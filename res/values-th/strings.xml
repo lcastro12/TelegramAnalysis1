@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="abc_action_bar_home_description">นำทางไปหน้าแรก</string>
-    <string name="abc_action_bar_up_description">นำทางขึ้น</string>
-    <string name="abc_action_menu_overflow_description">ตัวเลือกอื่น</string>
-    <string name="abc_action_mode_done">เสร็จสิ้น</string>
-    <string name="abc_activity_chooser_view_see_all">ดูทั้งหมด</string>
-    <string name="abc_activitychooserview_choose_application">เลือกแอป</string>
-    <string name="abc_searchview_description_clear">ล้างข้อความค้นหา</string>
-    <string name="abc_searchview_description_query">ข้อความค้นหา</string>
-    <string name="abc_searchview_description_search">ค้นหา</string>
-    <string name="abc_searchview_description_submit">ส่งข้อความค้นหา</string>
-    <string name="abc_searchview_description_voice">ค้นหาด้วยเสียง</string>
-    <string name="abc_shareactionprovider_share_with">แชร์กับ</string>
-    <string name="abc_shareactionprovider_share_with_application">แชร์กับ %s</string>
     <string name="auth_client_needs_enabling_title">แอปพลิเคชันหนึ่งจำเป็นต้องมีบริการ Google Play เพื่อเปิดใช้งาน</string>
     <string name="auth_client_needs_installation_title">แอปพลิเคชันหนึ่งจำเป็นต้องมีการติดตั้งบริการ Google Play</string>
     <string name="auth_client_needs_update_title">แอปพลิเคชันหนึ่งจำเป็นต้องมีการอัปเดตสำหรับบริการ Google Play</string>
@@ -31,7 +18,6 @@
     <string name="common_google_play_services_network_error_text">ต้องมีการเขื่อมต่อข้อมูลเพื่อเชื่อมต่อกับบริการ Google Play</string>
     <string name="common_google_play_services_network_error_title">ข้อผิดพลาดของเครือข่าย</string>
     <string name="common_google_play_services_unknown_issue">ปัญหาที่ไม่รู้จักของบริการ Google Play</string>
-    <string name="common_google_play_services_unsupported_date_text">วันที่บนอุปกรณ์ไม่ถูกต้อง โปรดตรวจสอบวันที่บนอุปกรณ์</string>
     <string name="common_google_play_services_unsupported_text">บริการ Google Play ซึ่งใช้งานในบางแอปพลิเคชัน ไม่ได้รับการสนับสนุนโดยอุปกรณ์ของคุณ โปรดติดต่อผู้ผลิตเพื่อขอรับความช่วยเหลือ</string>
     <string name="common_google_play_services_unsupported_title">บริการ Google Play</string>
     <string name="common_google_play_services_update_button">อัปเดต</string>

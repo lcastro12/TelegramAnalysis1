@@ -1,53 +1,57 @@
 package android.support.v4.app;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.Resources.NotFoundException;
-import android.content.res.TypedArray;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat.OnRequestPermissionsResultCallback;
+import android.support.v4.app.ActivityCompatApi23.RequestPermissionsRequestCodeValidator;
 import android.support.v4.internal.view.SupportMenu;
+import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.util.SimpleArrayMap;
+import android.support.v4.view.InputDeviceCompat;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.List;
 
-public class FragmentActivity extends Activity {
+public class FragmentActivity extends BaseFragmentActivityHoneycomb implements OnRequestPermissionsResultCallback, RequestPermissionsRequestCodeValidator {
     static final String FRAGMENTS_TAG = "android:support:fragments";
     private static final int HONEYCOMB = 11;
     static final int MSG_REALLY_STOPPED = 1;
     static final int MSG_RESUME_PENDING = 2;
     private static final String TAG = "FragmentActivity";
-    SimpleArrayMap<String, LoaderManagerImpl> mAllLoaderManagers;
-    boolean mCheckedForLoaderManager;
-    final FragmentContainer mContainer = new C06252();
     boolean mCreated;
-    final FragmentManagerImpl mFragments = new FragmentManagerImpl();
-    final Handler mHandler = new C00031();
-    LoaderManagerImpl mLoaderManager;
-    boolean mLoadersStarted;
+    final FragmentController mFragments = FragmentController.createController(new HostCallbacks());
+    final Handler mHandler = new C00091();
+    MediaControllerCompat mMediaController;
     boolean mOptionsMenuInvalidated;
     boolean mReallyStopped;
+    boolean mRequestedPermissionsFromFragment;
     boolean mResumed;
     boolean mRetaining;
     boolean mStopped;
 
-    class C00031 extends Handler {
-        C00031() {
+    class C00091 extends Handler {
+        C00091() {
         }
 
         public void handleMessage(Message msg) {
@@ -69,34 +73,82 @@ public class FragmentActivity extends Activity {
         }
     }
 
-    static class FragmentTag {
-        public static final int[] Fragment = new int[]{16842755, 16842960, 16842961};
-        public static final int Fragment_id = 1;
-        public static final int Fragment_name = 0;
-        public static final int Fragment_tag = 2;
-
-        FragmentTag() {
-        }
-    }
-
     static final class NonConfigurationInstances {
-        Object activity;
-        SimpleArrayMap<String, Object> children;
         Object custom;
-        ArrayList<Fragment> fragments;
-        SimpleArrayMap<String, LoaderManagerImpl> loaders;
+        List<Fragment> fragments;
+        SimpleArrayMap<String, LoaderManager> loaders;
 
         NonConfigurationInstances() {
         }
     }
 
-    class C06252 implements FragmentContainer {
-        C06252() {
+    class HostCallbacks extends FragmentHostCallback<FragmentActivity> {
+        public HostCallbacks() {
+            super(FragmentActivity.this);
         }
 
-        public View findViewById(int id) {
+        public void onDump(String prefix, FileDescriptor fd, PrintWriter writer, String[] args) {
+            FragmentActivity.this.dump(prefix, fd, writer, args);
+        }
+
+        public boolean onShouldSaveFragmentState(Fragment fragment) {
+            return !FragmentActivity.this.isFinishing();
+        }
+
+        public LayoutInflater onGetLayoutInflater() {
+            return FragmentActivity.this.getLayoutInflater().cloneInContext(FragmentActivity.this);
+        }
+
+        public FragmentActivity onGetHost() {
+            return FragmentActivity.this;
+        }
+
+        public void onSupportInvalidateOptionsMenu() {
+            FragmentActivity.this.supportInvalidateOptionsMenu();
+        }
+
+        public void onStartActivityFromFragment(Fragment fragment, Intent intent, int requestCode) {
+            FragmentActivity.this.startActivityFromFragment(fragment, intent, requestCode);
+        }
+
+        public void onRequestPermissionsFromFragment(@NonNull Fragment fragment, @NonNull String[] permissions, int requestCode) {
+            FragmentActivity.this.requestPermissionsFromFragment(fragment, permissions, requestCode);
+        }
+
+        public boolean onShouldShowRequestPermissionRationale(@NonNull String permission) {
+            return ActivityCompat.shouldShowRequestPermissionRationale(FragmentActivity.this, permission);
+        }
+
+        public boolean onHasWindowAnimations() {
+            return FragmentActivity.this.getWindow() != null;
+        }
+
+        public int onGetWindowAnimations() {
+            Window w = FragmentActivity.this.getWindow();
+            return w == null ? 0 : w.getAttributes().windowAnimations;
+        }
+
+        public void onAttachFragment(Fragment fragment) {
+            FragmentActivity.this.onAttachFragment(fragment);
+        }
+
+        @Nullable
+        public View onFindViewById(int id) {
             return FragmentActivity.this.findViewById(id);
         }
+
+        public boolean onHasView() {
+            Window w = FragmentActivity.this.getWindow();
+            return (w == null || w.peekDecorView() == null) ? false : true;
+        }
+    }
+
+    public /* bridge */ /* synthetic */ View onCreateView(View x0, String x1, Context x2, AttributeSet x3) {
+        return super.onCreateView(x0, x1, x2, x3);
+    }
+
+    public /* bridge */ /* synthetic */ View onCreateView(String x0, Context x1, AttributeSet x2) {
+        return super.onCreateView(x0, x1, x2);
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -104,11 +156,12 @@ public class FragmentActivity extends Activity {
         int index = requestCode >> 16;
         if (index != 0) {
             index--;
-            if (this.mFragments.mActive == null || index < 0 || index >= this.mFragments.mActive.size()) {
+            int activeFragmentsCount = this.mFragments.getActiveFragmentsCount();
+            if (activeFragmentsCount == 0 || index < 0 || index >= activeFragmentsCount) {
                 Log.w(TAG, "Activity result fragment index out of range: 0x" + Integer.toHexString(requestCode));
                 return;
             }
-            Fragment frag = (Fragment) this.mFragments.mActive.get(index);
+            Fragment frag = (Fragment) this.mFragments.getActiveFragments(new ArrayList(activeFragmentsCount)).get(index);
             if (frag == null) {
                 Log.w(TAG, "Activity result no fragment exists for index: 0x" + Integer.toHexString(requestCode));
                 return;
@@ -121,9 +174,40 @@ public class FragmentActivity extends Activity {
     }
 
     public void onBackPressed() {
-        if (!this.mFragments.popBackStackImmediate()) {
-            finish();
+        if (!this.mFragments.getSupportFragmentManager().popBackStackImmediate()) {
+            supportFinishAfterTransition();
         }
+    }
+
+    public final void setSupportMediaController(MediaControllerCompat mediaController) {
+        this.mMediaController = mediaController;
+        if (VERSION.SDK_INT >= 21) {
+            ActivityCompat21.setMediaController(this, mediaController.getMediaController());
+        }
+    }
+
+    public final MediaControllerCompat getSupportMediaController() {
+        return this.mMediaController;
+    }
+
+    public void supportFinishAfterTransition() {
+        ActivityCompat.finishAfterTransition(this);
+    }
+
+    public void setEnterSharedElementCallback(SharedElementCallback callback) {
+        ActivityCompat.setEnterSharedElementCallback(this, callback);
+    }
+
+    public void setExitSharedElementCallback(SharedElementCallback listener) {
+        ActivityCompat.setExitSharedElementCallback(this, listener);
+    }
+
+    public void supportPostponeEnterTransition() {
+        ActivityCompat.postponeEnterTransition(this);
+    }
+
+    public void supportStartPostponedEnterTransition() {
+        ActivityCompat.startPostponedEnterTransition(this);
     }
 
     public void onConfigurationChanged(Configuration newConfig) {
@@ -131,24 +215,21 @@ public class FragmentActivity extends Activity {
         this.mFragments.dispatchConfigurationChanged(newConfig);
     }
 
-    protected void onCreate(Bundle savedInstanceState) {
-        ArrayList arrayList = null;
-        this.mFragments.attachActivity(this, this.mContainer, null);
-        if (getLayoutInflater().getFactory() == null) {
-            getLayoutInflater().setFactory(this);
-        }
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        List list = null;
+        this.mFragments.attachHost(null);
         super.onCreate(savedInstanceState);
         NonConfigurationInstances nc = (NonConfigurationInstances) getLastNonConfigurationInstance();
         if (nc != null) {
-            this.mAllLoaderManagers = nc.loaders;
+            this.mFragments.restoreLoaderNonConfig(nc.loaders);
         }
         if (savedInstanceState != null) {
             Parcelable p = savedInstanceState.getParcelable(FRAGMENTS_TAG);
-            FragmentManagerImpl fragmentManagerImpl = this.mFragments;
+            FragmentController fragmentController = this.mFragments;
             if (nc != null) {
-                arrayList = nc.fragments;
+                list = nc.fragments;
             }
-            fragmentManagerImpl.restoreAllState(p, arrayList);
+            fragmentController.restoreAllState(p, list);
         }
         this.mFragments.dispatchCreate();
     }
@@ -164,80 +245,15 @@ public class FragmentActivity extends Activity {
         return true;
     }
 
-    public View onCreateView(String name, Context context, AttributeSet attrs) {
-        Fragment fragment = null;
-        int containerId = 0;
-        if (!"fragment".equals(name)) {
-            return super.onCreateView(name, context, attrs);
-        }
-        String fname = attrs.getAttributeValue(null, "class");
-        TypedArray a = context.obtainStyledAttributes(attrs, FragmentTag.Fragment);
-        if (fname == null) {
-            fname = a.getString(0);
-        }
-        int id = a.getResourceId(1, -1);
-        String tag = a.getString(2);
-        a.recycle();
-        if (!Fragment.isSupportFragmentClass(this, fname)) {
-            return super.onCreateView(name, context, attrs);
-        }
-        View parent = null;
-        if (parent != null) {
-            containerId = parent.getId();
-        }
-        if (containerId == -1 && id == -1 && tag == null) {
-            throw new IllegalArgumentException(attrs.getPositionDescription() + ": Must specify unique android:id, android:tag, or have a parent with an id for " + fname);
-        }
-        if (id != -1) {
-            fragment = this.mFragments.findFragmentById(id);
-        }
-        if (fragment == null && tag != null) {
-            fragment = this.mFragments.findFragmentByTag(tag);
-        }
-        if (fragment == null && containerId != -1) {
-            fragment = this.mFragments.findFragmentById(containerId);
-        }
-        if (FragmentManagerImpl.DEBUG) {
-            Log.v(TAG, "onCreateView: id=0x" + Integer.toHexString(id) + " fname=" + fname + " existing=" + fragment);
-        }
-        if (fragment == null) {
-            fragment = Fragment.instantiate(this, fname);
-            fragment.mFromLayout = true;
-            fragment.mFragmentId = id != 0 ? id : containerId;
-            fragment.mContainerId = containerId;
-            fragment.mTag = tag;
-            fragment.mInLayout = true;
-            fragment.mFragmentManager = this.mFragments;
-            fragment.onInflate(this, attrs, fragment.mSavedFragmentState);
-            this.mFragments.addFragment(fragment, true);
-        } else if (fragment.mInLayout) {
-            throw new IllegalArgumentException(attrs.getPositionDescription() + ": Duplicate id 0x" + Integer.toHexString(id) + ", tag " + tag + ", or parent id 0x" + Integer.toHexString(containerId) + " with another fragment for " + fname);
-        } else {
-            fragment.mInLayout = true;
-            if (!fragment.mRetaining) {
-                fragment.onInflate(this, attrs, fragment.mSavedFragmentState);
-            }
-            this.mFragments.moveToState(fragment);
-        }
-        if (fragment.mView == null) {
-            throw new IllegalStateException("Fragment " + fname + " did not create a view.");
-        }
-        if (id != 0) {
-            fragment.mView.setId(id);
-        }
-        if (fragment.mView.getTag() == null) {
-            fragment.mView.setTag(tag);
-        }
-        return fragment.mView;
+    final View dispatchFragmentsOnCreateView(View parent, String name, Context context, AttributeSet attrs) {
+        return this.mFragments.onCreateView(parent, name, context, attrs);
     }
 
     protected void onDestroy() {
         super.onDestroy();
         doReallyStop(false);
         this.mFragments.dispatchDestroy();
-        if (this.mLoaderManager != null) {
-            this.mLoaderManager.doDestroy();
-        }
+        this.mFragments.doLoaderDestroy();
     }
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -291,6 +307,10 @@ public class FragmentActivity extends Activity {
         this.mFragments.noteStateNotSaved();
     }
 
+    public void onStateNotSaved() {
+        this.mFragments.noteStateNotSaved();
+    }
+
     protected void onResume() {
         super.onResume();
         this.mHandler.sendEmptyMessage(2);
@@ -330,34 +350,15 @@ public class FragmentActivity extends Activity {
             doReallyStop(true);
         }
         Object custom = onRetainCustomNonConfigurationInstance();
-        ArrayList<Fragment> fragments = this.mFragments.retainNonConfig();
-        boolean retainLoaders = false;
-        if (this.mAllLoaderManagers != null) {
-            int i;
-            int N = this.mAllLoaderManagers.size();
-            LoaderManagerImpl[] loaders = new LoaderManagerImpl[N];
-            for (i = N - 1; i >= 0; i--) {
-                loaders[i] = (LoaderManagerImpl) this.mAllLoaderManagers.valueAt(i);
-            }
-            for (i = 0; i < N; i++) {
-                LoaderManagerImpl lm = loaders[i];
-                if (lm.mRetaining) {
-                    retainLoaders = true;
-                } else {
-                    lm.doDestroy();
-                    this.mAllLoaderManagers.remove(lm.mWho);
-                }
-            }
-        }
-        if (fragments == null && !retainLoaders && custom == null) {
+        List<Fragment> fragments = this.mFragments.retainNonConfig();
+        SimpleArrayMap<String, LoaderManager> loaders = this.mFragments.retainLoaderNonConfig();
+        if (fragments == null && loaders == null && custom == null) {
             return null;
         }
         Object nci = new NonConfigurationInstances();
-        nci.activity = null;
         nci.custom = custom;
-        nci.children = null;
         nci.fragments = fragments;
-        nci.loaders = this.mAllLoaderManagers;
+        nci.loaders = loaders;
         return nci;
     }
 
@@ -380,32 +381,9 @@ public class FragmentActivity extends Activity {
         }
         this.mFragments.noteStateNotSaved();
         this.mFragments.execPendingActions();
-        if (!this.mLoadersStarted) {
-            this.mLoadersStarted = true;
-            if (this.mLoaderManager != null) {
-                this.mLoaderManager.doStart();
-            } else if (!this.mCheckedForLoaderManager) {
-                this.mLoaderManager = getLoaderManager("(root)", this.mLoadersStarted, false);
-                if (!(this.mLoaderManager == null || this.mLoaderManager.mStarted)) {
-                    this.mLoaderManager.doStart();
-                }
-            }
-            this.mCheckedForLoaderManager = true;
-        }
+        this.mFragments.doLoaderStart();
         this.mFragments.dispatchStart();
-        if (this.mAllLoaderManagers != null) {
-            int i;
-            int N = this.mAllLoaderManagers.size();
-            LoaderManagerImpl[] loaders = new LoaderManagerImpl[N];
-            for (i = N - 1; i >= 0; i--) {
-                loaders[i] = (LoaderManagerImpl) this.mAllLoaderManagers.valueAt(i);
-            }
-            for (i = 0; i < N; i++) {
-                LoaderManagerImpl lm = loaders[i];
-                lm.finishRetain();
-                lm.doReportStart();
-            }
-        }
+        this.mFragments.reportLoaderStart();
     }
 
     protected void onStop() {
@@ -449,9 +427,11 @@ public class FragmentActivity extends Activity {
             writer.print(this.mStopped);
             writer.print(" mReallyStopped=");
             writer.println(this.mReallyStopped);
-            writer.print(innerPrefix);
-            writer.print("mLoadersStarted=");
-            writer.println(this.mLoadersStarted);
+            this.mFragments.dumpLoaders(innerPrefix, fd, writer, args);
+            this.mFragments.getSupportFragmentManager().dump(prefix, fd, writer, args);
+            writer.print(prefix);
+            writer.println("View Hierarchy:");
+            dumpViewHierarchy(prefix + "  ", writer, getWindow().getDecorView());
         } else {
             writer.print(prefix);
             writer.print("Local FragmentActivity ");
@@ -467,21 +447,12 @@ public class FragmentActivity extends Activity {
             writer.print(this.mStopped);
             writer.print(" mReallyStopped=");
             writer.println(this.mReallyStopped);
-            writer.print(innerPrefix);
-            writer.print("mLoadersStarted=");
-            writer.println(this.mLoadersStarted);
-        }
-        if (this.mLoaderManager != null) {
+            this.mFragments.dumpLoaders(innerPrefix, fd, writer, args);
+            this.mFragments.getSupportFragmentManager().dump(prefix, fd, writer, args);
             writer.print(prefix);
-            writer.print("Loader Manager ");
-            writer.print(Integer.toHexString(System.identityHashCode(this.mLoaderManager)));
-            writer.println(":");
-            this.mLoaderManager.dump(prefix + "  ", fd, writer, args);
+            writer.println("View Hierarchy:");
+            dumpViewHierarchy(prefix + "  ", writer, getWindow().getDecorView());
         }
-        this.mFragments.dump(prefix, fd, writer, args);
-        writer.print(prefix);
-        writer.println("View Hierarchy:");
-        dumpViewHierarchy(prefix + "  ", writer, getWindow().getDecorView());
     }
 
     private static String viewToString(View view) {
@@ -632,16 +603,7 @@ public class FragmentActivity extends Activity {
     }
 
     void onReallyStop() {
-        if (this.mLoadersStarted) {
-            this.mLoadersStarted = false;
-            if (this.mLoaderManager != null) {
-                if (this.mRetaining) {
-                    this.mLoaderManager.doRetain();
-                } else {
-                    this.mLoaderManager.doStop();
-                }
-            }
-        }
+        this.mFragments.doLoaderStop(this.mRetaining);
         this.mFragments.dispatchReallyStop();
     }
 
@@ -649,7 +611,11 @@ public class FragmentActivity extends Activity {
     }
 
     public FragmentManager getSupportFragmentManager() {
-        return this.mFragments;
+        return this.mFragments.getSupportFragmentManager();
+    }
+
+    public LoaderManager getSupportLoaderManager() {
+        return this.mFragments.getSupportLoaderManager();
     }
 
     public void startActivityForResult(Intent intent, int requestCode) {
@@ -658,6 +624,32 @@ public class FragmentActivity extends Activity {
             return;
         }
         throw new IllegalArgumentException("Can only use lower 16 bits for requestCode");
+    }
+
+    public final void validateRequestPermissionsRequestCode(int requestCode) {
+        if (this.mRequestedPermissionsFromFragment) {
+            this.mRequestedPermissionsFromFragment = false;
+        } else if ((requestCode & InputDeviceCompat.SOURCE_ANY) != 0) {
+            throw new IllegalArgumentException("Can only use lower 8 bits for requestCode");
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        int index = (requestCode >> 8) & 255;
+        if (index != 0) {
+            index--;
+            int activeFragmentsCount = this.mFragments.getActiveFragmentsCount();
+            if (activeFragmentsCount == 0 || index < 0 || index >= activeFragmentsCount) {
+                Log.w(TAG, "Activity result fragment index out of range: 0x" + Integer.toHexString(requestCode));
+                return;
+            }
+            Fragment frag = (Fragment) this.mFragments.getActiveFragments(new ArrayList(activeFragmentsCount)).get(index);
+            if (frag == null) {
+                Log.w(TAG, "Activity result no fragment exists for index: 0x" + Integer.toHexString(requestCode));
+            } else {
+                frag.onRequestPermissionsResult(requestCode & 255, permissions, grantResults);
+            }
+        }
     }
 
     public void startActivityFromFragment(Fragment fragment, Intent intent, int requestCode) {
@@ -670,39 +662,14 @@ public class FragmentActivity extends Activity {
         }
     }
 
-    void invalidateSupportFragment(String who) {
-        if (this.mAllLoaderManagers != null) {
-            LoaderManagerImpl lm = (LoaderManagerImpl) this.mAllLoaderManagers.get(who);
-            if (lm != null && !lm.mRetaining) {
-                lm.doDestroy();
-                this.mAllLoaderManagers.remove(who);
-            }
-        }
-    }
-
-    public LoaderManager getSupportLoaderManager() {
-        if (this.mLoaderManager != null) {
-            return this.mLoaderManager;
-        }
-        this.mCheckedForLoaderManager = true;
-        this.mLoaderManager = getLoaderManager("(root)", this.mLoadersStarted, true);
-        return this.mLoaderManager;
-    }
-
-    LoaderManagerImpl getLoaderManager(String who, boolean started, boolean create) {
-        if (this.mAllLoaderManagers == null) {
-            this.mAllLoaderManagers = new SimpleArrayMap();
-        }
-        LoaderManagerImpl lm = (LoaderManagerImpl) this.mAllLoaderManagers.get(who);
-        if (lm != null) {
-            lm.updateActivity(this);
-            return lm;
-        } else if (!create) {
-            return lm;
+    private void requestPermissionsFromFragment(Fragment fragment, String[] permissions, int requestCode) {
+        if (requestCode == -1) {
+            ActivityCompat.requestPermissions(this, permissions, requestCode);
+        } else if ((requestCode & InputDeviceCompat.SOURCE_ANY) != 0) {
+            throw new IllegalArgumentException("Can only use lower 8 bits for requestCode");
         } else {
-            lm = new LoaderManagerImpl(who, this, started);
-            this.mAllLoaderManagers.put(who, lm);
-            return lm;
+            this.mRequestedPermissionsFromFragment = true;
+            ActivityCompat.requestPermissions(this, permissions, ((fragment.mIndex + 1) << 8) + (requestCode & 255));
         }
     }
 }

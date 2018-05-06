@@ -24,7 +24,7 @@ public class ParcelableCompat {
 
     public static <T> Creator<T> newCreator(ParcelableCompatCreatorCallbacks<T> callbacks) {
         if (VERSION.SDK_INT >= 13) {
-            ParcelableCompatCreatorHoneycombMR2Stub.instantiate(callbacks);
+            return ParcelableCompatCreatorHoneycombMR2Stub.instantiate(callbacks);
         }
         return new CompatCreator(callbacks);
     }

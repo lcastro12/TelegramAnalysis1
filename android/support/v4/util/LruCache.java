@@ -21,6 +21,16 @@ public class LruCache<K, V> {
         this.map = new LinkedHashMap(0, 0.75f, true);
     }
 
+    public void resize(int maxSize) {
+        if (maxSize <= 0) {
+            throw new IllegalArgumentException("maxSize <= 0");
+        }
+        synchronized (this) {
+            this.maxSize = maxSize;
+        }
+        trimToSize(maxSize);
+    }
+
     /* JADX WARNING: inconsistent code. */
     /* Code decompiled incorrectly, please refer to instructions dump. */
     public final V get(K r5) {

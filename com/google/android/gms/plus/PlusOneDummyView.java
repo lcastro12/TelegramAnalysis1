@@ -16,16 +16,16 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 public class PlusOneDummyView extends FrameLayout {
     public static final String TAG = "PlusOneDummyView";
 
-    private interface C0248d {
+    private interface C0236d {
         Drawable getDrawable(int i);
 
         boolean isValid();
     }
 
-    private static class C0840a implements C0248d {
+    private static class C1430a implements C0236d {
         private Context mContext;
 
-        private C0840a(Context context) {
+        private C1430a(Context context) {
             this.mContext = context;
         }
 
@@ -38,10 +38,10 @@ public class PlusOneDummyView extends FrameLayout {
         }
     }
 
-    private static class C0841b implements C0248d {
+    private static class C1431b implements C0236d {
         private Context mContext;
 
-        private C0841b(Context context) {
+        private C1431b(Context context) {
             this.mContext = context;
         }
 
@@ -80,10 +80,10 @@ public class PlusOneDummyView extends FrameLayout {
         }
     }
 
-    private static class C0842c implements C0248d {
+    private static class C1432c implements C0236d {
         private Context mContext;
 
-        private C0842c(Context context) {
+        private C1432c(Context context) {
             this.mContext = context;
         }
 
@@ -115,12 +115,12 @@ public class PlusOneDummyView extends FrameLayout {
         super(context);
         View button = new Button(context);
         button.setEnabled(false);
-        button.setBackgroundDrawable(cU().getDrawable(size));
-        Point ae = ae(size);
-        addView(button, new LayoutParams(ae.x, ae.y, 17));
+        button.setBackgroundDrawable(bx().getDrawable(size));
+        Point T = m603T(size);
+        addView(button, new LayoutParams(T.x, T.y, 17));
     }
 
-    private Point ae(int i) {
+    private Point m603T(int i) {
         int i2 = 24;
         int i3 = 20;
         Point point = new Point();
@@ -147,11 +147,11 @@ public class PlusOneDummyView extends FrameLayout {
         return point;
     }
 
-    private C0248d cU() {
-        C0248d c0841b = new C0841b(getContext());
-        if (!c0841b.isValid()) {
-            c0841b = new C0842c(getContext());
+    private C0236d bx() {
+        C0236d c1431b = new C1431b(getContext());
+        if (!c1431b.isValid()) {
+            c1431b = new C1432c(getContext());
         }
-        return !c0841b.isValid() ? new C0840a(getContext()) : c0841b;
+        return !c1431b.isValid() ? new C1430a(getContext()) : c1431b;
     }
 }

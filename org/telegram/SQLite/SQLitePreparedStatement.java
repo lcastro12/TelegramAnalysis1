@@ -1,14 +1,18 @@
 package org.telegram.SQLite;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 import org.telegram.messenger.FileLog;
+import org.telegram.tgnet.NativeByteBuffer;
 
 public class SQLitePreparedStatement {
+    private static HashMap<SQLitePreparedStatement, String> hashMap;
     private boolean finalizeAfterQuery = false;
     private boolean isFinalized = false;
     private int queryArgsCount;
     private int sqliteStatementHandle;
 
-    native void bindByteArray(int i, int i2, byte[] bArr) throws SQLiteException;
+    native void bindByteBuffer(int i, int i2, ByteBuffer byteBuffer, int i3) throws SQLiteException;
 
     native void bindDouble(int i, int i2, double d) throws SQLiteException;
 
@@ -53,8 +57,6 @@ public class SQLitePreparedStatement {
                 bindDouble(this.sqliteStatementHandle, i, ((Double) obj).doubleValue());
             } else if (obj instanceof String) {
                 bindString(this.sqliteStatementHandle, i, (String) obj);
-            } else if (obj instanceof byte[]) {
-                bindByteArray(this.sqliteStatementHandle, i, (byte[]) obj);
             } else {
                 throw new IllegalArgumentException();
             }
@@ -95,7 +97,7 @@ public class SQLitePreparedStatement {
                 this.isFinalized = true;
                 finalize(this.sqliteStatementHandle);
             } catch (SQLiteException e) {
-                FileLog.m801e("tmessages", e.getMessage(), e);
+                FileLog.m610e("tmessages", e.getMessage(), e);
             }
         }
     }
@@ -108,8 +110,12 @@ public class SQLitePreparedStatement {
         bindDouble(this.sqliteStatementHandle, index, value);
     }
 
-    public void bindByteArray(int index, byte[] value) throws SQLiteException {
-        bindByteArray(this.sqliteStatementHandle, index, value);
+    public void bindByteBuffer(int index, ByteBuffer value) throws SQLiteException {
+        bindByteBuffer(this.sqliteStatementHandle, index, value, value.limit());
+    }
+
+    public void bindByteBuffer(int index, NativeByteBuffer value) throws SQLiteException {
+        bindByteBuffer(this.sqliteStatementHandle, index, value.buffer, value.limit());
     }
 
     public void bindString(int index, String value) throws SQLiteException {

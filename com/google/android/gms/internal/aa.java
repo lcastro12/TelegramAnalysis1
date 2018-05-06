@@ -1,70 +1,52 @@
 package com.google.android.gms.internal;
 
-import android.content.Context;
-import android.content.res.TypedArray;
-import android.text.TextUtils;
-import android.util.AttributeSet;
-import com.google.android.gms.C0090R;
-import com.google.android.gms.ads.AdSize;
+import android.os.Parcel;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.safeparcel.C0141a;
+import com.google.android.gms.common.internal.safeparcel.C0141a.C0140a;
+import com.google.android.gms.common.internal.safeparcel.C0142b;
 
-public final class aa {
-    private final AdSize f12c;
-    private final String dV;
-
-    public aa(Context context, AttributeSet attributeSet) {
-        TypedArray obtainAttributes = context.getResources().obtainAttributes(attributeSet, C0090R.styleable.AdsAttrs);
-        Object string = obtainAttributes.getString(0);
-        if (TextUtils.isEmpty(string)) {
-            throw new IllegalArgumentException("Required XML attribute \"adSize\" was missing.");
-        }
-        this.f12c = m168f(string)[0];
-        this.dV = obtainAttributes.getString(1);
-        if (TextUtils.isEmpty(this.dV)) {
-            throw new IllegalArgumentException("Required XML attribute \"adUnitId\" was missing.");
-        }
+public class aa implements Creator<C1363z> {
+    static void m167a(C1363z c1363z, Parcel parcel, int i) {
+        int d = C0142b.m131d(parcel);
+        C0142b.m129c(parcel, 1, c1363z.m1035i());
+        C0142b.m118a(parcel, 2, c1363z.m1033O(), i, false);
+        C0142b.m110C(parcel, d);
     }
 
-    private static AdSize[] m168f(String str) {
-        String[] split = str.split("\\s*,\\s*");
-        AdSize[] adSizeArr = new AdSize[split.length];
-        for (int i = 0; i < split.length; i++) {
-            String trim = split[i].trim();
-            if (trim.matches("^(\\d+|FULL_WIDTH)\\s*[xX]\\s*(\\d+|AUTO_HEIGHT)$")) {
-                String[] split2 = trim.split("[xX]");
-                split2[0] = split2[0].trim();
-                split2[1] = split2[1].trim();
-                try {
-                    adSizeArr[i] = new AdSize("FULL_WIDTH".equals(split2[0]) ? -1 : Integer.parseInt(split2[0]), "AUTO_HEIGHT".equals(split2[1]) ? -2 : Integer.parseInt(split2[1]));
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Could not parse XML attribute \"adSize\": " + trim);
-                }
-            } else if ("BANNER".equals(trim)) {
-                adSizeArr[i] = AdSize.BANNER;
-            } else if ("FULL_BANNER".equals(trim)) {
-                adSizeArr[i] = AdSize.FULL_BANNER;
-            } else if ("LEADERBOARD".equals(trim)) {
-                adSizeArr[i] = AdSize.LEADERBOARD;
-            } else if ("MEDIUM_RECTANGLE".equals(trim)) {
-                adSizeArr[i] = AdSize.MEDIUM_RECTANGLE;
-            } else if ("SMART_BANNER".equals(trim)) {
-                adSizeArr[i] = AdSize.SMART_BANNER;
-            } else if ("WIDE_SKYSCRAPER".equals(trim)) {
-                adSizeArr[i] = AdSize.WIDE_SKYSCRAPER;
-            } else {
-                throw new IllegalArgumentException("Could not parse XML attribute \"adSize\": " + trim);
+    public /* synthetic */ Object createFromParcel(Parcel x0) {
+        return m168f(x0);
+    }
+
+    public C1363z m168f(Parcel parcel) {
+        int c = C0141a.m81c(parcel);
+        int i = 0;
+        ab abVar = null;
+        while (parcel.dataPosition() < c) {
+            int b = C0141a.m78b(parcel);
+            switch (C0141a.m93m(b)) {
+                case 1:
+                    i = C0141a.m86f(parcel, b);
+                    break;
+                case 2:
+                    abVar = (ab) C0141a.m75a(parcel, b, ab.CREATOR);
+                    break;
+                default:
+                    C0141a.m79b(parcel, b);
+                    break;
             }
         }
-        if (adSizeArr.length != 0) {
-            return adSizeArr;
+        if (parcel.dataPosition() == c) {
+            return new C1363z(i, abVar);
         }
-        throw new IllegalArgumentException("Could not parse XML attribute \"adSize\": " + str);
+        throw new C0140a("Overread allowed size end=" + c, parcel);
     }
 
-    public AdSize getAdSize() {
-        return this.f12c;
+    public /* synthetic */ Object[] newArray(int x0) {
+        return m169o(x0);
     }
 
-    public String getAdUnitId() {
-        return this.dV;
+    public C1363z[] m169o(int i) {
+        return new C1363z[i];
     }
 }

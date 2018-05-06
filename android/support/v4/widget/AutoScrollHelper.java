@@ -96,10 +96,10 @@ public abstract class AutoScrollHelper implements OnTouchListener {
                 return 0.0f;
             }
             if (this.mStopTime < 0 || currentTime < this.mStopTime) {
-                return AutoScrollHelper.constrain(((float) (currentTime - this.mStartTime)) / ((float) this.mRampUpDuration), 0.0f, (float) AutoScrollHelper.DEFAULT_RELATIVE_VELOCITY) * 0.5f;
+                return AutoScrollHelper.constrain(((float) (currentTime - this.mStartTime)) / ((float) this.mRampUpDuration), 0.0f, 1.0f) * 0.5f;
             }
             long elapsedSinceEnd = currentTime - this.mStopTime;
-            return (AutoScrollHelper.constrain(((float) elapsedSinceEnd) / ((float) this.mEffectiveRampDown), 0.0f, (float) AutoScrollHelper.DEFAULT_RELATIVE_VELOCITY) * this.mStopValue) + (AutoScrollHelper.DEFAULT_RELATIVE_VELOCITY - this.mStopValue);
+            return (AutoScrollHelper.constrain(((float) elapsedSinceEnd) / ((float) this.mEffectiveRampDown), 0.0f, 1.0f) * this.mStopValue) + (1.0f - this.mStopValue);
         }
 
         private float interpolateValue(float value) {
@@ -182,7 +182,7 @@ public abstract class AutoScrollHelper implements OnTouchListener {
         setEdgeType(1);
         setMaximumEdges(Float.MAX_VALUE, Float.MAX_VALUE);
         setRelativeEdges(DEFAULT_RELATIVE_EDGE, DEFAULT_RELATIVE_EDGE);
-        setRelativeVelocity(DEFAULT_RELATIVE_VELOCITY, DEFAULT_RELATIVE_VELOCITY);
+        setRelativeVelocity(1.0f, 1.0f);
         setActivationDelay(DEFAULT_ACTIVATION_DELAY);
         setRampUpDuration(500);
         setRampDownDuration(500);
@@ -341,7 +341,7 @@ public abstract class AutoScrollHelper implements OnTouchListener {
         } else {
             interpolated = this.mEdgeInterpolator.getInterpolation(value);
         }
-        return constrain(interpolated, (float) GroundOverlayOptions.NO_DIMENSION, (float) DEFAULT_RELATIVE_VELOCITY);
+        return constrain(interpolated, (float) GroundOverlayOptions.NO_DIMENSION, 1.0f);
     }
 
     private float constrainEdgeValue(float current, float leading) {
@@ -355,9 +355,12 @@ public abstract class AutoScrollHelper implements OnTouchListener {
                     return 0.0f;
                 }
                 if (current >= 0.0f) {
-                    return DEFAULT_RELATIVE_VELOCITY - (current / leading);
+                    return 1.0f - (current / leading);
                 }
-                return (this.mAnimating && this.mEdgeType == 1) ? DEFAULT_RELATIVE_VELOCITY : 0.0f;
+                if (this.mAnimating && this.mEdgeType == 1) {
+                    return 1.0f;
+                }
+                return 0.0f;
             case 2:
                 if (current < 0.0f) {
                     return current / (-leading);

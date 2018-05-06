@@ -93,10 +93,11 @@ public class UpdateView extends RelativeLayout {
 
     private void loadTitleLabel(RelativeLayout headerView, Context context) {
         TextView textView = new TextView(context);
-        textView.setId(NAME_LABEL_ID);
+        textView.setId(4098);
         LayoutParams params = new LayoutParams(-2, -2);
         int margin = (int) TypedValue.applyDimension(1, 20.0f, getResources().getDisplayMetrics());
         params.setMargins(margin, margin, margin, 0);
+        textView.setBackgroundColor(Color.rgb(230, 236, 239));
         textView.setLayoutParams(params);
         textView.setEllipsize(TruncateAt.END);
         textView.setShadowLayer(1.0f, 0.0f, 1.0f, -1);
@@ -113,7 +114,8 @@ public class UpdateView extends RelativeLayout {
         LayoutParams params = new LayoutParams(-2, -2);
         int marginSide = (int) TypedValue.applyDimension(1, 20.0f, getResources().getDisplayMetrics());
         params.setMargins(marginSide, (int) TypedValue.applyDimension(1, 10.0f, getResources().getDisplayMetrics()), marginSide, 0);
-        params.addRule(3, NAME_LABEL_ID);
+        params.addRule(3, 4098);
+        textView.setBackgroundColor(Color.rgb(230, 236, 239));
         textView.setLayoutParams(params);
         textView.setEllipsize(TruncateAt.END);
         textView.setShadowLayer(1.0f, 0.0f, 1.0f, -1);

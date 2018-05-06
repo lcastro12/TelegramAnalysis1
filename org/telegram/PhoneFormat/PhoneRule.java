@@ -1,5 +1,7 @@
 package org.telegram.PhoneFormat;
 
+import android.support.v4.view.MotionEventCompat;
+
 public class PhoneRule {
     public int byte8;
     public int flag12;
@@ -34,7 +36,7 @@ public class PhoneRule {
                     res.append(str.substring(spot, spot + 1));
                     spot++;
                     continue;
-                case '(':
+                case MotionEventCompat.AXIS_GENERIC_9 /*40*/:
                     if (spot < str.length()) {
                         hasOpen = true;
                         break;

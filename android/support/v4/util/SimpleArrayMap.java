@@ -175,7 +175,11 @@ public class SimpleArrayMap<K, V> {
     }
 
     public boolean containsKey(Object key) {
-        return key == null ? indexOfNull() >= 0 : indexOf(key, key.hashCode()) >= 0;
+        return indexOfKey(key) >= 0;
+    }
+
+    public int indexOfKey(Object key) {
+        return key == null ? indexOfNull() : indexOf(key, key.hashCode());
     }
 
     int indexOfValue(Object value) {
@@ -203,7 +207,7 @@ public class SimpleArrayMap<K, V> {
     }
 
     public V get(Object key) {
-        int index = key == null ? indexOfNull() : indexOf(key, key.hashCode());
+        int index = indexOfKey(key);
         return index >= 0 ? this.mArray[(index << 1) + 1] : null;
     }
 
@@ -285,7 +289,7 @@ public class SimpleArrayMap<K, V> {
     }
 
     public V remove(Object key) {
-        int index = key == null ? indexOfNull() : indexOf(key, key.hashCode());
+        int index = indexOfKey(key);
         if (index >= 0) {
             return removeAt(index);
         }

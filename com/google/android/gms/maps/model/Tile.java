@@ -2,17 +2,17 @@ package com.google.android.gms.maps.model;
 
 import android.os.Parcel;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.maps.internal.C0215q;
 
 public final class Tile implements SafeParcelable {
     public static final TileCreator CREATOR = new TileCreator();
+    private final int ab;
     public final byte[] data;
     public final int height;
-    private final int iM;
     public final int width;
 
     Tile(int versionCode, int width, int height, byte[] data) {
-        this.iM = versionCode;
+        this.ab = versionCode;
         this.width = width;
         this.height = height;
         this.data = data;
@@ -26,15 +26,15 @@ public final class Tile implements SafeParcelable {
         return 0;
     }
 
-    int getVersionCode() {
-        return this.iM;
+    int m1099i() {
+        return this.ab;
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0236i.m753a(this, out, flags);
+        if (C0215q.bn()) {
+            C0224i.m582a(this, out, flags);
         } else {
-            TileCreator.m742a(this, out, flags);
+            TileCreator.m571a(this, out, flags);
         }
     }
 }

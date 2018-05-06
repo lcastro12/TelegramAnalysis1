@@ -1,21 +1,21 @@
 package com.google.android.gms.games.leaderboard;
 
-import com.google.android.gms.common.data.C0646d;
+import com.google.android.gms.common.data.C1287d;
 import com.google.android.gms.common.data.DataBuffer;
 
 public final class LeaderboardScoreBuffer extends DataBuffer<LeaderboardScore> {
-    private final C0119b nv;
+    private final C0153b ep;
 
-    public LeaderboardScoreBuffer(C0646d dataHolder) {
+    public LeaderboardScoreBuffer(C1287d dataHolder) {
         super(dataHolder);
-        this.nv = new C0119b(dataHolder.aM());
+        this.ep = new C0153b(dataHolder.m639l());
     }
 
-    public C0119b cb() {
-        return this.nv;
+    public C0153b aF() {
+        return this.ep;
     }
 
     public LeaderboardScore get(int position) {
-        return new C0902d(this.jf, position);
+        return new C1693d(this.S, position);
     }
 }

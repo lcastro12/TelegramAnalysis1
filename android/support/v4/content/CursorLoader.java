@@ -4,11 +4,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.support.v4.content.Loader.ForceLoadContentObserver;
+import android.support.v4.os.CancellationSignal;
+import android.support.v4.os.OperationCanceledException;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
 public class CursorLoader extends AsyncTaskLoader<Cursor> {
+    CancellationSignal mCancellationSignal;
     Cursor mCursor;
     final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
     String[] mProjection;
@@ -18,12 +21,40 @@ public class CursorLoader extends AsyncTaskLoader<Cursor> {
     Uri mUri;
 
     public Cursor loadInBackground() {
-        Cursor cursor = getContext().getContentResolver().query(this.mUri, this.mProjection, this.mSelection, this.mSelectionArgs, this.mSortOrder);
-        if (cursor != null) {
-            cursor.getCount();
-            cursor.registerContentObserver(this.mObserver);
+        synchronized (this) {
+            if (isLoadInBackgroundCanceled()) {
+                throw new OperationCanceledException();
+            }
+            this.mCancellationSignal = new CancellationSignal();
         }
-        return cursor;
+        Cursor cursor;
+        try {
+            cursor = ContentResolverCompat.query(getContext().getContentResolver(), this.mUri, this.mProjection, this.mSelection, this.mSelectionArgs, this.mSortOrder, this.mCancellationSignal);
+            if (cursor != null) {
+                cursor.getCount();
+                cursor.registerContentObserver(this.mObserver);
+            }
+            synchronized (this) {
+                this.mCancellationSignal = null;
+            }
+            return cursor;
+        } catch (RuntimeException ex) {
+            cursor.close();
+            throw ex;
+        } catch (Throwable th) {
+            synchronized (this) {
+                this.mCancellationSignal = null;
+            }
+        }
+    }
+
+    public void cancelLoadInBackground() {
+        super.cancelLoadInBackground();
+        synchronized (this) {
+            if (this.mCancellationSignal != null) {
+                this.mCancellationSignal.cancel();
+            }
+        }
     }
 
     public void deliverResult(Cursor cursor) {

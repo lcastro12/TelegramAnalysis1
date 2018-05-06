@@ -1,6 +1,5 @@
 package org.telegram.PhoneFormat;
 
-import android.support.v4.view.MotionEventCompat;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -8,11 +7,11 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
-import org.telegram.messenger.BuildConfig;
-import org.telegram.ui.ApplicationLoader;
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.FileLog;
 
 public class PhoneFormat {
-    public static PhoneFormat Instance = new PhoneFormat();
+    private static volatile PhoneFormat Instance = null;
     public ByteBuffer buffer;
     public HashMap<String, ArrayList<String>> callingCodeCountries;
     public HashMap<String, CallingCodeInfo> callingCodeData;
@@ -22,6 +21,32 @@ public class PhoneFormat {
     public String defaultCallingCode;
     public String defaultCountry;
     private boolean initialzed = false;
+
+    public static PhoneFormat getInstance() {
+        PhoneFormat localInstance = Instance;
+        if (localInstance == null) {
+            synchronized (PhoneFormat.class) {
+                try {
+                    localInstance = Instance;
+                    if (localInstance == null) {
+                        PhoneFormat localInstance2 = new PhoneFormat();
+                        try {
+                            Instance = localInstance2;
+                            localInstance = localInstance2;
+                        } catch (Throwable th) {
+                            Throwable th2 = th;
+                            localInstance = localInstance2;
+                            throw th2;
+                        }
+                    }
+                } catch (Throwable th3) {
+                    th2 = th3;
+                    throw th2;
+                }
+            }
+        }
+        return localInstance;
+    }
 
     public static String strip(String str) {
         StringBuilder res = new StringBuilder(str);
@@ -34,15 +59,22 @@ public class PhoneFormat {
         return res.toString();
     }
 
-    public static String stripExceptNumbers(String str) {
+    public static String stripExceptNumbers(String str, boolean includePlus) {
         StringBuilder res = new StringBuilder(str);
         String phoneChars = "0123456789";
+        if (includePlus) {
+            phoneChars = phoneChars + "+";
+        }
         for (int i = res.length() - 1; i >= 0; i--) {
             if (!phoneChars.contains(res.substring(i, i + 1))) {
                 res.deleteCharAt(i);
             }
         }
         return res.toString();
+    }
+
+    public static String stripExceptNumbers(String str) {
+        return stripExceptNumbers(str, false);
     }
 
     public PhoneFormat() {
@@ -54,33 +86,108 @@ public class PhoneFormat {
     }
 
     public void init(String countryCode) {
+        Exception e;
+        Throwable th;
+        InputStream stream = null;
+        ByteArrayOutputStream byteArrayOutputStream = null;
         try {
-            InputStream stream = ApplicationLoader.applicationContext.getAssets().open("PhoneFormats.dat");
+            stream = ApplicationLoader.applicationContext.getAssets().open("PhoneFormats.dat");
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] buf = new byte[1024];
-            while (true) {
-                int len = stream.read(buf, 0, 1024);
-                if (len == -1) {
-                    break;
+            try {
+                byte[] buf = new byte[1024];
+                while (true) {
+                    int len = stream.read(buf, 0, 1024);
+                    if (len == -1) {
+                        break;
+                    }
+                    bos.write(buf, 0, len);
                 }
-                bos.write(buf, 0, len);
+                this.data = bos.toByteArray();
+                this.buffer = ByteBuffer.wrap(this.data);
+                this.buffer.order(ByteOrder.LITTLE_ENDIAN);
+                if (bos != null) {
+                    try {
+                        bos.close();
+                    } catch (Throwable e2) {
+                        FileLog.m611e("tmessages", e2);
+                    }
+                }
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (Throwable e22) {
+                        FileLog.m611e("tmessages", e22);
+                    }
+                }
+                if (countryCode == null || countryCode.length() == 0) {
+                    this.defaultCountry = Locale.getDefault().getCountry().toLowerCase();
+                } else {
+                    this.defaultCountry = countryCode;
+                }
+                this.callingCodeOffsets = new HashMap(255);
+                this.callingCodeCountries = new HashMap(255);
+                this.callingCodeData = new HashMap(10);
+                this.countryCallingCode = new HashMap(255);
+                parseDataHeader();
+                this.initialzed = true;
+                byteArrayOutputStream = bos;
+            } catch (Exception e3) {
+                e = e3;
+                byteArrayOutputStream = bos;
+                try {
+                    e.printStackTrace();
+                    if (byteArrayOutputStream != null) {
+                        try {
+                            byteArrayOutputStream.close();
+                        } catch (Throwable e222) {
+                            FileLog.m611e("tmessages", e222);
+                        }
+                    }
+                    if (stream != null) {
+                        try {
+                            stream.close();
+                        } catch (Throwable e2222) {
+                            FileLog.m611e("tmessages", e2222);
+                        }
+                    }
+                } catch (Throwable th2) {
+                    th = th2;
+                    if (byteArrayOutputStream != null) {
+                        try {
+                            byteArrayOutputStream.close();
+                        } catch (Throwable e22222) {
+                            FileLog.m611e("tmessages", e22222);
+                        }
+                    }
+                    if (stream != null) {
+                        try {
+                            stream.close();
+                        } catch (Throwable e222222) {
+                            FileLog.m611e("tmessages", e222222);
+                        }
+                    }
+                    throw th;
+                }
+            } catch (Throwable th3) {
+                th = th3;
+                byteArrayOutputStream = bos;
+                if (byteArrayOutputStream != null) {
+                    byteArrayOutputStream.close();
+                }
+                if (stream != null) {
+                    stream.close();
+                }
+                throw th;
             }
-            this.data = bos.toByteArray();
-            this.buffer = ByteBuffer.wrap(this.data);
-            this.buffer.order(ByteOrder.LITTLE_ENDIAN);
-            if (countryCode == null || countryCode.length() == 0) {
-                this.defaultCountry = Locale.getDefault().getCountry().toLowerCase();
-            } else {
-                this.defaultCountry = countryCode;
-            }
-            this.callingCodeOffsets = new HashMap(MotionEventCompat.ACTION_MASK);
-            this.callingCodeCountries = new HashMap(MotionEventCompat.ACTION_MASK);
-            this.callingCodeData = new HashMap(10);
-            this.countryCallingCode = new HashMap(MotionEventCompat.ACTION_MASK);
-            parseDataHeader();
-            this.initialzed = true;
-        } catch (Exception e) {
+        } catch (Exception e4) {
+            e = e4;
             e.printStackTrace();
+            if (byteArrayOutputStream != null) {
+                byteArrayOutputStream.close();
+            }
+            if (stream != null) {
+                stream.close();
+            }
         }
     }
 
@@ -203,16 +310,16 @@ public class PhoneFormat {
                 if (this.data[a] != (byte) 0) {
                     a++;
                 } else if (offset == a - offset) {
-                    return BuildConfig.FLAVOR;
+                    return "";
                 } else {
                     return new String(this.data, offset, a - offset);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return BuildConfig.FLAVOR;
+                return "";
             }
         }
-        return BuildConfig.FLAVOR;
+        return "";
     }
 
     public CallingCodeInfo callingCodeInfo(String callingCode) {

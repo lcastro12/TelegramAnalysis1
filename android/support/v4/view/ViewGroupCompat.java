@@ -13,11 +13,17 @@ public class ViewGroupCompat {
     interface ViewGroupCompatImpl {
         int getLayoutMode(ViewGroup viewGroup);
 
+        int getNestedScrollAxes(ViewGroup viewGroup);
+
+        boolean isTransitionGroup(ViewGroup viewGroup);
+
         boolean onRequestSendAccessibilityEvent(ViewGroup viewGroup, View view, AccessibilityEvent accessibilityEvent);
 
         void setLayoutMode(ViewGroup viewGroup, int i);
 
         void setMotionEventSplittingEnabled(ViewGroup viewGroup, boolean z);
+
+        void setTransitionGroup(ViewGroup viewGroup, boolean z);
     }
 
     static class ViewGroupCompatStubImpl implements ViewGroupCompatImpl {
@@ -36,6 +42,20 @@ public class ViewGroupCompat {
         }
 
         public void setLayoutMode(ViewGroup group, int mode) {
+        }
+
+        public void setTransitionGroup(ViewGroup group, boolean isTransitionGroup) {
+        }
+
+        public boolean isTransitionGroup(ViewGroup group) {
+            return false;
+        }
+
+        public int getNestedScrollAxes(ViewGroup group) {
+            if (group instanceof NestedScrollingParent) {
+                return ((NestedScrollingParent) group).getNestedScrollAxes();
+            }
+            return 0;
         }
     }
 
@@ -70,9 +90,28 @@ public class ViewGroupCompat {
         }
     }
 
+    static class ViewGroupCompatLollipopImpl extends ViewGroupCompatJellybeanMR2Impl {
+        ViewGroupCompatLollipopImpl() {
+        }
+
+        public void setTransitionGroup(ViewGroup group, boolean isTransitionGroup) {
+            ViewGroupCompatLollipop.setTransitionGroup(group, isTransitionGroup);
+        }
+
+        public boolean isTransitionGroup(ViewGroup group) {
+            return ViewGroupCompatLollipop.isTransitionGroup(group);
+        }
+
+        public int getNestedScrollAxes(ViewGroup group) {
+            return ViewGroupCompatLollipop.getNestedScrollAxes(group);
+        }
+    }
+
     static {
         int version = VERSION.SDK_INT;
-        if (version >= 18) {
+        if (version >= 21) {
+            IMPL = new ViewGroupCompatLollipopImpl();
+        } else if (version >= 18) {
             IMPL = new ViewGroupCompatJellybeanMR2Impl();
         } else if (version >= 14) {
             IMPL = new ViewGroupCompatIcsImpl();
@@ -100,5 +139,17 @@ public class ViewGroupCompat {
 
     public static void setLayoutMode(ViewGroup group, int mode) {
         IMPL.setLayoutMode(group, mode);
+    }
+
+    public static void setTransitionGroup(ViewGroup group, boolean isTransitionGroup) {
+        IMPL.setTransitionGroup(group, isTransitionGroup);
+    }
+
+    public static boolean isTransitionGroup(ViewGroup group) {
+        return IMPL.isTransitionGroup(group);
+    }
+
+    public static int getNestedScrollAxes(ViewGroup group) {
+        return IMPL.getNestedScrollAxes(group);
     }
 }

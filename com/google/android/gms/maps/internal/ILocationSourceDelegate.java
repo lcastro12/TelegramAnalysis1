@@ -5,26 +5,26 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.RemoteException;
-import com.google.android.gms.maps.internal.C0216g.C0806a;
+import com.google.android.gms.maps.internal.C0205g.C1398a;
 
 public interface ILocationSourceDelegate extends IInterface {
 
-    public static abstract class C0786a extends Binder implements ILocationSourceDelegate {
+    public static abstract class C1378a extends Binder implements ILocationSourceDelegate {
 
-        private static class C0785a implements ILocationSourceDelegate {
-            private IBinder dG;
+        private static class C1377a implements ILocationSourceDelegate {
+            private IBinder f103a;
 
-            C0785a(IBinder iBinder) {
-                this.dG = iBinder;
+            C1377a(IBinder iBinder) {
+                this.f103a = iBinder;
             }
 
-            public void activate(C0216g listener) throws RemoteException {
+            public void activate(C0205g listener) throws RemoteException {
                 Parcel obtain = Parcel.obtain();
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.ILocationSourceDelegate");
                     obtain.writeStrongBinder(listener != null ? listener.asBinder() : null);
-                    this.dG.transact(1, obtain, obtain2, 0);
+                    this.f103a.transact(1, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -33,7 +33,7 @@ public interface ILocationSourceDelegate extends IInterface {
             }
 
             public IBinder asBinder() {
-                return this.dG;
+                return this.f103a;
             }
 
             public void deactivate() throws RemoteException {
@@ -41,7 +41,7 @@ public interface ILocationSourceDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.ILocationSourceDelegate");
-                    this.dG.transact(2, obtain, obtain2, 0);
+                    this.f103a.transact(2, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -50,16 +50,16 @@ public interface ILocationSourceDelegate extends IInterface {
             }
         }
 
-        public C0786a() {
+        public C1378a() {
             attachInterface(this, "com.google.android.gms.maps.internal.ILocationSourceDelegate");
         }
 
-        public static ILocationSourceDelegate m1256M(IBinder iBinder) {
+        public static ILocationSourceDelegate m1053y(IBinder iBinder) {
             if (iBinder == null) {
                 return null;
             }
             IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.maps.internal.ILocationSourceDelegate");
-            return (queryLocalInterface == null || !(queryLocalInterface instanceof ILocationSourceDelegate)) ? new C0785a(iBinder) : (ILocationSourceDelegate) queryLocalInterface;
+            return (queryLocalInterface == null || !(queryLocalInterface instanceof ILocationSourceDelegate)) ? new C1377a(iBinder) : (ILocationSourceDelegate) queryLocalInterface;
         }
 
         public IBinder asBinder() {
@@ -70,7 +70,7 @@ public interface ILocationSourceDelegate extends IInterface {
             switch (code) {
                 case 1:
                     data.enforceInterface("com.google.android.gms.maps.internal.ILocationSourceDelegate");
-                    activate(C0806a.m1273R(data.readStrongBinder()));
+                    activate(C1398a.m1071D(data.readStrongBinder()));
                     reply.writeNoException();
                     return true;
                 case 2:
@@ -87,7 +87,7 @@ public interface ILocationSourceDelegate extends IInterface {
         }
     }
 
-    void activate(C0216g c0216g) throws RemoteException;
+    void activate(C0205g c0205g) throws RemoteException;
 
     void deactivate() throws RemoteException;
 }

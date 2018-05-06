@@ -5,6 +5,9 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.ColorInt;
+import android.support.annotation.ColorRes;
+import android.support.annotation.DrawableRes;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,8 +40,8 @@ public class PagerTabStrip extends PagerTitleStrip {
     private final Rect mTempRect;
     private int mTouchSlop;
 
-    class C00351 implements OnClickListener {
-        C00351() {
+    class C00831 implements OnClickListener {
+        C00831() {
         }
 
         public void onClick(View v) {
@@ -46,8 +49,8 @@ public class PagerTabStrip extends PagerTitleStrip {
         }
     }
 
-    class C00362 implements OnClickListener {
-        C00362() {
+    class C00842 implements OnClickListener {
+        C00842() {
         }
 
         public void onClick(View v) {
@@ -63,7 +66,7 @@ public class PagerTabStrip extends PagerTitleStrip {
         super(context, attrs);
         this.mTabPaint = new Paint();
         this.mTempRect = new Rect();
-        this.mTabAlpha = MotionEventCompat.ACTION_MASK;
+        this.mTabAlpha = 255;
         this.mDrawFullUnderline = false;
         this.mDrawFullUnderlineSet = false;
         this.mIndicatorColor = this.mTextColor;
@@ -80,24 +83,25 @@ public class PagerTabStrip extends PagerTitleStrip {
         setTextSpacing(getTextSpacing());
         setWillNotDraw(false);
         this.mPrevText.setFocusable(true);
-        this.mPrevText.setOnClickListener(new C00351());
+        this.mPrevText.setOnClickListener(new C00831());
         this.mNextText.setFocusable(true);
-        this.mNextText.setOnClickListener(new C00362());
+        this.mNextText.setOnClickListener(new C00842());
         if (getBackground() == null) {
             this.mDrawFullUnderline = true;
         }
     }
 
-    public void setTabIndicatorColor(int color) {
+    public void setTabIndicatorColor(@ColorInt int color) {
         this.mIndicatorColor = color;
         this.mTabPaint.setColor(this.mIndicatorColor);
         invalidate();
     }
 
-    public void setTabIndicatorColorResource(int resId) {
+    public void setTabIndicatorColorResource(@ColorRes int resId) {
         setTabIndicatorColor(getContext().getResources().getColor(resId));
     }
 
+    @ColorInt
     public int getTabIndicatorColor() {
         return this.mIndicatorColor;
     }
@@ -123,14 +127,14 @@ public class PagerTabStrip extends PagerTitleStrip {
         }
     }
 
-    public void setBackgroundColor(int color) {
+    public void setBackgroundColor(@ColorInt int color) {
         super.setBackgroundColor(color);
         if (!this.mDrawFullUnderlineSet) {
             this.mDrawFullUnderline = (ViewCompat.MEASURED_STATE_MASK & color) == 0;
         }
     }
 
-    public void setBackgroundResource(int resId) {
+    public void setBackgroundResource(@DrawableRes int resId) {
         super.setBackgroundResource(resId);
         if (!this.mDrawFullUnderlineSet) {
             this.mDrawFullUnderline = resId == 0;

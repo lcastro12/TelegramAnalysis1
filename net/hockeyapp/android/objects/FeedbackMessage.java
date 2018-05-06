@@ -1,12 +1,14 @@
 package net.hockeyapp.android.objects;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class FeedbackMessage implements Serializable {
     private static final long serialVersionUID = -8773015828853994624L;
     private String appId;
     private String cleanText;
     private String createdAt;
+    private List<FeedbackAttachment> feedbackAttachments;
     private int id;
     private String model;
     private String name;
@@ -120,5 +122,13 @@ public class FeedbackMessage implements Serializable {
 
     public void setAppId(String appId) {
         this.appId = appId;
+    }
+
+    public List<FeedbackAttachment> getFeedbackAttachments() {
+        return this.feedbackAttachments;
+    }
+
+    public void setFeedbackAttachments(List<FeedbackAttachment> feedbackAttachments) {
+        this.feedbackAttachments = feedbackAttachments;
     }
 }

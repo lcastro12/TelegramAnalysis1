@@ -16,12 +16,11 @@ import com.google.android.gms.games.leaderboard.OnScoreSubmittedListener;
 import com.google.android.gms.games.multiplayer.OnInvitationReceivedListener;
 import com.google.android.gms.games.multiplayer.OnInvitationsLoadedListener;
 import com.google.android.gms.games.multiplayer.realtime.RealTimeReliableMessageSentListener;
-import com.google.android.gms.games.multiplayer.realtime.RealTimeSocket;
 import com.google.android.gms.games.multiplayer.realtime.Room;
 import com.google.android.gms.games.multiplayer.realtime.RoomConfig;
 import com.google.android.gms.games.multiplayer.realtime.RoomUpdateListener;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.internal.em;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.internal.au;
 import java.util.List;
 
 public final class GamesClient implements GooglePlayServicesClient {
@@ -40,7 +39,6 @@ public final class GamesClient implements GooglePlayServicesClient {
     public static final int STATUS_ACHIEVEMENT_UNKNOWN = 3001;
     public static final int STATUS_ACHIEVEMENT_UNLOCKED = 3003;
     public static final int STATUS_ACHIEVEMENT_UNLOCK_FAILURE = 3000;
-    public static final int STATUS_APP_MISCONFIGURED = 8;
     public static final int STATUS_CLIENT_RECONNECT_REQUIRED = 2;
     public static final int STATUS_INTERNAL_ERROR = 1;
     public static final int STATUS_INVALID_REAL_TIME_ROOM_ID = 7002;
@@ -58,180 +56,180 @@ public final class GamesClient implements GooglePlayServicesClient {
     public static final int STATUS_REAL_TIME_MESSAGE_FAILED = -1;
     public static final int STATUS_REAL_TIME_MESSAGE_SEND_FAILED = 7001;
     public static final int STATUS_REAL_TIME_ROOM_NOT_JOINED = 7004;
-    private final em mz;
+    private final au dt;
 
     public static final class Builder {
-        private final ConnectionCallbacks iq;
-        private final OnConnectionFailedListener ir;
-        private String[] is = new String[]{Scopes.GAMES};
-        private String it = "<<default account>>";
-        private String mA;
-        private int mB = 49;
-        private View mC;
+        private final ConnectionCallbacks f35d;
+        private String du;
+        private int dv = 49;
+        private View dw;
+        private final OnConnectionFailedListener f36e;
+        private String[] f37f = new String[]{Scopes.GAMES};
+        private String f38g = "<<default account>>";
         private final Context mContext;
 
         public Builder(Context context, ConnectionCallbacks connectedListener, OnConnectionFailedListener connectionFailedListener) {
             this.mContext = context;
-            this.mA = context.getPackageName();
-            this.iq = connectedListener;
-            this.ir = connectionFailedListener;
+            this.du = context.getPackageName();
+            this.f35d = connectedListener;
+            this.f36e = connectionFailedListener;
         }
 
         public GamesClient create() {
-            return new GamesClient(this.mContext, this.mA, this.it, this.iq, this.ir, this.is, this.mB, this.mC);
+            return new GamesClient(this.mContext, this.du, this.f38g, this.f35d, this.f36e, this.f37f, this.dv, this.dw);
         }
 
         public Builder setAccountName(String accountName) {
-            this.it = (String) dm.m392e(accountName);
+            this.f38g = (String) C0192s.m521d(accountName);
             return this;
         }
 
         public Builder setGravityForPopups(int gravity) {
-            this.mB = gravity;
+            this.dv = gravity;
             return this;
         }
 
         public Builder setScopes(String... scopes) {
-            this.is = scopes;
+            this.f37f = scopes;
             return this;
         }
 
         public Builder setViewForPopups(View gamesContentView) {
-            this.mC = (View) dm.m392e(gamesContentView);
+            this.dw = (View) C0192s.m521d(gamesContentView);
             return this;
         }
     }
 
     private GamesClient(Context context, String gamePackageName, String accountName, ConnectionCallbacks connectedListener, OnConnectionFailedListener connectionFailedListener, String[] scopes, int gravity, View gamesContentView) {
-        this.mz = new em(context, gamePackageName, accountName, connectedListener, connectionFailedListener, scopes, gravity, gamesContentView, false);
+        this.dt = new au(context, gamePackageName, accountName, connectedListener, connectionFailedListener, scopes, gravity, gamesContentView, false);
     }
 
     public void clearAllNotifications() {
-        this.mz.clearNotifications(-1);
+        this.dt.clearNotifications(-1);
     }
 
     public void clearNotifications(int notificationTypes) {
-        this.mz.clearNotifications(notificationTypes);
+        this.dt.clearNotifications(notificationTypes);
     }
 
     public void connect() {
-        this.mz.connect();
+        this.dt.connect();
     }
 
     public void createRoom(RoomConfig config) {
-        this.mz.createRoom(config);
+        this.dt.createRoom(config);
     }
 
     public void declineRoomInvitation(String invitationId) {
-        this.mz.m1437j(invitationId, 0);
+        this.dt.m1213i(invitationId, 0);
     }
 
     public void disconnect() {
-        this.mz.disconnect();
+        this.dt.disconnect();
     }
 
     public void dismissRoomInvitation(String invitationId) {
-        this.mz.m1436i(invitationId, 0);
+        this.dt.m1212h(invitationId, 0);
     }
 
     public Intent getAchievementsIntent() {
-        return this.mz.getAchievementsIntent();
+        return this.dt.getAchievementsIntent();
     }
 
     public Intent getAllLeaderboardsIntent() {
-        return this.mz.getAllLeaderboardsIntent();
+        return this.dt.getAllLeaderboardsIntent();
     }
 
     public String getAppId() {
-        return this.mz.getAppId();
+        return this.dt.getAppId();
     }
 
     public String getCurrentAccountName() {
-        return this.mz.getCurrentAccountName();
+        return this.dt.getCurrentAccountName();
     }
 
     public Game getCurrentGame() {
-        return this.mz.getCurrentGame();
+        return this.dt.getCurrentGame();
     }
 
     public Player getCurrentPlayer() {
-        return this.mz.getCurrentPlayer();
+        return this.dt.getCurrentPlayer();
     }
 
     public String getCurrentPlayerId() {
-        return this.mz.getCurrentPlayerId();
+        return this.dt.getCurrentPlayerId();
     }
 
     public Intent getInvitationInboxIntent() {
-        return this.mz.getInvitationInboxIntent();
+        return this.dt.getInvitationInboxIntent();
     }
 
     public Intent getLeaderboardIntent(String leaderboardId) {
-        return this.mz.getLeaderboardIntent(leaderboardId);
+        return this.dt.getLeaderboardIntent(leaderboardId);
     }
 
     public RealTimeSocket getRealTimeSocketForParticipant(String roomId, String participantId) {
-        return this.mz.getRealTimeSocketForParticipant(roomId, participantId);
+        return this.dt.getRealTimeSocketForParticipant(roomId, participantId);
     }
 
     public Intent getRealTimeWaitingRoomIntent(Room room, int minParticipantsToStart) {
-        return this.mz.getRealTimeWaitingRoomIntent(room, minParticipantsToStart);
+        return this.dt.getRealTimeWaitingRoomIntent(room, minParticipantsToStart);
     }
 
     public Intent getSelectPlayersIntent(int minPlayers, int maxPlayers) {
-        return this.mz.getSelectPlayersIntent(minPlayers, maxPlayers);
+        return this.dt.getSelectPlayersIntent(minPlayers, maxPlayers);
     }
 
     public Intent getSettingsIntent() {
-        return this.mz.getSettingsIntent();
+        return this.dt.getSettingsIntent();
     }
 
     public void incrementAchievement(String id, int numSteps) {
-        this.mz.m1430a(null, id, numSteps);
+        this.dt.m1204a(null, id, numSteps);
     }
 
     public void incrementAchievementImmediate(OnAchievementUpdatedListener listener, String id, int numSteps) {
-        this.mz.m1430a(listener, id, numSteps);
+        this.dt.m1204a(listener, id, numSteps);
     }
 
     public boolean isConnected() {
-        return this.mz.isConnected();
+        return this.dt.isConnected();
     }
 
     public boolean isConnecting() {
-        return this.mz.isConnecting();
+        return this.dt.isConnecting();
     }
 
     public boolean isConnectionCallbacksRegistered(ConnectionCallbacks listener) {
-        return this.mz.isConnectionCallbacksRegistered(listener);
+        return this.dt.isConnectionCallbacksRegistered(listener);
     }
 
     public boolean isConnectionFailedListenerRegistered(OnConnectionFailedListener listener) {
-        return this.mz.isConnectionFailedListenerRegistered(listener);
+        return this.dt.isConnectionFailedListenerRegistered(listener);
     }
 
     public void joinRoom(RoomConfig config) {
-        this.mz.joinRoom(config);
+        this.dt.joinRoom(config);
     }
 
     public void leaveRoom(RoomUpdateListener listener, String roomId) {
-        this.mz.leaveRoom(listener, roomId);
+        this.dt.leaveRoom(listener, roomId);
     }
 
     public void loadAchievements(OnAchievementsLoadedListener listener, boolean forceReload) {
-        this.mz.loadAchievements(listener, forceReload);
+        this.dt.loadAchievements(listener, forceReload);
     }
 
     public void loadGame(OnGamesLoadedListener listener) {
-        this.mz.loadGame(listener);
+        this.dt.loadGame(listener);
     }
 
     public void loadInvitablePlayers(OnPlayersLoadedListener listener, int pageSize, boolean forceReload) {
-        this.mz.m1428a(listener, pageSize, false, forceReload);
+        this.dt.m1202a(listener, pageSize, false, forceReload);
     }
 
     public void loadInvitations(OnInvitationsLoadedListener listener) {
-        this.mz.loadInvitations(listener);
+        this.dt.loadInvitations(listener);
     }
 
     @Deprecated
@@ -245,144 +243,128 @@ public final class GamesClient implements GooglePlayServicesClient {
     }
 
     public void loadLeaderboardMetadata(OnLeaderboardMetadataLoadedListener listener, String leaderboardId, boolean forceReload) {
-        this.mz.loadLeaderboardMetadata(listener, leaderboardId, forceReload);
+        this.dt.loadLeaderboardMetadata(listener, leaderboardId, forceReload);
     }
 
     public void loadLeaderboardMetadata(OnLeaderboardMetadataLoadedListener listener, boolean forceReload) {
-        this.mz.loadLeaderboardMetadata(listener, forceReload);
+        this.dt.loadLeaderboardMetadata(listener, forceReload);
     }
 
     public void loadMoreInvitablePlayers(OnPlayersLoadedListener listener, int pageSize) {
-        this.mz.m1428a(listener, pageSize, true, false);
+        this.dt.m1202a(listener, pageSize, true, false);
     }
 
     public void loadMoreScores(OnLeaderboardScoresLoadedListener listener, LeaderboardScoreBuffer buffer, int maxResults, int pageDirection) {
-        this.mz.loadMoreScores(listener, buffer, maxResults, pageDirection);
+        this.dt.loadMoreScores(listener, buffer, maxResults, pageDirection);
     }
 
     public void loadPlayer(OnPlayersLoadedListener listener, String playerId) {
-        this.mz.loadPlayer(listener, playerId);
+        this.dt.loadPlayer(listener, playerId);
     }
 
     public void loadPlayerCenteredScores(OnLeaderboardScoresLoadedListener listener, String leaderboardId, int span, int leaderboardCollection, int maxResults) {
-        this.mz.loadPlayerCenteredScores(listener, leaderboardId, span, leaderboardCollection, maxResults, false);
+        this.dt.loadPlayerCenteredScores(listener, leaderboardId, span, leaderboardCollection, maxResults, false);
     }
 
     public void loadPlayerCenteredScores(OnLeaderboardScoresLoadedListener listener, String leaderboardId, int span, int leaderboardCollection, int maxResults, boolean forceReload) {
-        this.mz.loadPlayerCenteredScores(listener, leaderboardId, span, leaderboardCollection, maxResults, forceReload);
+        this.dt.loadPlayerCenteredScores(listener, leaderboardId, span, leaderboardCollection, maxResults, forceReload);
     }
 
     public void loadTopScores(OnLeaderboardScoresLoadedListener listener, String leaderboardId, int span, int leaderboardCollection, int maxResults) {
-        this.mz.loadTopScores(listener, leaderboardId, span, leaderboardCollection, maxResults, false);
+        this.dt.loadTopScores(listener, leaderboardId, span, leaderboardCollection, maxResults, false);
     }
 
     public void loadTopScores(OnLeaderboardScoresLoadedListener listener, String leaderboardId, int span, int leaderboardCollection, int maxResults, boolean forceReload) {
-        this.mz.loadTopScores(listener, leaderboardId, span, leaderboardCollection, maxResults, forceReload);
+        this.dt.loadTopScores(listener, leaderboardId, span, leaderboardCollection, maxResults, forceReload);
     }
 
     public void reconnect() {
-        this.mz.disconnect();
-        this.mz.connect();
+        this.dt.disconnect();
+        this.dt.connect();
     }
 
     public void registerConnectionCallbacks(ConnectionCallbacks listener) {
-        this.mz.registerConnectionCallbacks(listener);
+        this.dt.registerConnectionCallbacks(listener);
     }
 
     public void registerConnectionFailedListener(OnConnectionFailedListener listener) {
-        this.mz.registerConnectionFailedListener(listener);
+        this.dt.registerConnectionFailedListener(listener);
     }
 
     public void registerInvitationListener(OnInvitationReceivedListener listener) {
-        this.mz.registerInvitationListener(listener);
+        this.dt.registerInvitationListener(listener);
     }
 
     public void revealAchievement(String id) {
-        this.mz.m1429a(null, id);
+        this.dt.m1203a(null, id);
     }
 
     public void revealAchievementImmediate(OnAchievementUpdatedListener listener, String id) {
-        this.mz.m1429a(listener, id);
+        this.dt.m1203a(listener, id);
     }
 
     public int sendReliableRealTimeMessage(RealTimeReliableMessageSentListener listener, byte[] messageData, String roomId, String recipientParticipantId) {
-        return this.mz.sendReliableRealTimeMessage(listener, messageData, roomId, recipientParticipantId);
+        return this.dt.sendReliableRealTimeMessage(listener, messageData, roomId, recipientParticipantId);
     }
 
     public int sendUnreliableRealTimeMessage(byte[] messageData, String roomId, String recipientParticipantId) {
-        return this.mz.m1424a(messageData, roomId, new String[]{recipientParticipantId});
+        return this.dt.m1198a(messageData, roomId, new String[]{recipientParticipantId});
     }
 
     public int sendUnreliableRealTimeMessage(byte[] messageData, String roomId, List<String> recipientParticipantIds) {
-        return this.mz.m1424a(messageData, roomId, (String[]) recipientParticipantIds.toArray(new String[recipientParticipantIds.size()]));
+        return this.dt.m1198a(messageData, roomId, (String[]) recipientParticipantIds.toArray(new String[recipientParticipantIds.size()]));
     }
 
     public int sendUnreliableRealTimeMessageToAll(byte[] messageData, String roomId) {
-        return this.mz.sendUnreliableRealTimeMessageToAll(messageData, roomId);
-    }
-
-    public void setAchievementSteps(String id, int numSteps) {
-        this.mz.m1435b(null, id, numSteps);
-    }
-
-    public void setAchievementStepsImmediate(OnAchievementUpdatedListener listener, String id, int numSteps) {
-        this.mz.m1435b(listener, id, numSteps);
+        return this.dt.sendUnreliableRealTimeMessageToAll(messageData, roomId);
     }
 
     public void setGravityForPopups(int gravity) {
-        this.mz.setGravityForPopups(gravity);
+        this.dt.setGravityForPopups(gravity);
     }
 
     public void setUseNewPlayerNotificationsFirstParty(boolean newPlayerStyle) {
-        this.mz.setUseNewPlayerNotificationsFirstParty(newPlayerStyle);
+        this.dt.setUseNewPlayerNotificationsFirstParty(newPlayerStyle);
     }
 
     public void setViewForPopups(View gamesContentView) {
-        dm.m392e(gamesContentView);
-        this.mz.setViewForPopups(gamesContentView);
+        C0192s.m521d(gamesContentView);
+        this.dt.setViewForPopups(gamesContentView);
     }
 
     public void signOut() {
-        this.mz.signOut(null);
+        this.dt.signOut(null);
     }
 
     public void signOut(OnSignOutCompleteListener listener) {
-        this.mz.signOut(listener);
+        this.dt.signOut(listener);
     }
 
     public void submitScore(String leaderboardId, long score) {
-        this.mz.m1431a(null, leaderboardId, score, null);
-    }
-
-    public void submitScore(String leaderboardId, long score, String scoreTag) {
-        this.mz.m1431a(null, leaderboardId, score, scoreTag);
+        this.dt.m1205a(null, leaderboardId, score);
     }
 
     public void submitScoreImmediate(OnScoreSubmittedListener listener, String leaderboardId, long score) {
-        this.mz.m1431a(listener, leaderboardId, score, null);
-    }
-
-    public void submitScoreImmediate(OnScoreSubmittedListener listener, String leaderboardId, long score, String scoreTag) {
-        this.mz.m1431a(listener, leaderboardId, score, scoreTag);
+        this.dt.m1205a(listener, leaderboardId, score);
     }
 
     public void unlockAchievement(String id) {
-        this.mz.m1434b(null, id);
+        this.dt.m1209b(null, id);
     }
 
     public void unlockAchievementImmediate(OnAchievementUpdatedListener listener, String id) {
-        this.mz.m1434b(listener, id);
+        this.dt.m1209b(listener, id);
     }
 
     public void unregisterConnectionCallbacks(ConnectionCallbacks listener) {
-        this.mz.unregisterConnectionCallbacks(listener);
+        this.dt.unregisterConnectionCallbacks(listener);
     }
 
     public void unregisterConnectionFailedListener(OnConnectionFailedListener listener) {
-        this.mz.unregisterConnectionFailedListener(listener);
+        this.dt.unregisterConnectionFailedListener(listener);
     }
 
     public void unregisterInvitationListener() {
-        this.mz.unregisterInvitationListener();
+        this.dt.unregisterInvitationListener();
     }
 }

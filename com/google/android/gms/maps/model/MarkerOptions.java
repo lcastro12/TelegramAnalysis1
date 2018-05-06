@@ -3,76 +3,67 @@ package com.google.android.gms.maps.model;
 import android.os.IBinder;
 import android.os.Parcel;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.dynamic.C0112b.C0655a;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.dynamic.C0146b.C1296a;
+import com.google.android.gms.maps.internal.C0215q;
 
 public final class MarkerOptions implements SafeParcelable {
     public static final MarkerOptionsCreator CREATOR = new MarkerOptionsCreator();
-    private final int iM;
-    private float mAlpha;
-    private LatLng qA;
-    private String qB;
-    private String qC;
-    private BitmapDescriptor qD;
-    private boolean qE;
-    private boolean qF;
-    private float qG;
-    private float qH;
-    private float qI;
-    private boolean ql;
-    private float qt;
-    private float qu;
+    private final int ab;
+    private boolean hc;
+    private float hk;
+    private float hl;
+    private LatLng hr;
+    private String hs;
+    private String ht;
+    private BitmapDescriptor hu;
+    private boolean hv;
+    private boolean hw;
+    private float hx;
+    private float hy;
+    private float hz;
 
     public MarkerOptions() {
-        this.qt = 0.5f;
-        this.qu = 1.0f;
-        this.ql = true;
-        this.qF = false;
-        this.qG = 0.0f;
-        this.qH = 0.5f;
-        this.qI = 0.0f;
-        this.mAlpha = 1.0f;
-        this.iM = 1;
+        this.hk = 0.5f;
+        this.hl = 1.0f;
+        this.hc = true;
+        this.hw = false;
+        this.hx = 0.0f;
+        this.hy = 0.5f;
+        this.hz = 0.0f;
+        this.ab = 1;
     }
 
-    MarkerOptions(int versionCode, LatLng position, String title, String snippet, IBinder wrappedIcon, float anchorU, float anchorV, boolean draggable, boolean visible, boolean flat, float rotation, float infoWindowAnchorU, float infoWindowAnchorV, float alpha) {
-        this.qt = 0.5f;
-        this.qu = 1.0f;
-        this.ql = true;
-        this.qF = false;
-        this.qG = 0.0f;
-        this.qH = 0.5f;
-        this.qI = 0.0f;
-        this.mAlpha = 1.0f;
-        this.iM = versionCode;
-        this.qA = position;
-        this.qB = title;
-        this.qC = snippet;
-        this.qD = wrappedIcon == null ? null : new BitmapDescriptor(C0655a.m828z(wrappedIcon));
-        this.qt = anchorU;
-        this.qu = anchorV;
-        this.qE = draggable;
-        this.ql = visible;
-        this.qF = flat;
-        this.qG = rotation;
-        this.qH = infoWindowAnchorU;
-        this.qI = infoWindowAnchorV;
-        this.mAlpha = alpha;
-    }
-
-    public MarkerOptions alpha(float alpha) {
-        this.mAlpha = alpha;
-        return this;
+    MarkerOptions(int versionCode, LatLng position, String title, String snippet, IBinder wrappedIcon, float anchorU, float anchorV, boolean draggable, boolean visible, boolean flat, float rotation, float infoWindowAnchorU, float infoWindowAnchorV) {
+        this.hk = 0.5f;
+        this.hl = 1.0f;
+        this.hc = true;
+        this.hw = false;
+        this.hx = 0.0f;
+        this.hy = 0.5f;
+        this.hz = 0.0f;
+        this.ab = versionCode;
+        this.hr = position;
+        this.hs = title;
+        this.ht = snippet;
+        this.hu = wrappedIcon == null ? null : new BitmapDescriptor(C1296a.m652l(wrappedIcon));
+        this.hk = anchorU;
+        this.hl = anchorV;
+        this.hv = draggable;
+        this.hc = visible;
+        this.hw = flat;
+        this.hx = rotation;
+        this.hy = infoWindowAnchorU;
+        this.hz = infoWindowAnchorV;
     }
 
     public MarkerOptions anchor(float u, float v) {
-        this.qt = u;
-        this.qu = v;
+        this.hk = u;
+        this.hl = v;
         return this;
     }
 
-    IBinder cN() {
-        return this.qD == null ? null : this.qD.cs().asBinder();
+    IBinder bq() {
+        return this.hu == null ? null : this.hu.aW().asBinder();
     }
 
     public int describeContents() {
@@ -80,112 +71,108 @@ public final class MarkerOptions implements SafeParcelable {
     }
 
     public MarkerOptions draggable(boolean draggable) {
-        this.qE = draggable;
+        this.hv = draggable;
         return this;
     }
 
     public MarkerOptions flat(boolean flat) {
-        this.qF = flat;
+        this.hw = flat;
         return this;
     }
 
-    public float getAlpha() {
-        return this.mAlpha;
-    }
-
     public float getAnchorU() {
-        return this.qt;
+        return this.hk;
     }
 
     public float getAnchorV() {
-        return this.qu;
+        return this.hl;
     }
 
     public BitmapDescriptor getIcon() {
-        return this.qD;
+        return this.hu;
     }
 
     public float getInfoWindowAnchorU() {
-        return this.qH;
+        return this.hy;
     }
 
     public float getInfoWindowAnchorV() {
-        return this.qI;
+        return this.hz;
     }
 
     public LatLng getPosition() {
-        return this.qA;
+        return this.hr;
     }
 
     public float getRotation() {
-        return this.qG;
+        return this.hx;
     }
 
     public String getSnippet() {
-        return this.qC;
+        return this.ht;
     }
 
     public String getTitle() {
-        return this.qB;
+        return this.hs;
     }
 
-    int getVersionCode() {
-        return this.iM;
+    int m1096i() {
+        return this.ab;
     }
 
     public MarkerOptions icon(BitmapDescriptor icon) {
-        this.qD = icon;
+        this.hu = icon;
         return this;
     }
 
     public MarkerOptions infoWindowAnchor(float u, float v) {
-        this.qH = u;
-        this.qI = v;
+        this.hy = u;
+        this.hz = v;
         return this;
     }
 
     public boolean isDraggable() {
-        return this.qE;
+        return this.hv;
     }
 
     public boolean isFlat() {
-        return this.qF;
+        return this.hw;
     }
 
     public boolean isVisible() {
-        return this.ql;
+        return this.hc;
     }
 
     public MarkerOptions position(LatLng position) {
-        this.qA = position;
+        this.hr = position;
         return this;
     }
 
     public MarkerOptions rotation(float rotation) {
-        this.qG = rotation;
+        this.hx = rotation;
         return this;
     }
 
     public MarkerOptions snippet(String snippet) {
-        this.qC = snippet;
+        this.ht = snippet;
         return this;
     }
 
     public MarkerOptions title(String title) {
-        this.qB = title;
+        this.hs = title;
         return this;
     }
 
     public MarkerOptions visible(boolean visible) {
-        this.ql = visible;
+        this.hc = visible;
         return this;
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0233f.m750a(this, out, flags);
+        if (C0215q.bn()) {
+            C0221f.m579a(this, out, flags);
         } else {
-            MarkerOptionsCreator.m739a(this, out, flags);
+            MarkerOptionsCreator.m568a(this, out, flags);
         }
     }
 }

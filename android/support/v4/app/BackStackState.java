@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 /* compiled from: BackStackRecord */
 final class BackStackState implements Parcelable {
-    public static final Creator<BackStackState> CREATOR = new C00011();
+    public static final Creator<BackStackState> CREATOR = new C00071();
     final int mBreadCrumbShortTitleRes;
     final CharSequence mBreadCrumbShortTitleText;
     final int mBreadCrumbTitleRes;
@@ -17,12 +17,14 @@ final class BackStackState implements Parcelable {
     final int mIndex;
     final String mName;
     final int[] mOps;
+    final ArrayList<String> mSharedElementSourceNames;
+    final ArrayList<String> mSharedElementTargetNames;
     final int mTransition;
     final int mTransitionStyle;
 
     /* compiled from: BackStackRecord */
-    static class C00011 implements Creator<BackStackState> {
-        C00011() {
+    static class C00071 implements Creator<BackStackState> {
+        C00071() {
         }
 
         public BackStackState createFromParcel(Parcel in) {
@@ -34,7 +36,7 @@ final class BackStackState implements Parcelable {
         }
     }
 
-    public BackStackState(FragmentManagerImpl fm, BackStackRecord bse) {
+    public BackStackState(BackStackRecord bse) {
         Op op;
         int numRemoved = 0;
         for (op = bse.mHead; op != null; op = op.next) {
@@ -87,6 +89,8 @@ final class BackStackState implements Parcelable {
             this.mBreadCrumbTitleText = bse.mBreadCrumbTitleText;
             this.mBreadCrumbShortTitleRes = bse.mBreadCrumbShortTitleRes;
             this.mBreadCrumbShortTitleText = bse.mBreadCrumbShortTitleText;
+            this.mSharedElementSourceNames = bse.mSharedElementSourceNames;
+            this.mSharedElementTargetNames = bse.mSharedElementTargetNames;
             return;
         }
         throw new IllegalStateException("Not on back stack");
@@ -102,6 +106,8 @@ final class BackStackState implements Parcelable {
         this.mBreadCrumbTitleText = (CharSequence) TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
         this.mBreadCrumbShortTitleRes = in.readInt();
         this.mBreadCrumbShortTitleText = (CharSequence) TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
+        this.mSharedElementSourceNames = in.createStringArrayList();
+        this.mSharedElementTargetNames = in.createStringArrayList();
     }
 
     public BackStackRecord instantiate(FragmentManagerImpl fm) {
@@ -158,6 +164,8 @@ final class BackStackState implements Parcelable {
         bse.mBreadCrumbTitleText = this.mBreadCrumbTitleText;
         bse.mBreadCrumbShortTitleRes = this.mBreadCrumbShortTitleRes;
         bse.mBreadCrumbShortTitleText = this.mBreadCrumbShortTitleText;
+        bse.mSharedElementSourceNames = this.mSharedElementSourceNames;
+        bse.mSharedElementTargetNames = this.mSharedElementTargetNames;
         bse.bumpBackStackNesting(1);
         return bse;
     }
@@ -176,5 +184,7 @@ final class BackStackState implements Parcelable {
         TextUtils.writeToParcel(this.mBreadCrumbTitleText, dest, 0);
         dest.writeInt(this.mBreadCrumbShortTitleRes);
         TextUtils.writeToParcel(this.mBreadCrumbShortTitleText, dest, 0);
+        dest.writeStringList(this.mSharedElementSourceNames);
+        dest.writeStringList(this.mSharedElementTargetNames);
     }
 }

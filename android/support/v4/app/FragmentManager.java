@@ -1,6 +1,8 @@
 package android.support.v4.app;
 
 import android.os.Bundle;
+import android.support.annotation.IdRes;
+import android.support.annotation.StringRes;
 import android.support.v4.app.Fragment.SavedState;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -12,10 +14,12 @@ public abstract class FragmentManager {
     public interface BackStackEntry {
         CharSequence getBreadCrumbShortTitle();
 
+        @StringRes
         int getBreadCrumbShortTitleRes();
 
         CharSequence getBreadCrumbTitle();
 
+        @StringRes
         int getBreadCrumbTitleRes();
 
         int getId();
@@ -35,7 +39,7 @@ public abstract class FragmentManager {
 
     public abstract boolean executePendingTransactions();
 
-    public abstract Fragment findFragmentById(int i);
+    public abstract Fragment findFragmentById(@IdRes int i);
 
     public abstract Fragment findFragmentByTag(String str);
 
@@ -46,6 +50,8 @@ public abstract class FragmentManager {
     public abstract Fragment getFragment(Bundle bundle, String str);
 
     public abstract List<Fragment> getFragments();
+
+    public abstract boolean isDestroyed();
 
     public abstract void popBackStack();
 

@@ -1,76 +1,64 @@
 package com.google.android.gms.internal;
 
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.os.Bundle;
-import android.os.Parcel;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import android.content.Context;
+import android.os.IBinder;
+import android.view.View;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.dynamic.C1689c;
+import com.google.android.gms.internal.bq.C1339a;
+import com.google.android.gms.plus.PlusOneDummyView;
 
-public final class bu implements SafeParcelable {
-    public static final bv CREATOR = new bv();
-    public final String adUnitId;
-    public final ApplicationInfo applicationInfo;
-    public final C0771x ed;
-    public final co eg;
-    public final Bundle gA;
-    public final C0770v gB;
-    public final PackageInfo gC;
-    public final String gD;
-    public final String gE;
-    public final String gF;
-    public final int versionCode;
+public final class bu {
+    private static Context gN;
+    private static bq iy;
 
-    public static final class C0153a {
-        public final String adUnitId;
-        public final ApplicationInfo applicationInfo;
-        public final C0771x ed;
-        public final co eg;
-        public final Bundle gA;
-        public final C0770v gB;
-        public final PackageInfo gC;
-        public final String gE;
-        public final String gF;
-
-        public C0153a(Bundle bundle, C0770v c0770v, C0771x c0771x, String str, ApplicationInfo applicationInfo, PackageInfo packageInfo, String str2, String str3, co coVar) {
-            this.gA = bundle;
-            this.gB = c0770v;
-            this.ed = c0771x;
-            this.adUnitId = str;
-            this.applicationInfo = applicationInfo;
-            this.gC = packageInfo;
-            this.gE = str2;
-            this.gF = str3;
-            this.eg = coVar;
+    public static class C0166a extends Exception {
+        public C0166a(String str) {
+            super(str);
         }
     }
 
-    bu(int i, Bundle bundle, C0770v c0770v, C0771x c0771x, String str, ApplicationInfo applicationInfo, PackageInfo packageInfo, String str2, String str3, String str4, co coVar) {
-        this.versionCode = i;
-        this.gA = bundle;
-        this.gB = c0770v;
-        this.ed = c0771x;
-        this.adUnitId = str;
-        this.applicationInfo = applicationInfo;
-        this.gC = packageInfo;
-        this.gD = str2;
-        this.gE = str3;
-        this.gF = str4;
-        this.eg = coVar;
+    public static View m409a(Context context, int i, int i2, String str, int i3) {
+        if (str != null) {
+            return (View) C1689c.m1134a(m411m(context).mo1262a(C1689c.m1135f(context), i, i2, str, i3));
+        }
+        try {
+            throw new NullPointerException();
+        } catch (Exception e) {
+            return new PlusOneDummyView(context, i);
+        }
     }
 
-    public bu(Bundle bundle, C0770v c0770v, C0771x c0771x, String str, ApplicationInfo applicationInfo, PackageInfo packageInfo, String str2, String str3, String str4, co coVar) {
-        this(1, bundle, c0770v, c0771x, str, applicationInfo, packageInfo, str2, str3, str4, coVar);
+    public static View m410a(Context context, int i, int i2, String str, String str2) {
+        if (str != null) {
+            return (View) C1689c.m1134a(m411m(context).mo1263a(C1689c.m1135f(context), i, i2, str, str2));
+        }
+        try {
+            throw new NullPointerException();
+        } catch (Exception e) {
+            return new PlusOneDummyView(context, i);
+        }
     }
 
-    public bu(C0153a c0153a, String str) {
-        this(c0153a.gA, c0153a.gB, c0153a.ed, c0153a.adUnitId, c0153a.applicationInfo, c0153a.gC, str, c0153a.gE, c0153a.gF, c0153a.eg);
-    }
-
-    public int describeContents() {
-        return 0;
-    }
-
-    public void writeToParcel(Parcel out, int flags) {
-        bv.m226a(this, out, flags);
+    private static bq m411m(Context context) throws C0166a {
+        C0192s.m521d(context);
+        if (iy == null) {
+            if (gN == null) {
+                gN = GooglePlayServicesUtil.getRemoteContext(context);
+                if (gN == null) {
+                    throw new C0166a("Could not get remote context.");
+                }
+            }
+            try {
+                iy = C1339a.m907Z((IBinder) gN.getClassLoader().loadClass("com.google.android.gms.plus.plusone.PlusOneButtonCreatorImpl").newInstance());
+            } catch (ClassNotFoundException e) {
+                throw new C0166a("Could not load creator class.");
+            } catch (InstantiationException e2) {
+                throw new C0166a("Could not instantiate creator.");
+            } catch (IllegalAccessException e3) {
+                throw new C0166a("Could not access creator.");
+            }
+        }
+        return iy;
     }
 }

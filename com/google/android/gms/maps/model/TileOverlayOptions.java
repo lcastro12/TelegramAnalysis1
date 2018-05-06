@@ -4,29 +4,29 @@ import android.os.IBinder;
 import android.os.Parcel;
 import android.os.RemoteException;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0227r;
-import com.google.android.gms.maps.model.internal.C0243g;
-import com.google.android.gms.maps.model.internal.C0243g.C0839a;
+import com.google.android.gms.maps.internal.C0215q;
+import com.google.android.gms.maps.model.internal.C0231g;
+import com.google.android.gms.maps.model.internal.C0231g.C1429a;
 
 public final class TileOverlayOptions implements SafeParcelable {
     public static final TileOverlayOptionsCreator CREATOR = new TileOverlayOptionsCreator();
-    private final int iM;
-    private C0243g qP;
-    private TileProvider qQ;
-    private float qk;
-    private boolean ql;
+    private final int ab;
+    private C0231g hG;
+    private TileProvider hH;
+    private float hb;
+    private boolean hc;
 
-    class C08231 implements TileProvider {
-        private final C0243g qR = this.qS.qP;
-        final /* synthetic */ TileOverlayOptions qS;
+    class C14131 implements TileProvider {
+        private final C0231g hI = this.hJ.hG;
+        final /* synthetic */ TileOverlayOptions hJ;
 
-        C08231(TileOverlayOptions tileOverlayOptions) {
-            this.qS = tileOverlayOptions;
+        C14131(TileOverlayOptions tileOverlayOptions) {
+            this.hJ = tileOverlayOptions;
         }
 
         public Tile getTile(int x, int y, int zoom) {
             try {
-                return this.qR.getTile(x, y, zoom);
+                return this.hI.getTile(x, y, zoom);
             } catch (RemoteException e) {
                 return null;
             }
@@ -34,21 +34,21 @@ public final class TileOverlayOptions implements SafeParcelable {
     }
 
     public TileOverlayOptions() {
-        this.ql = true;
-        this.iM = 1;
+        this.hc = true;
+        this.ab = 1;
     }
 
     TileOverlayOptions(int versionCode, IBinder delegate, boolean visible, float zIndex) {
-        this.ql = true;
-        this.iM = versionCode;
-        this.qP = C0839a.aj(delegate);
-        this.qQ = this.qP == null ? null : new C08231(this);
-        this.ql = visible;
-        this.qk = zIndex;
+        this.hc = true;
+        this.ab = versionCode;
+        this.hG = C1429a.m1125U(delegate);
+        this.hH = this.hG == null ? null : new C14131(this);
+        this.hc = visible;
+        this.hb = zIndex;
     }
 
-    IBinder cP() {
-        return this.qP.asBinder();
+    IBinder bs() {
+        return this.hG.asBinder();
     }
 
     public int describeContents() {
@@ -56,25 +56,25 @@ public final class TileOverlayOptions implements SafeParcelable {
     }
 
     public TileProvider getTileProvider() {
-        return this.qQ;
-    }
-
-    int getVersionCode() {
-        return this.iM;
+        return this.hH;
     }
 
     public float getZIndex() {
-        return this.qk;
+        return this.hb;
+    }
+
+    int m1101i() {
+        return this.ab;
     }
 
     public boolean isVisible() {
-        return this.ql;
+        return this.hc;
     }
 
     public TileOverlayOptions tileProvider(final TileProvider tileProvider) {
-        this.qQ = tileProvider;
-        this.qP = this.qQ == null ? null : new C0839a(this) {
-            final /* synthetic */ TileOverlayOptions qS;
+        this.hH = tileProvider;
+        this.hG = this.hH == null ? null : new C1429a(this) {
+            final /* synthetic */ TileOverlayOptions hJ;
 
             public Tile getTile(int x, int y, int zoom) {
                 return tileProvider.getTile(x, y, zoom);
@@ -84,20 +84,20 @@ public final class TileOverlayOptions implements SafeParcelable {
     }
 
     public TileOverlayOptions visible(boolean visible) {
-        this.ql = visible;
+        this.hc = visible;
         return this;
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0244j.m767a(this, out, flags);
+        if (C0215q.bn()) {
+            C0232j.m596a(this, out, flags);
         } else {
-            TileOverlayOptionsCreator.m743a(this, out, flags);
+            TileOverlayOptionsCreator.m572a(this, out, flags);
         }
     }
 
     public TileOverlayOptions zIndex(float zIndex) {
-        this.qk = zIndex;
+        this.hb = zIndex;
         return this;
     }
 }

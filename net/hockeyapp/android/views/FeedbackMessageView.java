@@ -8,9 +8,11 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
 public class FeedbackMessageView extends LinearLayout {
+    public static final int ATTACHMENT_LIST_VIEW_ID = 12292;
     public static final int AUTHOR_TEXT_VIEW_ID = 12289;
     public static final int DATE_TEXT_VIEW_ID = 12290;
     public static final int MESSAGE_TEXT_VIEW_ID = 12291;
+    private AttachmentListView attachmentListView;
     private TextView authorTextView;
     private TextView dateTextView;
     private TextView messageTextView;
@@ -27,6 +29,7 @@ public class FeedbackMessageView extends LinearLayout {
         loadAuthorLabel(context);
         loadDateLabel(context);
         loadMessageLabel(context);
+        loadAttachmentList(context);
     }
 
     private void loadLayoutParams(Context context) {
@@ -37,7 +40,7 @@ public class FeedbackMessageView extends LinearLayout {
 
     private void loadAuthorLabel(Context context) {
         this.authorTextView = new TextView(context);
-        this.authorTextView.setId(AUTHOR_TEXT_VIEW_ID);
+        this.authorTextView.setId(12289);
         LayoutParams params = new LayoutParams(-2, -2);
         int margin = (int) TypedValue.applyDimension(1, 20.0f, getResources().getDisplayMetrics());
         params.setMargins(margin, margin, margin, 0);
@@ -64,7 +67,7 @@ public class FeedbackMessageView extends LinearLayout {
 
     private void loadDateLabel(Context context) {
         this.dateTextView = new TextView(context);
-        this.dateTextView.setId(DATE_TEXT_VIEW_ID);
+        this.dateTextView.setId(12290);
         LayoutParams params = new LayoutParams(-2, -2);
         int margin = (int) TypedValue.applyDimension(1, 20.0f, getResources().getDisplayMetrics());
         params.setMargins(margin, 0, margin, 0);
@@ -91,7 +94,7 @@ public class FeedbackMessageView extends LinearLayout {
 
     private void loadMessageLabel(Context context) {
         this.messageTextView = new TextView(context);
-        this.messageTextView.setId(MESSAGE_TEXT_VIEW_ID);
+        this.messageTextView.setId(12291);
         LayoutParams params = new LayoutParams(-2, -2);
         int margin = (int) TypedValue.applyDimension(1, 20.0f, getResources().getDisplayMetrics());
         params.setMargins(margin, 0, margin, margin);
@@ -114,6 +117,16 @@ public class FeedbackMessageView extends LinearLayout {
         if (this.messageTextView != null) {
             this.messageTextView.setTextColor(color);
         }
+    }
+
+    private void loadAttachmentList(Context context) {
+        this.attachmentListView = new AttachmentListView(context);
+        this.attachmentListView.setId(12292);
+        LayoutParams params = new LayoutParams(-1, -1);
+        int margin = (int) TypedValue.applyDimension(1, 20.0f, getResources().getDisplayMetrics());
+        params.setMargins(margin, 0, margin, margin);
+        this.attachmentListView.setLayoutParams(params);
+        addView(this.attachmentListView);
     }
 
     public void setFeedbackMessageViewBgAndTextColor(int decisionValue) {

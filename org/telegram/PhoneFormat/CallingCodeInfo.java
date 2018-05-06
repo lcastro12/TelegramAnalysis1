@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public class CallingCodeInfo {
-    public String callingCode;
-    public ArrayList<String> countries;
-    public ArrayList<String> intlPrefixes;
-    public ArrayList<RuleSet> ruleSets;
-    public ArrayList<String> trunkPrefixes;
+    public String callingCode = "";
+    public ArrayList<String> countries = new ArrayList();
+    public ArrayList<String> intlPrefixes = new ArrayList();
+    public ArrayList<RuleSet> ruleSets = new ArrayList();
+    public ArrayList<String> trunkPrefixes = new ArrayList();
 
     String matchingAccessCode(String str) {
         Iterator i$ = this.intlPrefixes.iterator();
@@ -82,16 +82,14 @@ public class CallingCodeInfo {
         }
         Iterator i$ = this.ruleSets.iterator();
         while (i$.hasNext()) {
-            boolean valid = ((RuleSet) i$.next()).isValid(str, intlPrefix, trunkPrefix, true);
-            if (valid) {
-                return valid;
+            if (((RuleSet) i$.next()).isValid(str, intlPrefix, trunkPrefix, true)) {
+                return true;
             }
         }
         i$ = this.ruleSets.iterator();
         while (i$.hasNext()) {
-            valid = ((RuleSet) i$.next()).isValid(str, intlPrefix, trunkPrefix, false);
-            if (valid) {
-                return valid;
+            if (((RuleSet) i$.next()).isValid(str, intlPrefix, trunkPrefix, false)) {
+                return true;
             }
         }
         return false;

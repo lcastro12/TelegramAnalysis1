@@ -13,6 +13,7 @@ public class Loader<D> {
     Context mContext;
     int mId;
     OnLoadCompleteListener<D> mListener;
+    OnLoadCanceledListener<D> mOnLoadCanceledListener;
     boolean mProcessingChange = false;
     boolean mReset = true;
     boolean mStarted = false;
@@ -31,6 +32,10 @@ public class Loader<D> {
         }
     }
 
+    public interface OnLoadCanceledListener<D> {
+        void onLoadCanceled(Loader<D> loader);
+    }
+
     public interface OnLoadCompleteListener<D> {
         void onLoadComplete(Loader<D> loader, D d);
     }
@@ -42,6 +47,12 @@ public class Loader<D> {
     public void deliverResult(D data) {
         if (this.mListener != null) {
             this.mListener.onLoadComplete(this, data);
+        }
+    }
+
+    public void deliverCancellation() {
+        if (this.mOnLoadCanceledListener != null) {
+            this.mOnLoadCanceledListener.onLoadCanceled(this);
         }
     }
 
@@ -71,6 +82,23 @@ public class Loader<D> {
         }
     }
 
+    public void registerOnLoadCanceledListener(OnLoadCanceledListener<D> listener) {
+        if (this.mOnLoadCanceledListener != null) {
+            throw new IllegalStateException("There is already a listener registered");
+        }
+        this.mOnLoadCanceledListener = listener;
+    }
+
+    public void unregisterOnLoadCanceledListener(OnLoadCanceledListener<D> listener) {
+        if (this.mOnLoadCanceledListener == null) {
+            throw new IllegalStateException("No listener register");
+        } else if (this.mOnLoadCanceledListener != listener) {
+            throw new IllegalArgumentException("Attempting to unregister the wrong listener");
+        } else {
+            this.mOnLoadCanceledListener = null;
+        }
+    }
+
     public boolean isStarted() {
         return this.mStarted;
     }
@@ -91,6 +119,14 @@ public class Loader<D> {
     }
 
     protected void onStartLoading() {
+    }
+
+    public boolean cancelLoad() {
+        return onCancelLoad();
+    }
+
+    protected boolean onCancelLoad() {
+        return false;
     }
 
     public void forceLoad() {

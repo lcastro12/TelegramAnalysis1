@@ -21,6 +21,8 @@ public class EdgeEffectCompat {
 
         boolean onPull(Object obj, float f);
 
+        boolean onPull(Object obj, float f, float f2);
+
         boolean onRelease(Object obj);
 
         void setSize(Object obj, int i, int i2);
@@ -57,6 +59,10 @@ public class EdgeEffectCompat {
         }
 
         public boolean draw(Object edgeEffect, Canvas canvas) {
+            return false;
+        }
+
+        public boolean onPull(Object edgeEffect, float deltaDistance, float displacement) {
             return false;
         }
     }
@@ -96,10 +102,25 @@ public class EdgeEffectCompat {
         public boolean draw(Object edgeEffect, Canvas canvas) {
             return EdgeEffectCompatIcs.draw(edgeEffect, canvas);
         }
+
+        public boolean onPull(Object edgeEffect, float deltaDistance, float displacement) {
+            return EdgeEffectCompatIcs.onPull(edgeEffect, deltaDistance);
+        }
+    }
+
+    static class EdgeEffectLollipopImpl extends EdgeEffectIcsImpl {
+        EdgeEffectLollipopImpl() {
+        }
+
+        public boolean onPull(Object edgeEffect, float deltaDistance, float displacement) {
+            return EdgeEffectCompatLollipop.onPull(edgeEffect, deltaDistance, displacement);
+        }
     }
 
     static {
-        if (VERSION.SDK_INT >= 14) {
+        if (VERSION.SDK_INT >= 21) {
+            IMPL = new EdgeEffectLollipopImpl();
+        } else if (VERSION.SDK_INT >= 14) {
             IMPL = new EdgeEffectIcsImpl();
         } else {
             IMPL = new BaseEdgeEffectImpl();
@@ -124,6 +145,10 @@ public class EdgeEffectCompat {
 
     public boolean onPull(float deltaDistance) {
         return IMPL.onPull(this.mEdgeEffect, deltaDistance);
+    }
+
+    public boolean onPull(float deltaDistance, float displacement) {
+        return IMPL.onPull(this.mEdgeEffect, deltaDistance, displacement);
     }
 
     public boolean onRelease() {

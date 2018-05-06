@@ -1,64 +1,84 @@
 package com.google.android.gms.internal;
 
-import android.app.Activity;
-import android.content.Intent;
+import android.net.Uri;
+import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
-import com.google.android.gms.dynamic.C0115e;
-import com.google.android.gms.dynamic.C0898c;
-import com.google.android.gms.internal.bn.C0700a;
-import com.google.android.gms.internal.bo.C0702a;
+import android.os.IInterface;
+import android.os.Parcel;
+import android.os.RemoteException;
+import com.google.android.gms.internal.bl.C1331a;
 
-public final class bm extends C0115e<bo> {
-    private static final bm gl = new bm();
+public interface bm extends IInterface {
 
-    private static final class C0146a extends Exception {
-        public C0146a(String str) {
-            super(str);
-        }
-    }
+    public static abstract class C1333a extends Binder implements bm {
 
-    private bm() {
-        super("com.google.android.gms.ads.AdOverlayCreatorImpl");
-    }
+        private static class C1332a implements bm {
+            private IBinder f84a;
 
-    public static bn m900a(Activity activity) {
-        try {
-            if (!m901b(activity)) {
-                return gl.m902c(activity);
+            C1332a(IBinder iBinder) {
+                this.f84a = iBinder;
             }
-            cn.m295m("Using AdOverlay from the client jar.");
-            return new bf(activity);
-        } catch (C0146a e) {
-            cn.m299q(e.getMessage());
-            return null;
+
+            public void mo1244a(bl blVar, Uri uri, Bundle bundle, boolean z) throws RemoteException {
+                IBinder iBinder = null;
+                int i = 1;
+                Parcel obtain = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.panorama.internal.IPanoramaService");
+                    if (blVar != null) {
+                        iBinder = blVar.asBinder();
+                    }
+                    obtain.writeStrongBinder(iBinder);
+                    if (uri != null) {
+                        obtain.writeInt(1);
+                        uri.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    if (bundle != null) {
+                        obtain.writeInt(1);
+                        bundle.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    if (!z) {
+                        i = 0;
+                    }
+                    obtain.writeInt(i);
+                    this.f84a.transact(1, obtain, null, 1);
+                } finally {
+                    obtain.recycle();
+                }
+            }
+
+            public IBinder asBinder() {
+                return this.f84a;
+            }
+        }
+
+        public static bm m880W(IBinder iBinder) {
+            if (iBinder == null) {
+                return null;
+            }
+            IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.panorama.internal.IPanoramaService");
+            return (queryLocalInterface == null || !(queryLocalInterface instanceof bm)) ? new C1332a(iBinder) : (bm) queryLocalInterface;
+        }
+
+        public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+            switch (code) {
+                case 1:
+                    data.enforceInterface("com.google.android.gms.panorama.internal.IPanoramaService");
+                    mo1244a(C1331a.m878V(data.readStrongBinder()), data.readInt() != 0 ? (Uri) Uri.CREATOR.createFromParcel(data) : null, data.readInt() != 0 ? (Bundle) Bundle.CREATOR.createFromParcel(data) : null, data.readInt() != 0);
+                    return true;
+                case 1598968902:
+                    reply.writeString("com.google.android.gms.panorama.internal.IPanoramaService");
+                    return true;
+                default:
+                    return super.onTransact(code, data, reply, flags);
+            }
         }
     }
 
-    private static boolean m901b(Activity activity) throws C0146a {
-        Intent intent = activity.getIntent();
-        if (intent.hasExtra("com.google.android.gms.ads.internal.overlay.useClientJar")) {
-            return intent.getBooleanExtra("com.google.android.gms.ads.internal.overlay.useClientJar", false);
-        }
-        throw new C0146a("Ad overlay requires the useClientJar flag in intent extras.");
-    }
-
-    private bn m902c(Activity activity) {
-        try {
-            return C0700a.m905m(((bo) m145t(activity)).mo808a(C0898c.m1318g(activity)));
-        } catch (Throwable e) {
-            cn.m293b("Could not create remote AdOverlay.", e);
-            return null;
-        } catch (Throwable e2) {
-            cn.m293b("Could not create remote AdOverlay.", e2);
-            return null;
-        }
-    }
-
-    protected /* synthetic */ Object mo799d(IBinder iBinder) {
-        return m904l(iBinder);
-    }
-
-    protected bo m904l(IBinder iBinder) {
-        return C0702a.m907n(iBinder);
-    }
+    void mo1244a(bl blVar, Uri uri, Bundle bundle, boolean z) throws RemoteException;
 }

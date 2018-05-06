@@ -5,8 +5,9 @@ import android.content.res.TypedArray;
 import android.database.DataSetObserver;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
+import android.support.annotation.ColorInt;
+import android.support.annotation.FloatRange;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.support.v4.widget.ExploreByTouchHelper;
 import android.text.TextUtils.TruncateAt;
 import android.util.AttributeSet;
 import android.view.View;
@@ -184,14 +185,14 @@ public class PagerTitleStrip extends ViewGroup implements Decor {
         return this.mScaledTextSpacing;
     }
 
-    public void setNonPrimaryAlpha(float alpha) {
-        this.mNonPrimaryAlpha = ((int) (255.0f * alpha)) & MotionEventCompat.ACTION_MASK;
+    public void setNonPrimaryAlpha(@FloatRange(from = 0.0d, to = 1.0d) float alpha) {
+        this.mNonPrimaryAlpha = ((int) (255.0f * alpha)) & 255;
         int transparentColor = (this.mNonPrimaryAlpha << 24) | (this.mTextColor & ViewCompat.MEASURED_SIZE_MASK);
         this.mPrevText.setTextColor(transparentColor);
         this.mNextText.setTextColor(transparentColor);
     }
 
-    public void setTextColor(int color) {
+    public void setTextColor(@ColorInt int color) {
         this.mTextColor = color;
         this.mCurrText.setTextColor(color);
         int transparentColor = (this.mNonPrimaryAlpha << 24) | (this.mTextColor & ViewCompat.MEASURED_SIZE_MASK);
@@ -256,9 +257,8 @@ public class PagerTitleStrip extends ViewGroup implements Decor {
             text = adapter.getPageTitle(currentItem + 1);
         }
         this.mNextText.setText(text);
-        int childHeight = (getHeight() - getPaddingTop()) - getPaddingBottom();
-        int childWidthSpec = MeasureSpec.makeMeasureSpec((int) (((float) ((getWidth() - getPaddingLeft()) - getPaddingRight())) * 0.8f), ExploreByTouchHelper.INVALID_ID);
-        int childHeightSpec = MeasureSpec.makeMeasureSpec(childHeight, ExploreByTouchHelper.INVALID_ID);
+        int childWidthSpec = MeasureSpec.makeMeasureSpec(Math.max(0, (int) (((float) ((getWidth() - getPaddingLeft()) - getPaddingRight())) * 0.8f)), Integer.MIN_VALUE);
+        int childHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(0, (getHeight() - getPaddingTop()) - getPaddingBottom()), Integer.MIN_VALUE);
         this.mPrevText.measure(childWidthSpec, childHeightSpec);
         this.mCurrText.measure(childWidthSpec, childHeightSpec);
         this.mNextText.measure(childWidthSpec, childHeightSpec);
@@ -358,27 +358,23 @@ public class PagerTitleStrip extends ViewGroup implements Decor {
     }
 
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
-        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-        if (widthMode != 1073741824) {
+        if (MeasureSpec.getMode(widthMeasureSpec) != 1073741824) {
             throw new IllegalStateException("Must measure with an exact width");
         }
-        int childHeight = heightSize;
-        int minHeight = getMinHeight();
-        int padding = getPaddingTop() + getPaddingBottom();
-        childHeight -= padding;
-        int childWidthSpec = MeasureSpec.makeMeasureSpec((int) (((float) widthSize) * 0.8f), ExploreByTouchHelper.INVALID_ID);
-        int childHeightSpec = MeasureSpec.makeMeasureSpec(childHeight, ExploreByTouchHelper.INVALID_ID);
+        int height;
+        int heightPadding = getPaddingTop() + getPaddingBottom();
+        int childHeightSpec = getChildMeasureSpec(heightMeasureSpec, heightPadding, -2);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int childWidthSpec = getChildMeasureSpec(widthMeasureSpec, (int) (((float) widthSize) * 0.2f), -2);
         this.mPrevText.measure(childWidthSpec, childHeightSpec);
         this.mCurrText.measure(childWidthSpec, childHeightSpec);
         this.mNextText.measure(childWidthSpec, childHeightSpec);
-        if (heightMode == 1073741824) {
-            setMeasuredDimension(widthSize, heightSize);
+        if (MeasureSpec.getMode(heightMeasureSpec) == 1073741824) {
+            height = MeasureSpec.getSize(heightMeasureSpec);
         } else {
-            setMeasuredDimension(widthSize, Math.max(minHeight, this.mCurrText.getMeasuredHeight() + padding));
+            height = Math.max(getMinHeight(), this.mCurrText.getMeasuredHeight() + heightPadding);
         }
+        setMeasuredDimension(widthSize, ViewCompat.resolveSizeAndState(height, heightMeasureSpec, ViewCompat.getMeasuredState(this.mCurrText) << 16));
     }
 
     protected void onLayout(boolean changed, int l, int t, int r, int b) {

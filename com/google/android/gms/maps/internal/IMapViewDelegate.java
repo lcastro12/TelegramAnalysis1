@@ -6,23 +6,23 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.RemoteException;
-import com.google.android.gms.dynamic.C0112b;
-import com.google.android.gms.dynamic.C0112b.C0655a;
-import com.google.android.gms.maps.internal.IGoogleMapDelegate.C0784a;
+import com.google.android.gms.dynamic.C0146b;
+import com.google.android.gms.dynamic.C0146b.C1296a;
+import com.google.android.gms.maps.internal.IGoogleMapDelegate.C1376a;
 
 public interface IMapViewDelegate extends IInterface {
 
-    public static abstract class C0790a extends Binder implements IMapViewDelegate {
+    public static abstract class C1382a extends Binder implements IMapViewDelegate {
 
-        private static class C0789a implements IMapViewDelegate {
-            private IBinder dG;
+        private static class C1381a implements IMapViewDelegate {
+            private IBinder f105a;
 
-            C0789a(IBinder iBinder) {
-                this.dG = iBinder;
+            C1381a(IBinder iBinder) {
+                this.f105a = iBinder;
             }
 
             public IBinder asBinder() {
-                return this.dG;
+                return this.f105a;
             }
 
             public IGoogleMapDelegate getMap() throws RemoteException {
@@ -30,25 +30,25 @@ public interface IMapViewDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IMapViewDelegate");
-                    this.dG.transact(1, obtain, obtain2, 0);
+                    this.f105a.transact(1, obtain, obtain2, 0);
                     obtain2.readException();
-                    IGoogleMapDelegate K = C0784a.m1255K(obtain2.readStrongBinder());
-                    return K;
+                    IGoogleMapDelegate w = C1376a.m1052w(obtain2.readStrongBinder());
+                    return w;
                 } finally {
                     obtain2.recycle();
                     obtain.recycle();
                 }
             }
 
-            public C0112b getView() throws RemoteException {
+            public C0146b getView() throws RemoteException {
                 Parcel obtain = Parcel.obtain();
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IMapViewDelegate");
-                    this.dG.transact(8, obtain, obtain2, 0);
+                    this.f105a.transact(8, obtain, obtain2, 0);
                     obtain2.readException();
-                    C0112b z = C0655a.m828z(obtain2.readStrongBinder());
-                    return z;
+                    C0146b l = C1296a.m652l(obtain2.readStrongBinder());
+                    return l;
                 } finally {
                     obtain2.recycle();
                     obtain.recycle();
@@ -66,7 +66,7 @@ public interface IMapViewDelegate extends IInterface {
                     } else {
                         obtain.writeInt(0);
                     }
-                    this.dG.transact(2, obtain, obtain2, 0);
+                    this.f105a.transact(2, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -79,7 +79,7 @@ public interface IMapViewDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IMapViewDelegate");
-                    this.dG.transact(5, obtain, obtain2, 0);
+                    this.f105a.transact(5, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -92,7 +92,7 @@ public interface IMapViewDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IMapViewDelegate");
-                    this.dG.transact(6, obtain, obtain2, 0);
+                    this.f105a.transact(6, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -105,7 +105,7 @@ public interface IMapViewDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IMapViewDelegate");
-                    this.dG.transact(4, obtain, obtain2, 0);
+                    this.f105a.transact(4, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -118,7 +118,7 @@ public interface IMapViewDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IMapViewDelegate");
-                    this.dG.transact(3, obtain, obtain2, 0);
+                    this.f105a.transact(3, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -137,7 +137,7 @@ public interface IMapViewDelegate extends IInterface {
                     } else {
                         obtain.writeInt(0);
                     }
-                    this.dG.transact(7, obtain, obtain2, 0);
+                    this.f105a.transact(7, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         outState.readFromParcel(obtain2);
@@ -151,12 +151,12 @@ public interface IMapViewDelegate extends IInterface {
             }
         }
 
-        public static IMapViewDelegate m1258O(IBinder iBinder) {
+        public static IMapViewDelegate m1055A(IBinder iBinder) {
             if (iBinder == null) {
                 return null;
             }
             IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.maps.internal.IMapViewDelegate");
-            return (queryLocalInterface == null || !(queryLocalInterface instanceof IMapViewDelegate)) ? new C0789a(iBinder) : (IMapViewDelegate) queryLocalInterface;
+            return (queryLocalInterface == null || !(queryLocalInterface instanceof IMapViewDelegate)) ? new C1381a(iBinder) : (IMapViewDelegate) queryLocalInterface;
         }
 
         public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
@@ -216,7 +216,7 @@ public interface IMapViewDelegate extends IInterface {
                     return true;
                 case 8:
                     data.enforceInterface("com.google.android.gms.maps.internal.IMapViewDelegate");
-                    C0112b view = getView();
+                    C0146b view = getView();
                     reply.writeNoException();
                     if (view != null) {
                         iBinder = view.asBinder();
@@ -234,7 +234,7 @@ public interface IMapViewDelegate extends IInterface {
 
     IGoogleMapDelegate getMap() throws RemoteException;
 
-    C0112b getView() throws RemoteException;
+    C0146b getView() throws RemoteException;
 
     void onCreate(Bundle bundle) throws RemoteException;
 

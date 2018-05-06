@@ -3,6 +3,7 @@ package android.support.v4.text;
 import android.util.Log;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Locale;
 
 class ICUCompatIcs {
     private static final String TAG = "ICUCompatIcs";
@@ -20,14 +21,24 @@ class ICUCompatIcs {
                 sAddLikelySubtagsMethod = clazz.getMethod("addLikelySubtags", new Class[]{String.class});
             }
         } catch (Exception e) {
+            sGetScriptMethod = null;
+            sAddLikelySubtagsMethod = null;
             Log.w(TAG, e);
         }
     }
 
-    public static String getScript(String locale) {
+    public static String maximizeAndGetScript(Locale locale) {
+        String localeWithSubtags = addLikelySubtags(locale);
+        if (localeWithSubtags != null) {
+            return getScript(localeWithSubtags);
+        }
+        return null;
+    }
+
+    private static String getScript(String localeStr) {
         try {
             if (sGetScriptMethod != null) {
-                return (String) sGetScriptMethod.invoke(null, new Object[]{locale});
+                return (String) sGetScriptMethod.invoke(null, new Object[]{localeStr});
             }
         } catch (IllegalAccessException e) {
             Log.w(TAG, e);
@@ -37,16 +48,17 @@ class ICUCompatIcs {
         return null;
     }
 
-    public static String addLikelySubtags(String locale) {
+    private static String addLikelySubtags(Locale locale) {
+        String localeStr = locale.toString();
         try {
             if (sAddLikelySubtagsMethod != null) {
-                return (String) sAddLikelySubtagsMethod.invoke(null, new Object[]{locale});
+                return (String) sAddLikelySubtagsMethod.invoke(null, new Object[]{localeStr});
             }
         } catch (IllegalAccessException e) {
             Log.w(TAG, e);
         } catch (InvocationTargetException e2) {
             Log.w(TAG, e2);
         }
-        return locale;
+        return localeStr;
     }
 }

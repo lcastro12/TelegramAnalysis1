@@ -1,83 +1,58 @@
 package com.google.android.gms.internal;
 
-import android.os.Binder;
-import android.os.IBinder;
-import android.os.IInterface;
 import android.os.Parcel;
-import android.os.RemoteException;
-import com.google.android.gms.dynamic.C0112b;
-import com.google.android.gms.dynamic.C0112b.C0655a;
-import com.google.android.gms.internal.aw.C0681a;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.safeparcel.C0141a;
+import com.google.android.gms.common.internal.safeparcel.C0141a.C0140a;
+import com.google.android.gms.common.internal.safeparcel.C0142b;
+import com.google.android.gms.internal.ab.C1307a;
 
-public interface ad extends IInterface {
-
-    public static abstract class C0670a extends Binder implements ad {
-
-        private static class C0669a implements ad {
-            private IBinder dG;
-
-            C0669a(IBinder iBinder) {
-                this.dG = iBinder;
-            }
-
-            public IBinder mo768a(C0112b c0112b, C0771x c0771x, String str, aw awVar, int i) throws RemoteException {
-                IBinder iBinder = null;
-                Parcel obtain = Parcel.obtain();
-                Parcel obtain2 = Parcel.obtain();
-                try {
-                    obtain.writeInterfaceToken("com.google.android.gms.ads.internal.client.IAdManagerCreator");
-                    obtain.writeStrongBinder(c0112b != null ? c0112b.asBinder() : null);
-                    if (c0771x != null) {
-                        obtain.writeInt(1);
-                        c0771x.writeToParcel(obtain, 0);
-                    } else {
-                        obtain.writeInt(0);
-                    }
-                    obtain.writeString(str);
-                    if (awVar != null) {
-                        iBinder = awVar.asBinder();
-                    }
-                    obtain.writeStrongBinder(iBinder);
-                    obtain.writeInt(i);
-                    this.dG.transact(1, obtain, obtain2, 0);
-                    obtain2.readException();
-                    iBinder = obtain2.readStrongBinder();
-                    return iBinder;
-                } finally {
-                    obtain2.recycle();
-                    obtain.recycle();
-                }
-            }
-
-            public IBinder asBinder() {
-                return this.dG;
-            }
-        }
-
-        public static ad m843g(IBinder iBinder) {
-            if (iBinder == null) {
-                return null;
-            }
-            IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.ads.internal.client.IAdManagerCreator");
-            return (queryLocalInterface == null || !(queryLocalInterface instanceof ad)) ? new C0669a(iBinder) : (ad) queryLocalInterface;
-        }
-
-        public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-            switch (code) {
-                case 1:
-                    data.enforceInterface("com.google.android.gms.ads.internal.client.IAdManagerCreator");
-                    IBinder a = mo768a(C0655a.m828z(data.readStrongBinder()), data.readInt() != 0 ? C0771x.CREATOR.m701b(data) : null, data.readString(), C0681a.m873i(data.readStrongBinder()), data.readInt());
-                    reply.writeNoException();
-                    reply.writeStrongBinder(a);
-                    return true;
-                case 1598968902:
-                    reply.writeString("com.google.android.gms.ads.internal.client.IAdManagerCreator");
-                    return true;
-                default:
-                    return super.onTransact(code, data, reply, flags);
-            }
-        }
+public class ad implements Creator<C1307a> {
+    static void m173a(C1307a c1307a, Parcel parcel, int i) {
+        int d = C0142b.m131d(parcel);
+        C0142b.m129c(parcel, 1, c1307a.versionCode);
+        C0142b.m119a(parcel, 2, c1307a.cr, false);
+        C0142b.m129c(parcel, 3, c1307a.cs);
+        C0142b.m110C(parcel, d);
     }
 
-    IBinder mo768a(C0112b c0112b, C0771x c0771x, String str, aw awVar, int i) throws RemoteException;
+    public /* synthetic */ Object createFromParcel(Parcel x0) {
+        return m174h(x0);
+    }
+
+    public C1307a m174h(Parcel parcel) {
+        int i = 0;
+        int c = C0141a.m81c(parcel);
+        String str = null;
+        int i2 = 0;
+        while (parcel.dataPosition() < c) {
+            int b = C0141a.m78b(parcel);
+            switch (C0141a.m93m(b)) {
+                case 1:
+                    i2 = C0141a.m86f(parcel, b);
+                    break;
+                case 2:
+                    str = C0141a.m92l(parcel, b);
+                    break;
+                case 3:
+                    i = C0141a.m86f(parcel, b);
+                    break;
+                default:
+                    C0141a.m79b(parcel, b);
+                    break;
+            }
+        }
+        if (parcel.dataPosition() == c) {
+            return new C1307a(i2, str, i);
+        }
+        throw new C0140a("Overread allowed size end=" + c, parcel);
+    }
+
+    public /* synthetic */ Object[] newArray(int x0) {
+        return m175q(x0);
+    }
+
+    public C1307a[] m175q(int i) {
+        return new C1307a[i];
+    }
 }

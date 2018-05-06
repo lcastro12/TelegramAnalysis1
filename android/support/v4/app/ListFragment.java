@@ -28,13 +28,13 @@ public class ListFragment extends Fragment {
     ListView mList;
     View mListContainer;
     boolean mListShown;
-    private final OnItemClickListener mOnClickListener = new C00142();
+    private final OnItemClickListener mOnClickListener = new C00252();
     View mProgressContainer;
-    private final Runnable mRequestFocus = new C00131();
+    private final Runnable mRequestFocus = new C00241();
     TextView mStandardEmptyView;
 
-    class C00131 implements Runnable {
-        C00131() {
+    class C00241 implements Runnable {
+        C00241() {
         }
 
         public void run() {
@@ -42,8 +42,8 @@ public class ListFragment extends Fragment {
         }
     }
 
-    class C00142 implements OnItemClickListener {
-        C00142() {
+    class C00252 implements OnItemClickListener {
+        C00252() {
         }
 
         public void onItemClick(AdapterView<?> parent, View v, int position, long id) {

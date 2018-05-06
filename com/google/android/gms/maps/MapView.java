@@ -10,39 +10,39 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.dynamic.C0111a;
-import com.google.android.gms.dynamic.C0113d;
-import com.google.android.gms.dynamic.C0898c;
+import com.google.android.gms.dynamic.C0145a;
+import com.google.android.gms.dynamic.C0147d;
+import com.google.android.gms.dynamic.C1689c;
 import com.google.android.gms.dynamic.LifecycleDelegate;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.maps.internal.C0226q;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.maps.internal.C0214p;
 import com.google.android.gms.maps.internal.IMapViewDelegate;
 import com.google.android.gms.maps.model.RuntimeRemoteException;
 
 public class MapView extends FrameLayout {
-    private GoogleMap pI;
-    private final C0778b pM;
+    private final C1370b gD;
+    private GoogleMap gz;
 
-    static class C0777a implements LifecycleDelegate {
-        private final ViewGroup pN;
-        private final IMapViewDelegate pO;
-        private View pP;
+    static class C1369a implements LifecycleDelegate {
+        private final ViewGroup gE;
+        private final IMapViewDelegate gF;
+        private View gG;
 
-        public C0777a(ViewGroup viewGroup, IMapViewDelegate iMapViewDelegate) {
-            this.pO = (IMapViewDelegate) dm.m392e(iMapViewDelegate);
-            this.pN = (ViewGroup) dm.m392e(viewGroup);
+        public C1369a(ViewGroup viewGroup, IMapViewDelegate iMapViewDelegate) {
+            this.gF = (IMapViewDelegate) C0192s.m521d(iMapViewDelegate);
+            this.gE = (ViewGroup) C0192s.m521d(viewGroup);
         }
 
-        public IMapViewDelegate cF() {
-            return this.pO;
+        public IMapViewDelegate bj() {
+            return this.gF;
         }
 
         public void onCreate(Bundle savedInstanceState) {
             try {
-                this.pO.onCreate(savedInstanceState);
-                this.pP = (View) C0898c.m1317b(this.pO.getView());
-                this.pN.removeAllViews();
-                this.pN.addView(this.pP);
+                this.gF.onCreate(savedInstanceState);
+                this.gG = (View) C1689c.m1134a(this.gF.getView());
+                this.gE.removeAllViews();
+                this.gE.addView(this.gG);
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
@@ -54,7 +54,7 @@ public class MapView extends FrameLayout {
 
         public void onDestroy() {
             try {
-                this.pO.onDestroy();
+                this.gF.onDestroy();
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
@@ -70,7 +70,7 @@ public class MapView extends FrameLayout {
 
         public void onLowMemory() {
             try {
-                this.pO.onLowMemory();
+                this.gF.onLowMemory();
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
@@ -78,7 +78,7 @@ public class MapView extends FrameLayout {
 
         public void onPause() {
             try {
-                this.pO.onPause();
+                this.gF.onPause();
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
@@ -86,7 +86,7 @@ public class MapView extends FrameLayout {
 
         public void onResume() {
             try {
-                this.pO.onResume();
+                this.gF.onResume();
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
@@ -94,34 +94,34 @@ public class MapView extends FrameLayout {
 
         public void onSaveInstanceState(Bundle outState) {
             try {
-                this.pO.onSaveInstanceState(outState);
+                this.gF.onSaveInstanceState(outState);
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
     }
 
-    static class C0778b extends C0111a<C0777a> {
+    static class C1370b extends C0145a<C1369a> {
+        protected C0147d<C1369a> gC;
+        private final ViewGroup gH;
+        private final GoogleMapOptions gI;
         private final Context mContext;
-        protected C0113d<C0777a> pL;
-        private final ViewGroup pQ;
-        private final GoogleMapOptions pR;
 
-        C0778b(ViewGroup viewGroup, Context context, GoogleMapOptions googleMapOptions) {
-            this.pQ = viewGroup;
+        C1370b(ViewGroup viewGroup, Context context, GoogleMapOptions googleMapOptions) {
+            this.gH = viewGroup;
             this.mContext = context;
-            this.pR = googleMapOptions;
+            this.gI = googleMapOptions;
         }
 
-        protected void mo1075a(C0113d<C0777a> c0113d) {
-            this.pL = c0113d;
-            cE();
+        protected void mo1349a(C0147d<C1369a> c0147d) {
+            this.gC = c0147d;
+            bi();
         }
 
-        public void cE() {
-            if (this.pL != null && bP() == null) {
+        public void bi() {
+            if (this.gC != null && at() == null) {
                 try {
-                    this.pL.mo706a(new C0777a(this.pQ, C0226q.m729u(this.mContext).mo1176a(C0898c.m1318g(this.mContext), this.pR)));
+                    this.gC.mo1039a(new C1369a(this.gH, C0214p.m557i(this.mContext).mo1447a(C1689c.m1135f(this.mContext), this.gI)));
                 } catch (RemoteException e) {
                     throw new RuntimeRemoteException(e);
                 } catch (GooglePlayServicesNotAvailableException e2) {
@@ -132,64 +132,64 @@ public class MapView extends FrameLayout {
 
     public MapView(Context context) {
         super(context);
-        this.pM = new C0778b(this, context, null);
+        this.gD = new C1370b(this, context, null);
     }
 
     public MapView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.pM = new C0778b(this, context, GoogleMapOptions.createFromAttributes(context, attrs));
+        this.gD = new C1370b(this, context, GoogleMapOptions.createFromAttributes(context, attrs));
     }
 
     public MapView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        this.pM = new C0778b(this, context, GoogleMapOptions.createFromAttributes(context, attrs));
+        this.gD = new C1370b(this, context, GoogleMapOptions.createFromAttributes(context, attrs));
     }
 
     public MapView(Context context, GoogleMapOptions options) {
         super(context);
-        this.pM = new C0778b(this, context, options);
+        this.gD = new C1370b(this, context, options);
     }
 
     public final GoogleMap getMap() {
-        if (this.pI != null) {
-            return this.pI;
+        if (this.gz != null) {
+            return this.gz;
         }
-        this.pM.cE();
-        if (this.pM.bP() == null) {
+        this.gD.bi();
+        if (this.gD.at() == null) {
             return null;
         }
         try {
-            this.pI = new GoogleMap(((C0777a) this.pM.bP()).cF().getMap());
-            return this.pI;
+            this.gz = new GoogleMap(((C1369a) this.gD.at()).bj().getMap());
+            return this.gz;
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
     }
 
     public final void onCreate(Bundle savedInstanceState) {
-        this.pM.onCreate(savedInstanceState);
-        if (this.pM.bP() == null) {
-            this.pM.m141a((FrameLayout) this);
+        this.gD.onCreate(savedInstanceState);
+        if (this.gD.at() == null) {
+            this.gD.m139a((FrameLayout) this);
         }
     }
 
     public final void onDestroy() {
-        this.pM.onDestroy();
+        this.gD.onDestroy();
     }
 
     public final void onLowMemory() {
-        this.pM.onLowMemory();
+        this.gD.onLowMemory();
     }
 
     public final void onPause() {
-        this.pM.onPause();
+        this.gD.onPause();
     }
 
     public final void onResume() {
-        this.pM.onResume();
+        this.gD.onResume();
     }
 
     public final void onSaveInstanceState(Bundle outState) {
-        this.pM.onSaveInstanceState(outState);
+        this.gD.onSaveInstanceState(outState);
     }
 }

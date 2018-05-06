@@ -1,6 +1,7 @@
 package android.support.v4.content;
 
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.util.Log;
@@ -27,9 +28,9 @@ abstract class ModernAsyncTask<Params, Progress, Result> {
     private static final int MESSAGE_POST_RESULT = 1;
     public static final Executor THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(5, 128, 1, TimeUnit.SECONDS, sPoolWorkQueue, sThreadFactory);
     private static volatile Executor sDefaultExecutor = THREAD_POOL_EXECUTOR;
-    private static final InternalHandler sHandler = new InternalHandler();
+    private static InternalHandler sHandler;
     private static final BlockingQueue<Runnable> sPoolWorkQueue = new LinkedBlockingQueue(10);
-    private static final ThreadFactory sThreadFactory = new C00161();
+    private static final ThreadFactory sThreadFactory = new C00291();
     private final FutureTask<Result> mFuture = new FutureTask<Result>(this.mWorker) {
         protected void done() {
             try {
@@ -37,22 +38,22 @@ abstract class ModernAsyncTask<Params, Progress, Result> {
             } catch (InterruptedException e) {
                 Log.w(ModernAsyncTask.LOG_TAG, e);
             } catch (ExecutionException e2) {
-                throw new RuntimeException("An error occured while executing doInBackground()", e2.getCause());
+                throw new RuntimeException("An error occurred while executing doInBackground()", e2.getCause());
             } catch (CancellationException e3) {
                 ModernAsyncTask.this.postResultIfNotInvoked(null);
             } catch (Throwable t) {
-                RuntimeException runtimeException = new RuntimeException("An error occured while executing doInBackground()", t);
+                RuntimeException runtimeException = new RuntimeException("An error occurred while executing doInBackground()", t);
             }
         }
     };
     private volatile Status mStatus = Status.PENDING;
     private final AtomicBoolean mTaskInvoked = new AtomicBoolean();
-    private final WorkerRunnable<Params, Result> mWorker = new C06262();
+    private final WorkerRunnable<Params, Result> mWorker = new C12622();
 
-    static class C00161 implements ThreadFactory {
+    static class C00291 implements ThreadFactory {
         private final AtomicInteger mCount = new AtomicInteger(1);
 
-        C00161() {
+        C00291() {
         }
 
         public Thread newThread(Runnable r) {
@@ -71,7 +72,8 @@ abstract class ModernAsyncTask<Params, Progress, Result> {
     }
 
     private static class InternalHandler extends Handler {
-        private InternalHandler() {
+        public InternalHandler() {
+            super(Looper.getMainLooper());
         }
 
         public void handleMessage(Message msg) {
@@ -102,8 +104,8 @@ abstract class ModernAsyncTask<Params, Progress, Result> {
         }
     }
 
-    class C06262 extends WorkerRunnable<Params, Result> {
-        C06262() {
+    class C12622 extends WorkerRunnable<Params, Result> {
+        C12622() {
             super();
         }
 
@@ -116,8 +118,15 @@ abstract class ModernAsyncTask<Params, Progress, Result> {
 
     protected abstract Result doInBackground(Params... paramsArr);
 
-    public static void init() {
-        sHandler.getLooper();
+    private static Handler getHandler() {
+        Handler handler;
+        synchronized (ModernAsyncTask.class) {
+            if (sHandler == null) {
+                sHandler = new InternalHandler();
+            }
+            handler = sHandler;
+        }
+        return handler;
     }
 
     public static void setDefaultExecutor(Executor exec) {
@@ -131,7 +140,7 @@ abstract class ModernAsyncTask<Params, Progress, Result> {
     }
 
     private Result postResult(Result result) {
-        sHandler.obtainMessage(1, new AsyncTaskResult(this, result)).sendToTarget();
+        getHandler().obtainMessage(1, new AsyncTaskResult(this, result)).sendToTarget();
         return result;
     }
 
@@ -197,7 +206,7 @@ abstract class ModernAsyncTask<Params, Progress, Result> {
 
     protected final void publishProgress(Progress... values) {
         if (!isCancelled()) {
-            sHandler.obtainMessage(2, new AsyncTaskResult(this, values)).sendToTarget();
+            getHandler().obtainMessage(2, new AsyncTaskResult(this, values)).sendToTarget();
         }
     }
 

@@ -137,7 +137,7 @@ public class GestureDetectorCompat {
                 this.mVelocityTracker = VelocityTracker.obtain();
             }
             this.mVelocityTracker.addMovement(ev);
-            boolean pointerUp = (action & MotionEventCompat.ACTION_MASK) == 6;
+            boolean pointerUp = (action & 255) == 6;
             int skipIndex = pointerUp ? MotionEventCompat.getActionIndex(ev) : -1;
             float sumX = 0.0f;
             float sumY = 0.0f;
@@ -156,7 +156,7 @@ public class GestureDetectorCompat {
             float focusX = sumX / ((float) div);
             float focusY = sumY / ((float) div);
             boolean handled = false;
-            switch (action & MotionEventCompat.ACTION_MASK) {
+            switch (action & 255) {
                 case 0:
                     if (this.mDoubleTapListener != null) {
                         boolean hadTapMessage = this.mHandler.hasMessages(3);

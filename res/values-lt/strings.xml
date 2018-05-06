@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="abc_action_bar_home_description">Eiti į pagrindinį puslapį</string>
-    <string name="abc_action_bar_up_description">Eiti į viršų</string>
-    <string name="abc_action_menu_overflow_description">Daugiau parinkčių</string>
-    <string name="abc_action_mode_done">Atlikta</string>
-    <string name="abc_activity_chooser_view_see_all">Peržiūrėti viską</string>
-    <string name="abc_activitychooserview_choose_application">Pasirinkti programą</string>
-    <string name="abc_searchview_description_clear">Išvalyti užklausą</string>
-    <string name="abc_searchview_description_query">Paieškos užklausa</string>
-    <string name="abc_searchview_description_search">Paieška</string>
-    <string name="abc_searchview_description_submit">Pateikti užklausą</string>
-    <string name="abc_searchview_description_voice">Paieška balsu</string>
-    <string name="abc_shareactionprovider_share_with">Bendrinti naudojant</string>
-    <string name="abc_shareactionprovider_share_with_application">Bendrinti naudojant „%s“</string>
     <string name="auth_client_needs_enabling_title">Norint naudoti programą būtina įgalinti „Google Play“ paslaugas.</string>
     <string name="auth_client_needs_installation_title">Norint naudoti programą būtina įdiegti „Google Play“ paslaugas.</string>
     <string name="auth_client_needs_update_title">Norint naudoti programą būtina atnaujinti „Google Play“ paslaugas.</string>
@@ -31,7 +18,6 @@
     <string name="common_google_play_services_network_error_text">Norint prisijungti prie „Google Play“ paslaugų reikia duomenų ryšio.</string>
     <string name="common_google_play_services_network_error_title">Tinklo klaida</string>
     <string name="common_google_play_services_unknown_issue">Nežinoma „Google Play“ paslaugų problema.</string>
-    <string name="common_google_play_services_unsupported_date_text">Įrenginyje nurodyta data neteisinga. Patikrinkite įrenginyje nurodytą datą.</string>
     <string name="common_google_play_services_unsupported_text">Jūsų įrenginys nepalaiko „Google Play“ paslaugų, kuriomis remiasi kai kurios programos. Jei reikia pagalbos, susisiekite su gamintoju.</string>
     <string name="common_google_play_services_unsupported_title">„Google Play“ paslaugos</string>
     <string name="common_google_play_services_update_button">Atnaujinti</string>

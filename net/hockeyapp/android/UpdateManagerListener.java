@@ -1,6 +1,7 @@
 package net.hockeyapp.android;
 
 import java.util.Date;
+import org.json.JSONArray;
 
 public abstract class UpdateManagerListener extends StringListener {
     public Class<? extends UpdateActivity> getUpdateActivityClass() {
@@ -17,11 +18,25 @@ public abstract class UpdateManagerListener extends StringListener {
     public void onUpdateAvailable() {
     }
 
+    public void onCancel() {
+    }
+
+    public void onUpdateAvailable(JSONArray data, String url) {
+        onUpdateAvailable();
+    }
+
     public Date getExpiryDate() {
         return null;
     }
 
     public boolean onBuildExpired() {
         return true;
+    }
+
+    public boolean canUpdateInMarket() {
+        return false;
+    }
+
+    public void onUpdatePermissionsNotGranted() {
     }
 }

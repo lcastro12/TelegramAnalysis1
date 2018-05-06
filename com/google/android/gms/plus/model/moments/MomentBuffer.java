@@ -1,15 +1,15 @@
 package com.google.android.gms.plus.model.moments;
 
-import com.google.android.gms.common.data.C0646d;
+import com.google.android.gms.common.data.C1287d;
 import com.google.android.gms.common.data.DataBuffer;
-import com.google.android.gms.internal.fu;
+import com.google.android.gms.internal.cb;
 
 public final class MomentBuffer extends DataBuffer<Moment> {
-    public MomentBuffer(C0646d dataHolder) {
+    public MomentBuffer(C1287d dataHolder) {
         super(dataHolder);
     }
 
     public Moment get(int position) {
-        return new fu(this.jf, position);
+        return new cb(this.S, position);
     }
 }

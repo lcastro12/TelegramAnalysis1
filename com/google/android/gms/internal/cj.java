@@ -1,43 +1,103 @@
 package com.google.android.gms.internal;
 
-import android.content.Context;
-import android.support.v4.view.ViewCompat;
-import android.view.View;
-import android.view.Window;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import java.io.File;
+import android.os.Parcel;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.safeparcel.C0141a;
+import com.google.android.gms.common.internal.safeparcel.C0141a.C0140a;
+import com.google.android.gms.common.internal.safeparcel.C0142b;
+import com.google.android.gms.internal.cc.C1718d;
+import java.util.HashSet;
+import java.util.Set;
 
-public final class cj {
-    public static void m278a(Context context, WebSettings webSettings) {
-        webSettings.setAppCachePath(new File(context.getCacheDir(), "com.google.android.gms.ads.appcache").getAbsolutePath());
-        webSettings.setAppCacheMaxSize(0);
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setDatabasePath(context.getDatabasePath("com.google.android.gms.ads.db").getAbsolutePath());
-        webSettings.setDatabaseEnabled(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setDisplayZoomControls(false);
-        webSettings.setBuiltInZoomControls(true);
-        webSettings.setSupportZoom(true);
+public class cj implements Creator<C1718d> {
+    static void m436a(C1718d c1718d, Parcel parcel, int i) {
+        int d = C0142b.m131d(parcel);
+        Set bH = c1718d.bH();
+        if (bH.contains(Integer.valueOf(1))) {
+            C0142b.m129c(parcel, 1, c1718d.m1321i());
+        }
+        if (bH.contains(Integer.valueOf(2))) {
+            C0142b.m119a(parcel, 2, c1718d.getFamilyName(), true);
+        }
+        if (bH.contains(Integer.valueOf(3))) {
+            C0142b.m119a(parcel, 3, c1718d.getFormatted(), true);
+        }
+        if (bH.contains(Integer.valueOf(4))) {
+            C0142b.m119a(parcel, 4, c1718d.getGivenName(), true);
+        }
+        if (bH.contains(Integer.valueOf(5))) {
+            C0142b.m119a(parcel, 5, c1718d.getHonorificPrefix(), true);
+        }
+        if (bH.contains(Integer.valueOf(6))) {
+            C0142b.m119a(parcel, 6, c1718d.getHonorificSuffix(), true);
+        }
+        if (bH.contains(Integer.valueOf(7))) {
+            C0142b.m119a(parcel, 7, c1718d.getMiddleName(), true);
+        }
+        C0142b.m110C(parcel, d);
     }
 
-    public static void m279a(Window window) {
-        window.setFlags(ViewCompat.MEASURED_STATE_TOO_SMALL, ViewCompat.MEASURED_STATE_TOO_SMALL);
+    public C1718d m437E(Parcel parcel) {
+        String str = null;
+        int c = C0141a.m81c(parcel);
+        Set hashSet = new HashSet();
+        int i = 0;
+        String str2 = null;
+        String str3 = null;
+        String str4 = null;
+        String str5 = null;
+        String str6 = null;
+        while (parcel.dataPosition() < c) {
+            int b = C0141a.m78b(parcel);
+            switch (C0141a.m93m(b)) {
+                case 1:
+                    i = C0141a.m86f(parcel, b);
+                    hashSet.add(Integer.valueOf(1));
+                    break;
+                case 2:
+                    str6 = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(2));
+                    break;
+                case 3:
+                    str5 = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(3));
+                    break;
+                case 4:
+                    str4 = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(4));
+                    break;
+                case 5:
+                    str3 = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(5));
+                    break;
+                case 6:
+                    str2 = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(6));
+                    break;
+                case 7:
+                    str = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(7));
+                    break;
+                default:
+                    C0141a.m79b(parcel, b);
+                    break;
+            }
+        }
+        if (parcel.dataPosition() == c) {
+            return new C1718d(hashSet, i, str6, str5, str4, str3, str2, str);
+        }
+        throw new C0140a("Overread allowed size end=" + c, parcel);
     }
 
-    public static void m280a(WebView webView) {
-        webView.onPause();
+    public C1718d[] ae(int i) {
+        return new C1718d[i];
     }
 
-    public static void m281b(WebView webView) {
-        webView.onResume();
+    public /* synthetic */ Object createFromParcel(Parcel x0) {
+        return m437E(x0);
     }
 
-    public static void m282c(View view) {
-        view.setLayerType(1, null);
-    }
-
-    public static void m283d(View view) {
-        view.setLayerType(0, null);
+    public /* synthetic */ Object[] newArray(int x0) {
+        return ae(x0);
     }
 }

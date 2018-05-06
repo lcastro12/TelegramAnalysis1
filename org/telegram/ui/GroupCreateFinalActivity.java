@@ -1,56 +1,71 @@
 package org.telegram.ui;
 
 import android.app.AlertDialog.Builder;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.internal.view.SupportMenuItem;
-import android.support.v7.app.ActionBar;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.text.Editable;
+import android.text.InputFilter;
+import android.text.InputFilter.LengthFilter;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.TextView;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
+import android.widget.ListView;
 import java.util.ArrayList;
-import org.telegram.TL.TLRPC.FileLocation;
-import org.telegram.TL.TLRPC.InputFile;
-import org.telegram.TL.TLRPC.PhotoSize;
-import org.telegram.TL.TLRPC.User;
-import org.telegram.messenger.C0419R;
+import java.util.Iterator;
+import java.util.concurrent.Semaphore;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.C0553R;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationCenter.NotificationCenterDelegate;
-import org.telegram.messenger.Utilities;
-import org.telegram.ui.Cells.ChatOrUserCell;
-import org.telegram.ui.Views.AvatarUpdater;
-import org.telegram.ui.Views.AvatarUpdater.AvatarUpdaterDelegate;
-import org.telegram.ui.Views.BackupImageView;
-import org.telegram.ui.Views.BaseFragment;
-import org.telegram.ui.Views.PinnedHeaderListView;
-import org.telegram.ui.Views.SectionedBaseAdapter;
+import org.telegram.tgnet.ConnectionsManager;
+import org.telegram.tgnet.TLRPC.FileLocation;
+import org.telegram.tgnet.TLRPC.InputFile;
+import org.telegram.tgnet.TLRPC.PhotoSize;
+import org.telegram.tgnet.TLRPC.User;
+import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
+import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.Adapters.BaseFragmentAdapter;
+import org.telegram.ui.Cells.GreySectionCell;
+import org.telegram.ui.Cells.UserCell;
+import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.AvatarUpdater;
+import org.telegram.ui.Components.AvatarUpdater.AvatarUpdaterDelegate;
+import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.FrameLayoutFixed;
 
 public class GroupCreateFinalActivity extends BaseFragment implements NotificationCenterDelegate, AvatarUpdaterDelegate {
+    private static final int done_button = 1;
     private FileLocation avatar;
+    private AvatarDrawable avatarDrawable;
     private BackupImageView avatarImage;
     private AvatarUpdater avatarUpdater = new AvatarUpdater();
+    private int chatType = 0;
     private boolean createAfterUpload;
     private boolean donePressed;
-    private PinnedHeaderListView listView;
-    private TextView nameTextView;
+    private ListAdapter listAdapter;
+    private ListView listView;
+    private EditText nameTextView;
+    private String nameToSet = null;
+    private ProgressDialog progressDialog = null;
     private ArrayList<Integer> selectedContacts;
     private InputFile uploadedAvatar;
 
-    class C05151 implements OnClickListener {
+    class C10173 implements OnClickListener {
 
-        class C05141 implements DialogInterface.OnClickListener {
-            C05141() {
+        class C10161 implements DialogInterface.OnClickListener {
+            C10161() {
             }
 
             public void onClick(DialogInterface dialogInterface, int i) {
@@ -61,47 +76,87 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
                 } else if (i == 2) {
                     GroupCreateFinalActivity.this.avatar = null;
                     GroupCreateFinalActivity.this.uploadedAvatar = null;
-                    GroupCreateFinalActivity.this.avatarImage.setImage(GroupCreateFinalActivity.this.avatar, "50_50", (int) C0419R.drawable.group_blue);
+                    GroupCreateFinalActivity.this.avatarImage.setImage(GroupCreateFinalActivity.this.avatar, "50_50", GroupCreateFinalActivity.this.avatarDrawable);
                 }
             }
         }
 
-        C05151() {
+        C10173() {
         }
 
         public void onClick(View view) {
-            Builder builder = new Builder(GroupCreateFinalActivity.this.parentActivity);
-            builder.setItems(GroupCreateFinalActivity.this.avatar != null ? new CharSequence[]{GroupCreateFinalActivity.this.getStringEntry(C0419R.string.FromCamera), GroupCreateFinalActivity.this.getStringEntry(C0419R.string.FromGalley), GroupCreateFinalActivity.this.getStringEntry(C0419R.string.DeletePhoto)} : new CharSequence[]{GroupCreateFinalActivity.this.getStringEntry(C0419R.string.FromCamera), GroupCreateFinalActivity.this.getStringEntry(C0419R.string.FromGalley)}, new C05141());
-            builder.show().setCanceledOnTouchOutside(true);
+            if (GroupCreateFinalActivity.this.getParentActivity() != null) {
+                Builder builder = new Builder(GroupCreateFinalActivity.this.getParentActivity());
+                builder.setItems(GroupCreateFinalActivity.this.avatar != null ? new CharSequence[]{LocaleController.getString("FromCamera", C0553R.string.FromCamera), LocaleController.getString("FromGalley", C0553R.string.FromGalley), LocaleController.getString("DeletePhoto", C0553R.string.DeletePhoto)} : new CharSequence[]{LocaleController.getString("FromCamera", C0553R.string.FromCamera), LocaleController.getString("FromGalley", C0553R.string.FromGalley)}, new C10161());
+                GroupCreateFinalActivity.this.showDialog(builder.create());
+            }
         }
     }
 
-    class C05173 implements OnClickListener {
-        C05173() {
+    class C10184 implements TextWatcher {
+        C10184() {
         }
 
-        public void onClick(View view) {
-            if (!GroupCreateFinalActivity.this.donePressed && GroupCreateFinalActivity.this.nameTextView.getText().length() != 0) {
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+        }
+
+        public void afterTextChanged(Editable s) {
+            String obj;
+            AvatarDrawable access$900 = GroupCreateFinalActivity.this.avatarDrawable;
+            if (GroupCreateFinalActivity.this.nameTextView.length() > 0) {
+                obj = GroupCreateFinalActivity.this.nameTextView.getText().toString();
+            } else {
+                obj = null;
+            }
+            access$900.setInfo(5, obj, null, false);
+            GroupCreateFinalActivity.this.avatarImage.invalidate();
+        }
+    }
+
+    class C15902 extends ActionBarMenuOnItemClick {
+        C15902() {
+        }
+
+        public void onItemClick(int id) {
+            if (id == -1) {
+                GroupCreateFinalActivity.this.finishFragment();
+            } else if (id == 1 && !GroupCreateFinalActivity.this.donePressed && GroupCreateFinalActivity.this.nameTextView.getText().length() != 0) {
                 GroupCreateFinalActivity.this.donePressed = true;
-                Utilities.ShowProgressDialog(GroupCreateFinalActivity.this.parentActivity, GroupCreateFinalActivity.this.getStringEntry(C0419R.string.Loading));
-                if (GroupCreateFinalActivity.this.avatarUpdater.uploadingAvatar != null) {
+                if (GroupCreateFinalActivity.this.chatType == 1) {
+                    MessagesController.getInstance().createChat(GroupCreateFinalActivity.this.nameTextView.getText().toString(), GroupCreateFinalActivity.this.selectedContacts, null, GroupCreateFinalActivity.this.chatType);
+                } else if (GroupCreateFinalActivity.this.avatarUpdater.uploadingAvatar != null) {
                     GroupCreateFinalActivity.this.createAfterUpload = true;
                 } else {
-                    MessagesController.Instance.createChat(GroupCreateFinalActivity.this.nameTextView.getText().toString(), GroupCreateFinalActivity.this.selectedContacts, GroupCreateFinalActivity.this.uploadedAvatar);
+                    GroupCreateFinalActivity.this.progressDialog = new ProgressDialog(GroupCreateFinalActivity.this.getParentActivity());
+                    GroupCreateFinalActivity.this.progressDialog.setMessage(LocaleController.getString("Loading", C0553R.string.Loading));
+                    GroupCreateFinalActivity.this.progressDialog.setCanceledOnTouchOutside(false);
+                    GroupCreateFinalActivity.this.progressDialog.setCancelable(false);
+                    final int reqId = MessagesController.getInstance().createChat(GroupCreateFinalActivity.this.nameTextView.getText().toString(), GroupCreateFinalActivity.this.selectedContacts, null, GroupCreateFinalActivity.this.chatType);
+                    GroupCreateFinalActivity.this.progressDialog.setButton(-2, LocaleController.getString("Cancel", C0553R.string.Cancel), new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            ConnectionsManager.getInstance().cancelRequest(reqId, true);
+                            GroupCreateFinalActivity.this.donePressed = false;
+                            try {
+                                dialog.dismiss();
+                            } catch (Throwable e) {
+                                FileLog.m611e("tmessages", e);
+                            }
+                        }
+                    });
+                    GroupCreateFinalActivity.this.progressDialog.show();
                 }
             }
         }
     }
 
-    private class ListAdapter extends SectionedBaseAdapter {
+    private class ListAdapter extends BaseFragmentAdapter {
         private Context mContext;
 
         public ListAdapter(Context context) {
             this.mContext = context;
-        }
-
-        public Object getItem(int section, int position) {
-            return null;
         }
 
         public boolean areAllItemsEnabled() {
@@ -112,195 +167,255 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
             return false;
         }
 
-        public long getItemId(int section, int position) {
+        public View getView(int i, View view, ViewGroup viewGroup) {
+            if (view == null) {
+                view = new UserCell(this.mContext, 1, 0);
+            }
+            ((UserCell) view).setData(MessagesController.getInstance().getUser((Integer) GroupCreateFinalActivity.this.selectedContacts.get(i)), null, null, 0);
+            return view;
+        }
+
+        public int getItemViewType(int position) {
             return 0;
         }
 
-        public int getSectionCount() {
+        public int getViewTypeCount() {
             return 1;
         }
 
-        public int getCountForSection(int section) {
-            if (GroupCreateFinalActivity.this.selectedContacts == null) {
-                return 0;
-            }
+        public int getCount() {
             return GroupCreateFinalActivity.this.selectedContacts.size();
-        }
-
-        public View getItemView(int section, int position, View convertView, ViewGroup parent) {
-            boolean z;
-            User user = (User) MessagesController.Instance.users.get(GroupCreateFinalActivity.this.selectedContacts.get(position));
-            if (convertView == null) {
-                convertView = new ChatOrUserCell(this.mContext);
-                ((ChatOrUserCell) convertView).useBoldFont = true;
-                ((ChatOrUserCell) convertView).usePadding = false;
-            }
-            ((ChatOrUserCell) convertView).setData(user, null, null, null, null);
-            ChatOrUserCell chatOrUserCell = (ChatOrUserCell) convertView;
-            if (position != GroupCreateFinalActivity.this.selectedContacts.size() - 1) {
-                z = true;
-            } else {
-                z = false;
-            }
-            chatOrUserCell.useSeparator = z;
-            return convertView;
-        }
-
-        public int getItemViewType(int section, int position) {
-            return 0;
-        }
-
-        public int getItemViewTypeCount() {
-            return 1;
-        }
-
-        public int getSectionHeaderViewType(int section) {
-            return 0;
-        }
-
-        public int getSectionHeaderViewTypeCount() {
-            return 1;
-        }
-
-        public View getSectionHeaderView(int section, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = ((LayoutInflater) this.mContext.getSystemService("layout_inflater")).inflate(C0419R.layout.settings_section_layout, parent, false);
-                convertView.setBackgroundColor(-1);
-            }
-            TextView textView = (TextView) convertView.findViewById(C0419R.id.settings_section_text);
-            if (GroupCreateFinalActivity.this.selectedContacts.size() == 1) {
-                textView.setText(GroupCreateFinalActivity.this.selectedContacts.size() + " " + GroupCreateFinalActivity.this.getStringEntry(C0419R.string.MEMBER));
-            } else {
-                textView.setText(GroupCreateFinalActivity.this.selectedContacts.size() + " " + GroupCreateFinalActivity.this.getStringEntry(C0419R.string.MEMBERS));
-            }
-            return convertView;
         }
     }
 
+    public GroupCreateFinalActivity(Bundle args) {
+        super(args);
+        this.chatType = args.getInt("chatType", 0);
+        this.avatarDrawable = new AvatarDrawable();
+    }
+
     public boolean onFragmentCreate() {
-        super.onFragmentCreate();
-        NotificationCenter.Instance.addObserver(this, 3);
-        NotificationCenter.Instance.addObserver(this, 15);
-        NotificationCenter.Instance.addObserver(this, 16);
+        NotificationCenter.getInstance().addObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getInstance().addObserver(this, NotificationCenter.chatDidCreated);
+        NotificationCenter.getInstance().addObserver(this, NotificationCenter.chatDidFailCreate);
         this.avatarUpdater.parentFragment = this;
         this.avatarUpdater.delegate = this;
-        this.selectedContacts = (ArrayList) NotificationCenter.Instance.getFromMemCache(2);
-        return true;
+        this.selectedContacts = getArguments().getIntegerArrayList("result");
+        final ArrayList<Integer> usersToLoad = new ArrayList();
+        Iterator i$ = this.selectedContacts.iterator();
+        while (i$.hasNext()) {
+            Integer uid = (Integer) i$.next();
+            if (MessagesController.getInstance().getUser(uid) == null) {
+                usersToLoad.add(uid);
+            }
+        }
+        if (!usersToLoad.isEmpty()) {
+            final Semaphore semaphore = new Semaphore(0);
+            final ArrayList<User> users = new ArrayList();
+            MessagesStorage.getInstance().getStorageQueue().postRunnable(new Runnable() {
+                public void run() {
+                    users.addAll(MessagesStorage.getInstance().getUsers(usersToLoad));
+                    semaphore.release();
+                }
+            });
+            try {
+                semaphore.acquire();
+            } catch (Throwable e) {
+                FileLog.m611e("tmessages", e);
+            }
+            if (usersToLoad.size() != users.size() || users.isEmpty()) {
+                return false;
+            }
+            i$ = users.iterator();
+            while (i$.hasNext()) {
+                MessagesController.getInstance().putUser((User) i$.next(), true);
+            }
+        }
+        return super.onFragmentCreate();
     }
 
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        NotificationCenter.Instance.removeObserver(this, 3);
-        NotificationCenter.Instance.removeObserver(this, 15);
-        NotificationCenter.Instance.removeObserver(this, 16);
+        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.updateInterfaces);
+        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.chatDidCreated);
+        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.chatDidFailCreate);
         this.avatarUpdater.clear();
-    }
-
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
-    }
-
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        if (this.fragmentView == null) {
-            this.fragmentView = inflater.inflate(C0419R.layout.group_create_final_layout, container, false);
-            ((ImageButton) this.fragmentView.findViewById(C0419R.id.settings_change_avatar_button)).setOnClickListener(new C05151());
-            this.avatarImage = (BackupImageView) this.fragmentView.findViewById(C0419R.id.settings_avatar_image);
-            this.nameTextView = (EditText) this.fragmentView.findViewById(C0419R.id.bubble_input_text);
-            this.listView = (PinnedHeaderListView) this.fragmentView.findViewById(C0419R.id.listView);
-            this.listView.setAdapter(new ListAdapter(this.parentActivity));
-        } else {
-            ViewGroup parent = (ViewGroup) this.fragmentView.getParent();
-            if (parent != null) {
-                parent.removeView(this.fragmentView);
-            }
-        }
-        return this.fragmentView;
-    }
-
-    public void applySelfActionBar() {
-        if (this.parentActivity != null) {
-            ActionBar actionBar = this.parentActivity.getSupportActionBar();
-            actionBar.setDisplayShowTitleEnabled(true);
-            actionBar.setDisplayShowHomeEnabled(false);
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setDisplayUseLogoEnabled(false);
-            actionBar.setDisplayShowCustomEnabled(false);
-            actionBar.setCustomView(null);
-            actionBar.setTitle(getStringEntry(C0419R.string.NewGroup));
-            TextView title = (TextView) this.parentActivity.findViewById(C0419R.id.action_bar_title);
-            if (title == null) {
-                title = (TextView) this.parentActivity.findViewById(this.parentActivity.getResources().getIdentifier("action_bar_title", "id", "android"));
-            }
-            if (title != null) {
-                title.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-                title.setCompoundDrawablePadding(0);
-            }
-        }
     }
 
     public void onResume() {
         super.onResume();
-        if (getActivity() != null) {
-            ((ApplicationActivity) this.parentActivity).showActionBar();
-            ((ApplicationActivity) this.parentActivity).updateActionBar();
+        if (this.listAdapter != null) {
+            this.listAdapter.notifyDataSetChanged();
         }
     }
 
+    public View createView(Context context) {
+        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
+        this.actionBar.setAllowOverlayTitle(true);
+        if (this.chatType == 1) {
+            this.actionBar.setTitle(LocaleController.getString("NewBroadcastList", C0553R.string.NewBroadcastList));
+        } else {
+            this.actionBar.setTitle(LocaleController.getString("NewGroup", C0553R.string.NewGroup));
+        }
+        this.actionBar.setActionBarMenuOnItemClick(new C15902());
+        this.actionBar.createMenu().addItemWithWidth(1, C0553R.drawable.ic_done, AndroidUtilities.dp(56.0f));
+        this.fragmentView = new LinearLayout(context);
+        LinearLayout linearLayout = this.fragmentView;
+        linearLayout.setOrientation(1);
+        FrameLayout frameLayout = new FrameLayoutFixed(context);
+        linearLayout.addView(frameLayout);
+        LayoutParams layoutParams = (LayoutParams) frameLayout.getLayoutParams();
+        layoutParams.width = -1;
+        layoutParams.height = -2;
+        layoutParams.gravity = 51;
+        frameLayout.setLayoutParams(layoutParams);
+        this.avatarImage = new BackupImageView(context);
+        this.avatarImage.setRoundRadius(AndroidUtilities.dp(32.0f));
+        this.avatarDrawable.setInfo(5, null, null, this.chatType == 1);
+        this.avatarImage.setImageDrawable(this.avatarDrawable);
+        frameLayout.addView(this.avatarImage);
+        FrameLayout.LayoutParams layoutParams1 = (FrameLayout.LayoutParams) this.avatarImage.getLayoutParams();
+        layoutParams1.width = AndroidUtilities.dp(64.0f);
+        layoutParams1.height = AndroidUtilities.dp(64.0f);
+        layoutParams1.topMargin = AndroidUtilities.dp(12.0f);
+        layoutParams1.bottomMargin = AndroidUtilities.dp(12.0f);
+        layoutParams1.leftMargin = LocaleController.isRTL ? 0 : AndroidUtilities.dp(16.0f);
+        layoutParams1.rightMargin = LocaleController.isRTL ? AndroidUtilities.dp(16.0f) : 0;
+        layoutParams1.gravity = (LocaleController.isRTL ? 5 : 3) | 48;
+        this.avatarImage.setLayoutParams(layoutParams1);
+        if (this.chatType != 1) {
+            this.avatarDrawable.setDrawPhoto(true);
+            this.avatarImage.setOnClickListener(new C10173());
+        }
+        this.nameTextView = new EditText(context);
+        this.nameTextView.setHint(this.chatType == 0 ? LocaleController.getString("EnterGroupNamePlaceholder", C0553R.string.EnterGroupNamePlaceholder) : LocaleController.getString("EnterListName", C0553R.string.EnterListName));
+        if (this.nameToSet != null) {
+            this.nameTextView.setText(this.nameToSet);
+            this.nameToSet = null;
+        }
+        this.nameTextView.setMaxLines(4);
+        this.nameTextView.setGravity((LocaleController.isRTL ? 5 : 3) | 16);
+        this.nameTextView.setTextSize(1, 16.0f);
+        this.nameTextView.setHintTextColor(-6842473);
+        this.nameTextView.setImeOptions(268435456);
+        this.nameTextView.setInputType(16384);
+        this.nameTextView.setPadding(0, 0, 0, AndroidUtilities.dp(8.0f));
+        this.nameTextView.setFilters(new InputFilter[]{new LengthFilter(100)});
+        AndroidUtilities.clearCursorDrawable(this.nameTextView);
+        this.nameTextView.setTextColor(-14606047);
+        frameLayout.addView(this.nameTextView);
+        layoutParams1 = (FrameLayout.LayoutParams) this.nameTextView.getLayoutParams();
+        layoutParams1.width = -1;
+        layoutParams1.height = -2;
+        layoutParams1.leftMargin = LocaleController.isRTL ? AndroidUtilities.dp(16.0f) : AndroidUtilities.dp(96.0f);
+        layoutParams1.rightMargin = LocaleController.isRTL ? AndroidUtilities.dp(96.0f) : AndroidUtilities.dp(16.0f);
+        layoutParams1.gravity = 16;
+        this.nameTextView.setLayoutParams(layoutParams1);
+        if (this.chatType != 1) {
+            this.nameTextView.addTextChangedListener(new C10184());
+        }
+        GreySectionCell sectionCell = new GreySectionCell(context);
+        sectionCell.setText(LocaleController.formatPluralString("Members", this.selectedContacts.size()));
+        linearLayout.addView(sectionCell);
+        this.listView = new ListView(context);
+        this.listView.setDivider(null);
+        this.listView.setDividerHeight(0);
+        this.listView.setVerticalScrollBarEnabled(false);
+        ListView listView = this.listView;
+        android.widget.ListAdapter listAdapter = new ListAdapter(context);
+        this.listAdapter = listAdapter;
+        listView.setAdapter(listAdapter);
+        linearLayout.addView(this.listView);
+        layoutParams = (LayoutParams) this.listView.getLayoutParams();
+        layoutParams.width = -1;
+        layoutParams.height = -1;
+        this.listView.setLayoutParams(layoutParams);
+        return this.fragmentView;
+    }
+
     public void didUploadedPhoto(final InputFile file, final PhotoSize small, PhotoSize big) {
-        Utilities.RunOnUIThread(new Runnable() {
+        AndroidUtilities.runOnUIThread(new Runnable() {
             public void run() {
                 GroupCreateFinalActivity.this.uploadedAvatar = file;
                 GroupCreateFinalActivity.this.avatar = small.location;
-                GroupCreateFinalActivity.this.avatarImage.setImage(GroupCreateFinalActivity.this.avatar, "50_50", (int) C0419R.drawable.group_blue);
+                GroupCreateFinalActivity.this.avatarImage.setImage(GroupCreateFinalActivity.this.avatar, "50_50", GroupCreateFinalActivity.this.avatarDrawable);
                 if (GroupCreateFinalActivity.this.createAfterUpload) {
-                    FileLog.m800e("tmessages", "avatar did uploaded");
-                    MessagesController.Instance.createChat(GroupCreateFinalActivity.this.nameTextView.getText().toString(), GroupCreateFinalActivity.this.selectedContacts, GroupCreateFinalActivity.this.uploadedAvatar);
+                    FileLog.m609e("tmessages", "avatar did uploaded");
+                    MessagesController.getInstance().createChat(GroupCreateFinalActivity.this.nameTextView.getText().toString(), GroupCreateFinalActivity.this.selectedContacts, null, GroupCreateFinalActivity.this.chatType);
                 }
             }
         });
     }
 
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case 16908332:
-                finishFragment();
-                break;
-        }
-        return true;
-    }
-
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
         this.avatarUpdater.onActivityResult(requestCode, resultCode, data);
     }
 
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(C0419R.menu.group_create_menu, menu);
-        ((TextView) ((SupportMenuItem) menu.findItem(C0419R.id.done_menu_item)).getActionView().findViewById(C0419R.id.done_button)).setOnClickListener(new C05173());
+    public void saveSelfArgs(Bundle args) {
+        if (!(this.avatarUpdater == null || this.avatarUpdater.currentPicturePath == null)) {
+            args.putString("path", this.avatarUpdater.currentPicturePath);
+        }
+        if (this.nameTextView != null) {
+            String text = this.nameTextView.getText().toString();
+            if (text != null && text.length() != 0) {
+                args.putString("nameTextView", text);
+            }
+        }
     }
 
-    public void didReceivedNotification(int id, final Object... args) {
-        if (id == 3) {
+    public void restoreSelfArgs(Bundle args) {
+        if (this.avatarUpdater != null) {
+            this.avatarUpdater.currentPicturePath = args.getString("path");
+        }
+        String text = args.getString("nameTextView");
+        if (text == null) {
+            return;
+        }
+        if (this.nameTextView != null) {
+            this.nameTextView.setText(text);
+        } else {
+            this.nameToSet = text;
+        }
+    }
+
+    public void onTransitionAnimationEnd(boolean isOpen, boolean backward) {
+        if (isOpen) {
+            this.nameTextView.requestFocus();
+            AndroidUtilities.showKeyboard(this.nameTextView);
+        }
+    }
+
+    public void didReceivedNotification(int id, Object... args) {
+        if (id == NotificationCenter.updateInterfaces) {
             int mask = ((Integer) args[0]).intValue();
             if ((mask & 2) != 0 || (mask & 1) != 0 || (mask & 4) != 0) {
                 updateVisibleRows(mask);
             }
-        } else if (id == 16) {
-            Utilities.HideProgressDialog(this.parentActivity);
-            this.donePressed = false;
-            FileLog.m800e("tmessages", "did fail create chat");
-        } else if (id == 15) {
-            Utilities.RunOnUIThread(new Runnable() {
-                public void run() {
-                    Utilities.HideProgressDialog(GroupCreateFinalActivity.this.parentActivity);
-                    ChatActivity fragment = new ChatActivity();
-                    Bundle bundle = new Bundle();
-                    bundle.putInt("chat_id", ((Integer) args[0]).intValue());
-                    fragment.setArguments(bundle);
-                    ((ApplicationActivity) GroupCreateFinalActivity.this.parentActivity).presentFragment(fragment, "chat" + Math.random(), true, false);
+        } else if (id == NotificationCenter.chatDidFailCreate) {
+            if (this.progressDialog != null) {
+                try {
+                    this.progressDialog.dismiss();
+                } catch (Throwable e) {
+                    FileLog.m611e("tmessages", e);
                 }
-            });
+            }
+            this.donePressed = false;
+        } else if (id == NotificationCenter.chatDidCreated) {
+            if (this.progressDialog != null) {
+                try {
+                    this.progressDialog.dismiss();
+                } catch (Throwable e2) {
+                    FileLog.m611e("tmessages", e2);
+                }
+            }
+            int chat_id = ((Integer) args[0]).intValue();
+            NotificationCenter.getInstance().postNotificationName(NotificationCenter.closeChats, new Object[0]);
+            Bundle args2 = new Bundle();
+            args2.putInt("chat_id", chat_id);
+            presentFragment(new ChatActivity(args2), true);
+            if (this.uploadedAvatar != null) {
+                MessagesController.getInstance().changeChatAvatar(chat_id, this.uploadedAvatar);
+            }
         }
     }
 
@@ -309,8 +424,8 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
             int count = this.listView.getChildCount();
             for (int a = 0; a < count; a++) {
                 View child = this.listView.getChildAt(a);
-                if (child instanceof ChatOrUserCell) {
-                    ((ChatOrUserCell) child).update(mask);
+                if (child instanceof UserCell) {
+                    ((UserCell) child).update(mask);
                 }
             }
         }

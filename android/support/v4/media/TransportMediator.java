@@ -8,7 +8,6 @@ import android.support.v4.view.KeyEventCompat;
 import android.view.KeyEvent;
 import android.view.KeyEvent.Callback;
 import android.view.View;
-import com.google.ads.AdSize;
 import java.util.ArrayList;
 
 public class TransportMediator extends TransportController {
@@ -33,8 +32,8 @@ public class TransportMediator extends TransportController {
     final TransportMediatorCallback mTransportKeyCallback;
     final View mView;
 
-    class C00192 implements Callback {
-        C00192() {
+    class C00522 implements Callback {
+        C00522() {
         }
 
         public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -54,8 +53,8 @@ public class TransportMediator extends TransportController {
         }
     }
 
-    class C06271 implements TransportMediatorCallback {
-        C06271() {
+    class C12671 implements TransportMediatorCallback {
+        C12671() {
         }
 
         public void handleKey(KeyEvent key) {
@@ -83,10 +82,10 @@ public class TransportMediator extends TransportController {
             case 87:
             case 88:
             case 89:
-            case AdSize.LARGE_AD_HEIGHT /*90*/:
+            case 90:
             case 91:
             case KEYCODE_MEDIA_PLAY /*126*/:
-            case 127:
+            case KEYCODE_MEDIA_PAUSE /*127*/:
             case KEYCODE_MEDIA_RECORD /*130*/:
                 return true;
             default:
@@ -104,8 +103,8 @@ public class TransportMediator extends TransportController {
 
     private TransportMediator(Activity activity, View view, TransportPerformer callbacks) {
         this.mListeners = new ArrayList();
-        this.mTransportKeyCallback = new C06271();
-        this.mKeyEventCallback = new C00192();
+        this.mTransportKeyCallback = new C12671();
+        this.mKeyEventCallback = new C00522();
         this.mContext = activity != null ? activity : view.getContext();
         this.mCallbacks = callbacks;
         this.mAudioManager = (AudioManager) this.mContext.getSystemService("audio");

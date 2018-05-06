@@ -7,68 +7,68 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
 import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
-import com.google.android.gms.internal.ff;
+import com.google.android.gms.internal.bn;
 
 public class PanoramaClient implements GooglePlayServicesClient {
-    private final ff qU;
+    private final bn hN;
 
     public interface OnPanoramaInfoLoadedListener {
         void onPanoramaInfoLoaded(ConnectionResult connectionResult, Intent intent);
     }
 
-    public interface C0246a {
-        void m769a(ConnectionResult connectionResult, int i, Intent intent);
+    public interface C0234a {
+        void m598a(ConnectionResult connectionResult, int i, Intent intent);
     }
 
     public PanoramaClient(Context context, ConnectionCallbacks connectionCallbacks, OnConnectionFailedListener connectionFailedListener) {
-        this.qU = new ff(context, connectionCallbacks, connectionFailedListener);
+        this.hN = new bn(context, connectionCallbacks, connectionFailedListener);
     }
 
     public void connect() {
-        this.qU.connect();
+        this.hN.connect();
     }
 
     public void disconnect() {
-        this.qU.disconnect();
+        this.hN.disconnect();
     }
 
     public boolean isConnected() {
-        return this.qU.isConnected();
+        return this.hN.isConnected();
     }
 
     public boolean isConnecting() {
-        return this.qU.isConnecting();
+        return this.hN.isConnecting();
     }
 
     public boolean isConnectionCallbacksRegistered(ConnectionCallbacks listener) {
-        return this.qU.isConnectionCallbacksRegistered(listener);
+        return this.hN.isConnectionCallbacksRegistered(listener);
     }
 
     public boolean isConnectionFailedListenerRegistered(OnConnectionFailedListener listener) {
-        return this.qU.isConnectionFailedListenerRegistered(listener);
+        return this.hN.isConnectionFailedListenerRegistered(listener);
     }
 
     public void loadPanoramaInfo(OnPanoramaInfoLoadedListener listener, Uri uri) {
-        this.qU.m1460a(listener, uri, false);
+        this.hN.m1232a(listener, uri, false);
     }
 
     public void loadPanoramaInfoAndGrantAccess(OnPanoramaInfoLoadedListener listener, Uri uri) {
-        this.qU.m1460a(listener, uri, true);
+        this.hN.m1232a(listener, uri, true);
     }
 
     public void registerConnectionCallbacks(ConnectionCallbacks listener) {
-        this.qU.registerConnectionCallbacks(listener);
+        this.hN.registerConnectionCallbacks(listener);
     }
 
     public void registerConnectionFailedListener(OnConnectionFailedListener listener) {
-        this.qU.registerConnectionFailedListener(listener);
+        this.hN.registerConnectionFailedListener(listener);
     }
 
     public void unregisterConnectionCallbacks(ConnectionCallbacks listener) {
-        this.qU.unregisterConnectionCallbacks(listener);
+        this.hN.unregisterConnectionCallbacks(listener);
     }
 
     public void unregisterConnectionFailedListener(OnConnectionFailedListener listener) {
-        this.qU.unregisterConnectionFailedListener(listener);
+        this.hN.unregisterConnectionFailedListener(listener);
     }
 }

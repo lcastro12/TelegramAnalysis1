@@ -1,14 +1,14 @@
 package com.google.android.gms.maps.model;
 
 import android.os.RemoteException;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.maps.model.internal.C0238b;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.maps.model.internal.C0226b;
 
 public final class Circle {
-    private final C0238b qe;
+    private final C0226b gV;
 
-    public Circle(C0238b delegate) {
-        this.qe = (C0238b) dm.m392e(delegate);
+    public Circle(C0226b delegate) {
+        this.gV = (C0226b) C0192s.m521d(delegate);
     }
 
     public boolean equals(Object other) {
@@ -16,7 +16,7 @@ public final class Circle {
             return false;
         }
         try {
-            return this.qe.mo1222a(((Circle) other).qe);
+            return this.gV.mo1491a(((Circle) other).gV);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -24,7 +24,7 @@ public final class Circle {
 
     public LatLng getCenter() {
         try {
-            return this.qe.getCenter();
+            return this.gV.getCenter();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -32,7 +32,7 @@ public final class Circle {
 
     public int getFillColor() {
         try {
-            return this.qe.getFillColor();
+            return this.gV.getFillColor();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -40,7 +40,7 @@ public final class Circle {
 
     public String getId() {
         try {
-            return this.qe.getId();
+            return this.gV.getId();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -48,7 +48,7 @@ public final class Circle {
 
     public double getRadius() {
         try {
-            return this.qe.getRadius();
+            return this.gV.getRadius();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -56,7 +56,7 @@ public final class Circle {
 
     public int getStrokeColor() {
         try {
-            return this.qe.getStrokeColor();
+            return this.gV.getStrokeColor();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -64,7 +64,7 @@ public final class Circle {
 
     public float getStrokeWidth() {
         try {
-            return this.qe.getStrokeWidth();
+            return this.gV.getStrokeWidth();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -72,7 +72,7 @@ public final class Circle {
 
     public float getZIndex() {
         try {
-            return this.qe.getZIndex();
+            return this.gV.getZIndex();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -80,7 +80,7 @@ public final class Circle {
 
     public int hashCode() {
         try {
-            return this.qe.hashCodeRemote();
+            return this.gV.hashCodeRemote();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -88,7 +88,7 @@ public final class Circle {
 
     public boolean isVisible() {
         try {
-            return this.qe.isVisible();
+            return this.gV.isVisible();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -96,7 +96,7 @@ public final class Circle {
 
     public void remove() {
         try {
-            this.qe.remove();
+            this.gV.remove();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -104,7 +104,7 @@ public final class Circle {
 
     public void setCenter(LatLng center) {
         try {
-            this.qe.setCenter(center);
+            this.gV.setCenter(center);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -112,7 +112,7 @@ public final class Circle {
 
     public void setFillColor(int color) {
         try {
-            this.qe.setFillColor(color);
+            this.gV.setFillColor(color);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -120,7 +120,7 @@ public final class Circle {
 
     public void setRadius(double radius) {
         try {
-            this.qe.setRadius(radius);
+            this.gV.setRadius(radius);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -128,7 +128,7 @@ public final class Circle {
 
     public void setStrokeColor(int color) {
         try {
-            this.qe.setStrokeColor(color);
+            this.gV.setStrokeColor(color);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -136,7 +136,7 @@ public final class Circle {
 
     public void setStrokeWidth(float width) {
         try {
-            this.qe.setStrokeWidth(width);
+            this.gV.setStrokeWidth(width);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -144,7 +144,7 @@ public final class Circle {
 
     public void setVisible(boolean visible) {
         try {
-            this.qe.setVisible(visible);
+            this.gV.setVisible(visible);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -152,7 +152,7 @@ public final class Circle {
 
     public void setZIndex(float zIndex) {
         try {
-            this.qe.setZIndex(zIndex);
+            this.gV.setZIndex(zIndex);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }

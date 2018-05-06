@@ -75,9 +75,9 @@ public class TimeUtils {
             days = seconds / SECONDS_PER_DAY;
             seconds -= SECONDS_PER_DAY * days;
         }
-        if (seconds > 3600) {
-            hours = seconds / 3600;
-            seconds -= hours * 3600;
+        if (seconds > SECONDS_PER_HOUR) {
+            hours = seconds / SECONDS_PER_HOUR;
+            seconds -= hours * SECONDS_PER_HOUR;
         }
         if (seconds > SECONDS_PER_MINUTE) {
             minutes = seconds / SECONDS_PER_MINUTE;

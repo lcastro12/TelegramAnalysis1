@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.telegram.ui.ApplicationLoader;
+import org.telegram.messenger.ApplicationLoader;
 
 public class GoogleCloudMessaging {
     public static final String ERROR_MAIN_THREAD = "MAIN_THREAD";
@@ -21,51 +21,58 @@ public class GoogleCloudMessaging {
     public static final String MESSAGE_TYPE_DELETED = "deleted_messages";
     public static final String MESSAGE_TYPE_MESSAGE = "gcm";
     public static final String MESSAGE_TYPE_SEND_ERROR = "send_error";
-    static GoogleCloudMessaging oo;
-    private Context ee;
-    private PendingIntent op;
-    final BlockingQueue<Intent> oq = new LinkedBlockingQueue();
-    private Handler or = new Handler(this, Looper.getMainLooper()) {
-        final /* synthetic */ GoogleCloudMessaging ot;
+    static GoogleCloudMessaging fh;
+    private Context fi;
+    private PendingIntent fj;
+    final BlockingQueue<Intent> fk = new LinkedBlockingQueue();
+    private Handler fl = new Handler(this, Looper.getMainLooper()) {
+        final /* synthetic */ GoogleCloudMessaging fn;
 
         public void handleMessage(Message msg) {
-            this.ot.oq.add((Intent) msg.obj);
+            this.fn.fk.add((Intent) msg.obj);
         }
     };
-    private Messenger os = new Messenger(this.or);
+    private Messenger fm = new Messenger(this.fl);
 
-    private void m165b(String... strArr) {
-        String c = m166c(strArr);
-        Intent intent = new Intent("com.google.android.c2dm.intent.REGISTER");
-        intent.setPackage(GooglePlayServicesUtil.GOOGLE_PLAY_SERVICES_PACKAGE);
-        intent.putExtra("google.messenger", this.os);
-        m167d(intent);
-        intent.putExtra("sender", c);
-        this.ee.startService(intent);
-    }
-
-    private void cj() {
+    private void aO() {
         Intent intent = new Intent("com.google.android.c2dm.intent.UNREGISTER");
         intent.setPackage(GooglePlayServicesUtil.GOOGLE_PLAY_SERVICES_PACKAGE);
-        this.oq.clear();
-        intent.putExtra("google.messenger", this.os);
-        m167d(intent);
-        this.ee.startService(intent);
+        this.fk.clear();
+        intent.putExtra("google.messenger", this.fm);
+        m165c(intent);
+        this.fi.startService(intent);
+    }
+
+    private void m163b(String... strArr) {
+        String c = m164c(strArr);
+        Intent intent = new Intent("com.google.android.c2dm.intent.REGISTER");
+        intent.setPackage(GooglePlayServicesUtil.GOOGLE_PLAY_SERVICES_PACKAGE);
+        intent.putExtra("google.messenger", this.fm);
+        m165c(intent);
+        intent.putExtra("sender", c);
+        this.fi.startService(intent);
     }
 
     public static synchronized GoogleCloudMessaging getInstance(Context context) {
         GoogleCloudMessaging googleCloudMessaging;
         synchronized (GoogleCloudMessaging.class) {
-            if (oo == null) {
-                oo = new GoogleCloudMessaging();
-                oo.ee = context;
+            if (fh == null) {
+                fh = new GoogleCloudMessaging();
+                fh.fi = context;
             }
-            googleCloudMessaging = oo;
+            googleCloudMessaging = fh;
         }
         return googleCloudMessaging;
     }
 
-    String m166c(String... strArr) {
+    synchronized void aP() {
+        if (this.fj != null) {
+            this.fj.cancel();
+            this.fj = null;
+        }
+    }
+
+    String m164c(String... strArr) {
         if (strArr == null || strArr.length == 0) {
             throw new IllegalArgumentException("No senderIds");
         }
@@ -76,22 +83,15 @@ public class GoogleCloudMessaging {
         return stringBuilder.toString();
     }
 
-    synchronized void ck() {
-        if (this.op != null) {
-            this.op.cancel();
-            this.op = null;
+    synchronized void m165c(Intent intent) {
+        if (this.fj == null) {
+            this.fj = PendingIntent.getBroadcast(this.fi, 0, new Intent(), 0);
         }
+        intent.putExtra("app", this.fj);
     }
 
     public void close() {
-        ck();
-    }
-
-    synchronized void m167d(Intent intent) {
-        if (this.op == null) {
-            this.op = PendingIntent.getBroadcast(this.ee, 0, new Intent(), 0);
-        }
-        intent.putExtra("app", this.op);
+        aP();
     }
 
     public String getMessageType(Intent intent) {
@@ -106,10 +106,10 @@ public class GoogleCloudMessaging {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             throw new IOException(ERROR_MAIN_THREAD);
         }
-        this.oq.clear();
-        m165b(senderIds);
+        this.fk.clear();
+        m163b(senderIds);
         try {
-            Intent intent = (Intent) this.oq.poll(5000, TimeUnit.MILLISECONDS);
+            Intent intent = (Intent) this.fk.poll(5000, TimeUnit.MILLISECONDS);
             if (intent == null) {
                 throw new IOException(ERROR_SERVICE_NOT_AVAILABLE);
             }
@@ -136,11 +136,11 @@ public class GoogleCloudMessaging {
         } else {
             Intent intent = new Intent("com.google.android.gcm.intent.SEND");
             intent.putExtras(data);
-            m167d(intent);
+            m165c(intent);
             intent.putExtra("google.to", to);
             intent.putExtra("google.message_id", msgId);
             intent.putExtra("google.ttl", Long.toString(timeToLive));
-            this.ee.sendOrderedBroadcast(intent, null);
+            this.fi.sendOrderedBroadcast(intent, null);
         }
     }
 
@@ -152,9 +152,9 @@ public class GoogleCloudMessaging {
         if (Looper.getMainLooper() == Looper.myLooper()) {
             throw new IOException(ERROR_MAIN_THREAD);
         }
-        cj();
+        aO();
         try {
-            Intent intent = (Intent) this.oq.poll(5000, TimeUnit.MILLISECONDS);
+            Intent intent = (Intent) this.fk.poll(5000, TimeUnit.MILLISECONDS);
             if (intent == null) {
                 throw new IOException(ERROR_SERVICE_NOT_AVAILABLE);
             } else if (intent.getStringExtra("unregistered") == null) {

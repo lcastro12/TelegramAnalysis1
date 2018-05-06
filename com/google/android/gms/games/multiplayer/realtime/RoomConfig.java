@@ -2,47 +2,47 @@ package com.google.android.gms.games.multiplayer.realtime;
 
 import android.os.Bundle;
 import com.google.android.gms.games.GamesClient;
-import com.google.android.gms.internal.dm;
+import com.google.android.gms.internal.C0192s;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public final class RoomConfig {
-    private final String nM;
-    private final int nR;
-    private final RoomUpdateListener od;
-    private final RoomStatusUpdateListener oe;
-    private final RealTimeMessageReceivedListener of;
-    private final String[] og;
-    private final Bundle oh;
-    private final boolean oi;
+    private final String eF;
+    private final int eK;
+    private final RoomUpdateListener eW;
+    private final RoomStatusUpdateListener eX;
+    private final RealTimeMessageReceivedListener eY;
+    private final String[] eZ;
+    private final Bundle fa;
+    private final boolean fb;
 
     public static final class Builder {
-        int nR;
-        final RoomUpdateListener od;
-        RoomStatusUpdateListener oe;
-        RealTimeMessageReceivedListener of;
-        Bundle oh;
-        boolean oi;
-        String oj;
-        ArrayList<String> ok;
+        int eK;
+        final RoomUpdateListener eW;
+        RoomStatusUpdateListener eX;
+        RealTimeMessageReceivedListener eY;
+        Bundle fa;
+        boolean fb;
+        String fc;
+        ArrayList<String> fd;
 
         private Builder(RoomUpdateListener updateListener) {
-            this.oj = null;
-            this.nR = -1;
-            this.ok = new ArrayList();
-            this.oi = false;
-            this.od = (RoomUpdateListener) dm.m388a((Object) updateListener, (Object) "Must provide a RoomUpdateListener");
+            this.fc = null;
+            this.eK = -1;
+            this.fd = new ArrayList();
+            this.fb = false;
+            this.eW = (RoomUpdateListener) C0192s.m518b((Object) updateListener, (Object) "Must provide a RoomUpdateListener");
         }
 
         public Builder addPlayersToInvite(ArrayList<String> playerIds) {
-            dm.m392e(playerIds);
-            this.ok.addAll(playerIds);
+            C0192s.m521d(playerIds);
+            this.fd.addAll(playerIds);
             return this;
         }
 
         public Builder addPlayersToInvite(String... playerIds) {
-            dm.m392e(playerIds);
-            this.ok.addAll(Arrays.asList(playerIds));
+            C0192s.m521d(playerIds);
+            this.fd.addAll(Arrays.asList(playerIds));
             return this;
         }
 
@@ -51,48 +51,48 @@ public final class RoomConfig {
         }
 
         public Builder setAutoMatchCriteria(Bundle autoMatchCriteria) {
-            this.oh = autoMatchCriteria;
+            this.fa = autoMatchCriteria;
             return this;
         }
 
         public Builder setInvitationIdToAccept(String invitationId) {
-            dm.m392e(invitationId);
-            this.oj = invitationId;
+            C0192s.m521d(invitationId);
+            this.fc = invitationId;
             return this;
         }
 
         public Builder setMessageReceivedListener(RealTimeMessageReceivedListener listener) {
-            this.of = listener;
+            this.eY = listener;
             return this;
         }
 
         public Builder setRoomStatusUpdateListener(RoomStatusUpdateListener listener) {
-            this.oe = listener;
+            this.eX = listener;
             return this;
         }
 
         public Builder setSocketCommunicationEnabled(boolean enableSockets) {
-            this.oi = enableSockets;
+            this.fb = enableSockets;
             return this;
         }
 
         public Builder setVariant(int variant) {
-            this.nR = variant;
+            this.eK = variant;
             return this;
         }
     }
 
     private RoomConfig(Builder builder) {
-        this.od = builder.od;
-        this.oe = builder.oe;
-        this.of = builder.of;
-        this.nM = builder.oj;
-        this.nR = builder.nR;
-        this.oh = builder.oh;
-        this.oi = builder.oi;
-        this.og = (String[]) builder.ok.toArray(new String[builder.ok.size()]);
-        if (this.of == null) {
-            dm.m389a(this.oi, (Object) "Must either enable sockets OR specify a message listener");
+        this.eW = builder.eW;
+        this.eX = builder.eX;
+        this.eY = builder.eY;
+        this.eF = builder.fc;
+        this.eK = builder.eK;
+        this.fa = builder.fa;
+        this.fb = builder.fb;
+        this.eZ = (String[]) builder.fd.toArray(new String[builder.fd.size()]);
+        if (this.eY == null) {
+            C0192s.m516a(this.fb, "Must either enable sockets OR specify a message listener");
         }
     }
 
@@ -109,34 +109,34 @@ public final class RoomConfig {
     }
 
     public Bundle getAutoMatchCriteria() {
-        return this.oh;
+        return this.fa;
     }
 
     public String getInvitationId() {
-        return this.nM;
+        return this.eF;
     }
 
     public String[] getInvitedPlayerIds() {
-        return this.og;
+        return this.eZ;
     }
 
     public RealTimeMessageReceivedListener getMessageReceivedListener() {
-        return this.of;
+        return this.eY;
     }
 
     public RoomStatusUpdateListener getRoomStatusUpdateListener() {
-        return this.oe;
+        return this.eX;
     }
 
     public RoomUpdateListener getRoomUpdateListener() {
-        return this.od;
+        return this.eW;
     }
 
     public int getVariant() {
-        return this.nR;
+        return this.eK;
     }
 
     public boolean isSocketEnabled() {
-        return this.oi;
+        return this.fb;
     }
 }

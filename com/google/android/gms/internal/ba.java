@@ -1,344 +1,185 @@
 package com.google.android.gms.internal;
 
-import com.google.ads.AdRequest.ErrorCode;
-import com.google.ads.mediation.MediationBannerAdapter;
-import com.google.ads.mediation.MediationBannerListener;
-import com.google.ads.mediation.MediationInterstitialAdapter;
-import com.google.ads.mediation.MediationInterstitialListener;
-import com.google.ads.mediation.MediationServerParameters;
-import com.google.ads.mediation.NetworkExtras;
+import android.app.Activity;
+import android.content.Context;
+import android.os.Binder;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.view.Display;
+import android.view.View;
+import android.view.View.OnAttachStateChangeListener;
+import android.view.ViewTreeObserver;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+import java.lang.ref.WeakReference;
 
-public final class ba<NETWORK_EXTRAS extends NetworkExtras, SERVER_PARAMETERS extends MediationServerParameters> implements MediationBannerListener, MediationInterstitialListener {
-    private final ay ft;
+public class ba {
+    protected au dt;
+    protected C0163a ej;
 
-    class C01321 implements Runnable {
-        final /* synthetic */ ba fu;
+    public static final class C0163a {
+        public int bottom;
+        public IBinder ek;
+        public int el;
+        public int gravity;
+        public int left;
+        public int right;
+        public int top;
 
-        C01321(ba baVar) {
-            this.fu = baVar;
+        private C0163a(int i, IBinder iBinder) {
+            this.el = -1;
+            this.left = 0;
+            this.top = 0;
+            this.right = 0;
+            this.bottom = 0;
+            this.gravity = i;
+            this.ek = iBinder;
         }
 
-        public void run() {
-            try {
-                this.fu.ft.mo785y();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdClicked.", e);
-            }
-        }
-    }
-
-    class C01332 implements Runnable {
-        final /* synthetic */ ba fu;
-
-        C01332(ba baVar) {
-            this.fu = baVar;
-        }
-
-        public void run() {
-            try {
-                this.fu.ft.onAdOpened();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdOpened.", e);
-            }
-        }
-    }
-
-    class C01343 implements Runnable {
-        final /* synthetic */ ba fu;
-
-        C01343(ba baVar) {
-            this.fu = baVar;
-        }
-
-        public void run() {
-            try {
-                this.fu.ft.onAdLoaded();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdLoaded.", e);
-            }
+        public Bundle aE() {
+            Bundle bundle = new Bundle();
+            bundle.putInt("popupLocationInfo.gravity", this.gravity);
+            bundle.putInt("popupLocationInfo.displayId", this.el);
+            bundle.putInt("popupLocationInfo.left", this.left);
+            bundle.putInt("popupLocationInfo.top", this.top);
+            bundle.putInt("popupLocationInfo.right", this.right);
+            bundle.putInt("popupLocationInfo.bottom", this.bottom);
+            return bundle;
         }
     }
 
-    class C01354 implements Runnable {
-        final /* synthetic */ ba fu;
+    private static final class C1322b extends ba implements OnAttachStateChangeListener, OnGlobalLayoutListener {
+        private boolean dE = false;
+        private WeakReference<View> em;
 
-        C01354(ba baVar) {
-            this.fu = baVar;
+        protected C1322b(au auVar, int i) {
+            super(auVar, i);
         }
 
-        public void run() {
-            try {
-                this.fu.ft.onAdClosed();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdClosed.", e);
-            }
-        }
-    }
-
-    class C01376 implements Runnable {
-        final /* synthetic */ ba fu;
-
-        C01376(ba baVar) {
-            this.fu = baVar;
-        }
-
-        public void run() {
-            try {
-                this.fu.ft.onAdLeftApplication();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdLeftApplication.", e);
-            }
-        }
-    }
-
-    class C01387 implements Runnable {
-        final /* synthetic */ ba fu;
-
-        C01387(ba baVar) {
-            this.fu = baVar;
-        }
-
-        public void run() {
-            try {
-                this.fu.ft.onAdOpened();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdOpened.", e);
-            }
-        }
-    }
-
-    class C01398 implements Runnable {
-        final /* synthetic */ ba fu;
-
-        C01398(ba baVar) {
-            this.fu = baVar;
-        }
-
-        public void run() {
-            try {
-                this.fu.ft.onAdLoaded();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdLoaded.", e);
-            }
-        }
-    }
-
-    class C01409 implements Runnable {
-        final /* synthetic */ ba fu;
-
-        C01409(ba baVar) {
-            this.fu = baVar;
-        }
-
-        public void run() {
-            try {
-                this.fu.ft.onAdClosed();
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdClosed.", e);
-            }
-        }
-    }
-
-    public ba(ay ayVar) {
-        this.ft = ayVar;
-    }
-
-    public void onClick(MediationBannerAdapter<?, ?> mediationBannerAdapter) {
-        cn.m295m("Adapter called onClick.");
-        if (cm.ar()) {
-            try {
-                this.ft.mo785y();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdClicked.", e);
-                return;
-            }
-        }
-        cn.m299q("onClick must be called on the main UI thread.");
-        cm.hO.post(new C01321(this));
-    }
-
-    public void onDismissScreen(MediationBannerAdapter<?, ?> mediationBannerAdapter) {
-        cn.m295m("Adapter called onDismissScreen.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdClosed();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdClosed.", e);
-                return;
-            }
-        }
-        cn.m299q("onDismissScreen must be called on the main UI thread.");
-        cm.hO.post(new C01354(this));
-    }
-
-    public void onDismissScreen(MediationInterstitialAdapter<?, ?> mediationInterstitialAdapter) {
-        cn.m295m("Adapter called onDismissScreen.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdClosed();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdClosed.", e);
-                return;
-            }
-        }
-        cn.m299q("onDismissScreen must be called on the main UI thread.");
-        cm.hO.post(new C01409(this));
-    }
-
-    public void onFailedToReceiveAd(MediationBannerAdapter<?, ?> mediationBannerAdapter, final ErrorCode errorCode) {
-        cn.m295m("Adapter called onFailedToReceiveAd with error. " + errorCode);
-        if (cm.ar()) {
-            try {
-                this.ft.onAdFailedToLoad(bb.m193a(errorCode));
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdFailedToLoad.", e);
-                return;
-            }
-        }
-        cn.m299q("onFailedToReceiveAd must be called on the main UI thread.");
-        cm.hO.post(new Runnable(this) {
-            final /* synthetic */ ba fu;
-
-            public void run() {
-                try {
-                    this.fu.ft.onAdFailedToLoad(bb.m193a(errorCode));
-                } catch (Throwable e) {
-                    cn.m293b("Could not call onAdFailedToLoad.", e);
+        private void m848b(View view) {
+            int i = -1;
+            if (as.as()) {
+                Display display = view.getDisplay();
+                if (display != null) {
+                    i = display.getDisplayId();
                 }
             }
-        });
-    }
-
-    public void onFailedToReceiveAd(MediationInterstitialAdapter<?, ?> mediationInterstitialAdapter, final ErrorCode errorCode) {
-        cn.m295m("Adapter called onFailedToReceiveAd with error " + errorCode + ".");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdFailedToLoad(bb.m193a(errorCode));
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdFailedToLoad.", e);
-                return;
+            IBinder windowToken = view.getWindowToken();
+            int[] iArr = new int[2];
+            view.getLocationInWindow(iArr);
+            int width = view.getWidth();
+            int height = view.getHeight();
+            this.ej.el = i;
+            this.ej.ek = windowToken;
+            this.ej.left = iArr[0];
+            this.ej.top = iArr[1];
+            this.ej.right = iArr[0] + width;
+            this.ej.bottom = iArr[1] + height;
+            if (this.dE) {
+                aB();
+                this.dE = false;
             }
         }
-        cn.m299q("onFailedToReceiveAd must be called on the main UI thread.");
-        cm.hO.post(new Runnable(this) {
-            final /* synthetic */ ba fu;
 
-            public void run() {
-                try {
-                    this.fu.ft.onAdFailedToLoad(bb.m193a(errorCode));
-                } catch (Throwable e) {
-                    cn.m293b("Could not call onAdFailedToLoad.", e);
+        protected void mo1216F(int i) {
+            this.ej = new C0163a(i, null);
+        }
+
+        public void mo1217a(View view) {
+            View view2;
+            Context context;
+            this.dt.ax();
+            if (this.em != null) {
+                view2 = (View) this.em.get();
+                context = this.dt.getContext();
+                if (view2 == null && (context instanceof Activity)) {
+                    view2 = ((Activity) context).getWindow().getDecorView();
+                }
+                if (view2 != null) {
+                    view2.removeOnAttachStateChangeListener(this);
+                    ViewTreeObserver viewTreeObserver = view2.getViewTreeObserver();
+                    if (as.ar()) {
+                        viewTreeObserver.removeOnGlobalLayoutListener(this);
+                    } else {
+                        viewTreeObserver.removeGlobalOnLayoutListener(this);
+                    }
                 }
             }
-        });
-    }
+            this.em = null;
+            context = this.dt.getContext();
+            if (view == null && (context instanceof Activity)) {
+                view2 = ((Activity) context).findViewById(16908290);
+                if (view2 == null) {
+                    view2 = ((Activity) context).getWindow().getDecorView();
+                }
+                ax.m223b("PopupManager", "You have not specified a View to use as content view for popups. Falling back to the Activity content view which may not work properly in future versions of the API. Use setViewForPopups() to set your content view.");
+                view = view2;
+            }
+            if (view != null) {
+                m848b(view);
+                this.em = new WeakReference(view);
+                view.addOnAttachStateChangeListener(this);
+                view.getViewTreeObserver().addOnGlobalLayoutListener(this);
+                return;
+            }
+            ax.m224c("PopupManager", "No content view usable to display popups. Popups will not be displayed in response to this client's calls. Use setViewForPopups() to set your content view.");
+        }
 
-    public void onLeaveApplication(MediationBannerAdapter<?, ?> mediationBannerAdapter) {
-        cn.m295m("Adapter called onLeaveApplication.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdLeftApplication();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdLeftApplication.", e);
-                return;
+        public void aB() {
+            if (this.ej.ek != null) {
+                super.aB();
+            } else {
+                this.dE = this.em != null;
             }
         }
-        cn.m299q("onLeaveApplication must be called on the main UI thread.");
-        cm.hO.post(new C01376(this));
-    }
 
-    public void onLeaveApplication(MediationInterstitialAdapter<?, ?> mediationInterstitialAdapter) {
-        cn.m295m("Adapter called onLeaveApplication.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdLeftApplication();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdLeftApplication.", e);
-                return;
-            }
-        }
-        cn.m299q("onLeaveApplication must be called on the main UI thread.");
-        cm.hO.post(new Runnable(this) {
-            final /* synthetic */ ba fu;
-
-            {
-                this.fu = r1;
-            }
-
-            public void run() {
-                try {
-                    this.fu.ft.onAdLeftApplication();
-                } catch (Throwable e) {
-                    cn.m293b("Could not call onAdLeftApplication.", e);
+        public void onGlobalLayout() {
+            if (this.em != null) {
+                View view = (View) this.em.get();
+                if (view != null) {
+                    m848b(view);
                 }
             }
-        });
+        }
+
+        public void onViewAttachedToWindow(View v) {
+            m848b(v);
+        }
+
+        public void onViewDetachedFromWindow(View v) {
+            this.dt.ax();
+            v.removeOnAttachStateChangeListener(this);
+        }
     }
 
-    public void onPresentScreen(MediationBannerAdapter<?, ?> mediationBannerAdapter) {
-        cn.m295m("Adapter called onPresentScreen.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdOpened();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdOpened.", e);
-                return;
-            }
-        }
-        cn.m299q("onPresentScreen must be called on the main UI thread.");
-        cm.hO.post(new C01387(this));
+    private ba(au auVar, int i) {
+        this.dt = auVar;
+        mo1216F(i);
     }
 
-    public void onPresentScreen(MediationInterstitialAdapter<?, ?> mediationInterstitialAdapter) {
-        cn.m295m("Adapter called onPresentScreen.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdOpened();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdOpened.", e);
-                return;
-            }
-        }
-        cn.m299q("onPresentScreen must be called on the main UI thread.");
-        cm.hO.post(new C01332(this));
+    public static ba m334a(au auVar, int i) {
+        return as.ao() ? new C1322b(auVar, i) : new ba(auVar, i);
     }
 
-    public void onReceivedAd(MediationBannerAdapter<?, ?> mediationBannerAdapter) {
-        cn.m295m("Adapter called onReceivedAd.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdLoaded();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdLoaded.", e);
-                return;
-            }
-        }
-        cn.m299q("onReceivedAd must be called on the main UI thread.");
-        cm.hO.post(new C01398(this));
+    protected void mo1216F(int i) {
+        this.ej = new C0163a(i, new Binder());
     }
 
-    public void onReceivedAd(MediationInterstitialAdapter<?, ?> mediationInterstitialAdapter) {
-        cn.m295m("Adapter called onReceivedAd.");
-        if (cm.ar()) {
-            try {
-                this.ft.onAdLoaded();
-                return;
-            } catch (Throwable e) {
-                cn.m293b("Could not call onAdLoaded.", e);
-                return;
-            }
-        }
-        cn.m299q("onReceivedAd must be called on the main UI thread.");
-        cm.hO.post(new C01343(this));
+    public void mo1217a(View view) {
+    }
+
+    public void aB() {
+        this.dt.m1200a(this.ej.ek, this.ej.aE());
+    }
+
+    public Bundle aC() {
+        return this.ej.aE();
+    }
+
+    public IBinder aD() {
+        return this.ej.ek;
+    }
+
+    public void setGravity(int gravity) {
+        this.ej.gravity = gravity;
     }
 }

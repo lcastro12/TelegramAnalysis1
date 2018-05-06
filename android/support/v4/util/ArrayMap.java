@@ -8,8 +8,8 @@ import java.util.Set;
 public class ArrayMap<K, V> extends SimpleArrayMap<K, V> implements Map<K, V> {
     MapCollections<K, V> mCollections;
 
-    class C06281 extends MapCollections<K, V> {
-        C06281() {
+    class C12731 extends MapCollections<K, V> {
+        C12731() {
         }
 
         protected int colGetSize() {
@@ -21,7 +21,7 @@ public class ArrayMap<K, V> extends SimpleArrayMap<K, V> implements Map<K, V> {
         }
 
         protected int colIndexOfKey(Object key) {
-            return key == null ? ArrayMap.this.indexOfNull() : ArrayMap.this.indexOf(key, key.hashCode());
+            return ArrayMap.this.indexOfKey(key);
         }
 
         protected int colIndexOfValue(Object value) {
@@ -59,7 +59,7 @@ public class ArrayMap<K, V> extends SimpleArrayMap<K, V> implements Map<K, V> {
 
     private MapCollections<K, V> getCollection() {
         if (this.mCollections == null) {
-            this.mCollections = new C06281();
+            this.mCollections = new C12731();
         }
         return this.mCollections;
     }

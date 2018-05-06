@@ -8,11 +8,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.database.Cursor;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.provider.Settings.Global;
 import android.provider.Settings.Secure;
+import android.provider.Settings.SettingNotFoundException;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -23,9 +24,11 @@ import com.google.android.gms.plus.PlusShare;
 import net.hockeyapp.android.listeners.DownloadFileListener;
 import net.hockeyapp.android.objects.ErrorObject;
 import net.hockeyapp.android.tasks.DownloadFileTask;
+import net.hockeyapp.android.tasks.GetFileSizeTask;
+import net.hockeyapp.android.utils.AsyncTaskUtils;
+import net.hockeyapp.android.utils.Util;
 import net.hockeyapp.android.utils.VersionHelper;
 import net.hockeyapp.android.views.UpdateView;
-import org.telegram.messenger.BuildConfig;
 
 public class UpdateActivity extends Activity implements UpdateActivityInterface, UpdateInfoListener, OnClickListener {
     private final int DIALOG_ERROR_ID = 0;
@@ -34,8 +37,8 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
     private ErrorObject error;
     protected VersionHelper versionHelper;
 
-    class C02792 implements Runnable {
-        C02792() {
+    class C02704 implements Runnable {
+        C02704() {
         }
 
         public void run() {
@@ -43,8 +46,8 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
         }
     }
 
-    class C02803 implements Runnable {
-        C02803() {
+    class C02715 implements Runnable {
+        C02715() {
         }
 
         public void run() {
@@ -52,8 +55,17 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
         }
     }
 
-    class C02814 implements DialogInterface.OnClickListener {
-        C02814() {
+    class C02726 implements Runnable {
+        C02726() {
+        }
+
+        public void run() {
+            UpdateActivity.this.showDialog(0);
+        }
+    }
+
+    class C02737 implements DialogInterface.OnClickListener {
+        C02737() {
         }
 
         public void onClick(DialogInterface dialog, int id) {
@@ -62,8 +74,8 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
         }
     }
 
-    class C09481 extends DownloadFileListener {
-        C09481() {
+    class C17363 extends DownloadFileListener {
+        C17363() {
         }
 
         public void downloadSuccessful(DownloadFileTask task) {
@@ -92,7 +104,7 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
         setTitle("App Update");
         setContentView(getLayoutView());
         this.context = this;
-        this.versionHelper = new VersionHelper(getIntent().getStringExtra("json"), this);
+        this.versionHelper = new VersionHelper(this, getIntent().getStringExtra("json"), this);
         configureView();
         this.downloadTask = (DownloadFileTask) getLastNonConfigurationInstance();
         if (this.downloadTask != null) {
@@ -101,8 +113,25 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
     }
 
     protected void configureView() {
-        ((TextView) findViewById(UpdateView.NAME_LABEL_ID)).setText(getAppName());
-        ((TextView) findViewById(4099)).setText("Version " + this.versionHelper.getVersionString() + "\n" + this.versionHelper.getFileInfoString());
+        ((TextView) findViewById(4098)).setText(getAppName());
+        final TextView versionLabel = (TextView) findViewById(4099);
+        String versionString = "Version " + this.versionHelper.getVersionString();
+        final String fileDate = this.versionHelper.getFileDateString();
+        String appSizeString = "Unknown size";
+        if (this.versionHelper.getFileSizeBytes() >= 0) {
+            appSizeString = String.format("%.2f", new Object[]{Float.valueOf(((float) appSize) / 1048576.0f)}) + " MB";
+        } else {
+            final String str = versionString;
+            AsyncTaskUtils.execute(new GetFileSizeTask(this, getIntent().getStringExtra(PlusShare.KEY_CALL_TO_ACTION_URL), new DownloadFileListener() {
+                public void downloadSuccessful(DownloadFileTask task) {
+                    if (task instanceof GetFileSizeTask) {
+                        long appSize = ((GetFileSizeTask) task).getSize();
+                        versionLabel.setText(str + "\n" + fileDate + " - " + (String.format("%.2f", new Object[]{Float.valueOf(((float) appSize) / 1048576.0f)}) + " MB"));
+                    }
+                }
+            }));
+        }
+        versionLabel.setText(versionString + "\n" + fileDate + " - " + appSizeString);
         ((Button) findViewById(UpdateView.UPDATE_BUTTON_ID)).setOnClickListener(this);
         WebView webView = (WebView) findViewById(UpdateView.WEB_VIEW_ID);
         webView.clearCache(true);
@@ -125,9 +154,31 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
         startDownloadTask(getIntent().getStringExtra(PlusShare.KEY_CALL_TO_ACTION_URL));
     }
 
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        enableUpdateButton();
+        if (permissions.length != 0 && grantResults.length != 0 && requestCode == 1) {
+            if (grantResults[0] == 0) {
+                prepareDownload();
+                return;
+            }
+            Log.w("HockeyApp", "User denied write permission, can't continue with updater task.");
+            UpdateManagerListener listener = UpdateManager.getLastListener();
+            if (listener != null) {
+                listener.onUpdatePermissionsNotGranted();
+                return;
+            }
+            final UpdateActivity updateActivity = this;
+            new Builder(this.context).setTitle(Strings.get(Strings.PERMISSION_UPDATE_TITLE_ID)).setMessage(Strings.get(Strings.PERMISSION_UPDATE_MESSAGE_ID)).setNegativeButton(Strings.get(Strings.PERMISSION_DIALOG_NEGATIVE_BUTTON_ID), null).setPositiveButton(Strings.get(Strings.PERMISSION_DIALOG_POSITIVE_BUTTON_ID), new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    updateActivity.prepareDownload();
+                }
+            }).create().show();
+        }
+    }
+
     protected void startDownloadTask(String url) {
-        createDownloadTask(url, new C09481());
-        this.downloadTask.execute(new String[0]);
+        createDownloadTask(url, new C17363());
+        AsyncTaskUtils.execute(this.downloadTask);
     }
 
     protected void createDownloadTask(String url, DownloadFileListener listener) {
@@ -156,7 +207,7 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
             PackageManager pm = getPackageManager();
             return pm.getApplicationLabel(pm.getApplicationInfo(getPackageName(), 0)).toString();
         } catch (NameNotFoundException e) {
-            return BuildConfig.FLAVOR;
+            return "";
         }
     }
 
@@ -165,39 +216,57 @@ public class UpdateActivity extends Activity implements UpdateActivityInterface,
     }
 
     private boolean isUnknownSourcesChecked() {
-        Cursor query;
-        String[] projection = new String[]{"value"};
-        String selection = "name = ? AND value = ?";
-        if (VERSION.SDK_INT >= 17) {
-            query = getContentResolver().query(Global.CONTENT_URI, projection, selection, new String[]{"install_non_market_apps", String.valueOf(1)}, null);
-        } else {
-            query = getContentResolver().query(Secure.CONTENT_URI, projection, selection, new String[]{"install_non_market_apps", String.valueOf(1)}, null);
-        }
-        if (query.getCount() == 1) {
+        try {
+            if (VERSION.SDK_INT < 17 || VERSION.SDK_INT >= 21) {
+                if (Secure.getInt(getContentResolver(), "install_non_market_apps") != 1) {
+                    return false;
+                }
+                return true;
+            } else if (Global.getInt(getContentResolver(), "install_non_market_apps") == 1) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (SettingNotFoundException e) {
             return true;
         }
-        return false;
     }
 
     public void onClick(View v) {
-        if (!isWriteExternalStorageSet(this.context)) {
+        prepareDownload();
+        v.setEnabled(false);
+    }
+
+    protected void prepareDownload() {
+        if (!Util.isConnectedToNetwork(this.context)) {
             this.error = new ErrorObject();
-            this.error.setMessage("The permission to access the external storage permission is not set. Please contact the developer.");
-            runOnUiThread(new C02792());
-        } else if (isUnknownSourcesChecked()) {
-            startDownloadTask();
-            v.setEnabled(false);
-        } else {
+            this.error.setMessage(Strings.get(Strings.ERROR_NO_NETWORK_MESSAGE_ID));
+            runOnUiThread(new C02704());
+        } else if (isWriteExternalStorageSet(this.context)) {
+            if (isUnknownSourcesChecked()) {
+                startDownloadTask();
+                return;
+            }
             this.error = new ErrorObject();
             this.error.setMessage("The installation from unknown sources is not enabled. Please check the device settings.");
-            runOnUiThread(new C02803());
+            runOnUiThread(new C02726());
+        } else if (VERSION.SDK_INT >= 23) {
+            requestPermissions(new String[]{"android.permission.WRITE_EXTERNAL_STORAGE"}, 1);
+        } else {
+            this.error = new ErrorObject();
+            this.error.setMessage("The permission to access the external storage permission is not set. Please contact the developer.");
+            runOnUiThread(new C02715());
         }
     }
 
     protected Dialog onCreateDialog(int id) {
+        return onCreateDialog(id, null);
+    }
+
+    protected Dialog onCreateDialog(int id, Bundle args) {
         switch (id) {
             case 0:
-                return new Builder(this).setMessage("An error has occured").setCancelable(false).setTitle("Error").setIcon(17301543).setPositiveButton("OK", new C02814()).create();
+                return new Builder(this).setMessage("An error has occured").setCancelable(false).setTitle("Error").setIcon(17301543).setPositiveButton("OK", new C02737()).create();
             default:
                 return null;
         }

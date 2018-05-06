@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import net.hockeyapp.android.Constants;
-import org.telegram.messenger.BuildConfig;
 
 public class DeviceUtils {
 
@@ -28,17 +27,17 @@ public class DeviceUtils {
 
     public String getAppName(Context context) {
         if (context == null) {
-            return BuildConfig.FLAVOR;
+            return "";
         }
         try {
             PackageManager pm = context.getPackageManager();
             if (pm == null) {
-                return BuildConfig.FLAVOR;
+                return "";
             }
             return pm.getApplicationLabel(pm.getApplicationInfo(context.getPackageName(), 0)).toString();
         } catch (NameNotFoundException e) {
             e.printStackTrace();
-            return BuildConfig.FLAVOR;
+            return "";
         }
     }
 }

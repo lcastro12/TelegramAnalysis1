@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import org.telegram.messenger.BuildConfig;
 
 public class SimpleCursorAdapter extends ResourceCursorAdapter {
     private CursorToStringConverter mCursorToStringConverter;
@@ -56,7 +55,7 @@ public class SimpleCursorAdapter extends ResourceCursorAdapter {
                 } else {
                     String text = cursor.getString(from[i]);
                     if (text == null) {
-                        text = BuildConfig.FLAVOR;
+                        text = "";
                     }
                     if (v instanceof TextView) {
                         setViewText((TextView) v, text);

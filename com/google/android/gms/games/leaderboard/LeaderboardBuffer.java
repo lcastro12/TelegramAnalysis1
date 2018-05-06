@@ -1,19 +1,19 @@
 package com.google.android.gms.games.leaderboard;
 
-import com.google.android.gms.common.data.C0646d;
-import com.google.android.gms.common.data.C0647f;
+import com.google.android.gms.common.data.C1287d;
+import com.google.android.gms.common.data.C1288f;
 
-public final class LeaderboardBuffer extends C0647f<Leaderboard> {
-    public LeaderboardBuffer(C0646d dataHolder) {
+public final class LeaderboardBuffer extends C1288f<Leaderboard> {
+    public LeaderboardBuffer(C1287d dataHolder) {
         super(dataHolder);
     }
 
-    protected /* synthetic */ Object mo1484a(int i, int i2) {
+    protected /* synthetic */ Object mo2301a(int i, int i2) {
         return getEntry(i, i2);
     }
 
     protected Leaderboard getEntry(int rowIndex, int numChildren) {
-        return new C0659a(this.jf, rowIndex, numChildren);
+        return new C1300a(this.S, rowIndex, numChildren);
     }
 
     protected String getPrimaryDataMarkerColumn() {

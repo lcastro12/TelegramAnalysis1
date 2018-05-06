@@ -23,16 +23,18 @@ import java.util.UUID;
 import net.hockeyapp.android.Strings;
 import net.hockeyapp.android.listeners.DownloadFileListener;
 
-public class DownloadFileTask extends AsyncTask<String, Integer, Boolean> {
-    private Context context;
-    private String filePath = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download");
-    private String filename = (UUID.randomUUID() + ".apk");
-    private DownloadFileListener notifier;
-    private ProgressDialog progressDialog;
-    private String urlString;
+public class DownloadFileTask extends AsyncTask<Void, Integer, Long> {
+    protected static final int MAX_REDIRECTS = 6;
+    protected Context context;
+    private String downloadErrorMessage;
+    protected String filePath = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download");
+    protected String filename = (UUID.randomUUID() + ".apk");
+    protected DownloadFileListener notifier;
+    protected ProgressDialog progressDialog;
+    protected String urlString;
 
-    class C02841 implements OnClickListener {
-        C02841() {
+    class C02801 implements OnClickListener {
+        C02801() {
         }
 
         public void onClick(DialogInterface dialog, int which) {
@@ -40,8 +42,8 @@ public class DownloadFileTask extends AsyncTask<String, Integer, Boolean> {
         }
     }
 
-    class C02852 implements OnClickListener {
-        C02852() {
+    class C02812 implements OnClickListener {
+        C02812() {
         }
 
         public void onClick(DialogInterface dialog, int which) {
@@ -53,6 +55,7 @@ public class DownloadFileTask extends AsyncTask<String, Integer, Boolean> {
         this.context = context;
         this.urlString = urlString;
         this.notifier = notifier;
+        this.downloadErrorMessage = null;
     }
 
     public void attach(Context context) {
@@ -64,47 +67,65 @@ public class DownloadFileTask extends AsyncTask<String, Integer, Boolean> {
         this.progressDialog = null;
     }
 
-    protected Boolean doInBackground(String... args) {
+    protected Long doInBackground(Void... args) {
         try {
-            URLConnection connection = createConnection(new URL(getURLString()));
+            URLConnection connection = createConnection(new URL(getURLString()), 6);
             connection.connect();
-            int lenghtOfFile = connection.getContentLength();
-            File dir = new File(this.filePath);
-            if (dir.mkdirs() || dir.exists()) {
-                File file = new File(dir, this.filename);
-                InputStream input = new BufferedInputStream(connection.getInputStream());
-                OutputStream output = new FileOutputStream(file);
-                byte[] data = new byte[1024];
-                long total = 0;
-                while (true) {
-                    int count = input.read(data);
-                    if (count == -1) {
-                        break;
+            int lengthOfFile = connection.getContentLength();
+            String contentType = connection.getContentType();
+            if (contentType == null || !contentType.contains("text")) {
+                File dir = new File(this.filePath);
+                if (dir.mkdirs() || dir.exists()) {
+                    File file = new File(dir, this.filename);
+                    InputStream input = new BufferedInputStream(connection.getInputStream());
+                    OutputStream output = new FileOutputStream(file);
+                    byte[] data = new byte[1024];
+                    long total = 0;
+                    while (true) {
+                        int count = input.read(data);
+                        if (count != -1) {
+                            total += (long) count;
+                            publishProgress(new Integer[]{Integer.valueOf(Math.round((((float) total) * 100.0f) / ((float) lengthOfFile)))});
+                            output.write(data, 0, count);
+                        } else {
+                            output.flush();
+                            output.close();
+                            input.close();
+                            return Long.valueOf(total);
+                        }
                     }
-                    total += (long) count;
-                    publishProgress(new Integer[]{Integer.valueOf((int) ((100 * total) / ((long) lenghtOfFile)))});
-                    output.write(data, 0, count);
                 }
-                output.flush();
-                output.close();
-                input.close();
-                return Boolean.valueOf(total > 0);
+                throw new IOException("Could not create the dir(s):" + dir.getAbsolutePath());
             }
-            throw new IOException("Could not create the dir(s):" + dir.getAbsolutePath());
+            this.downloadErrorMessage = "The requested download does not appear to be a file.";
+            return Long.valueOf(0);
         } catch (Exception e) {
             e.printStackTrace();
-            return Boolean.valueOf(false);
+            return Long.valueOf(0);
         }
     }
 
-    protected URLConnection createConnection(URL url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    protected void setConnectionProperties(HttpURLConnection connection) {
         connection.addRequestProperty("User-Agent", "HockeySDK/Android");
         connection.setInstanceFollowRedirects(true);
         if (VERSION.SDK_INT <= 9) {
             connection.setRequestProperty("connection", "close");
         }
-        return connection;
+    }
+
+    protected URLConnection createConnection(URL url, int remainingRedirects) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        setConnectionProperties(connection);
+        int code = connection.getResponseCode();
+        if ((code != 301 && code != 302 && code != 303) || remainingRedirects == 0) {
+            return connection;
+        }
+        URL movedUrl = new URL(connection.getHeaderField("Location"));
+        if (url.getProtocol().equals(movedUrl.getProtocol())) {
+            return connection;
+        }
+        connection.disconnect();
+        return createConnection(movedUrl, remainingRedirects - 1);
     }
 
     protected void onProgressUpdate(Integer... args) {
@@ -121,14 +142,14 @@ public class DownloadFileTask extends AsyncTask<String, Integer, Boolean> {
         }
     }
 
-    protected void onPostExecute(Boolean result) {
+    protected void onPostExecute(Long result) {
         if (this.progressDialog != null) {
             try {
                 this.progressDialog.dismiss();
             } catch (Exception e) {
             }
         }
-        if (result.booleanValue()) {
+        if (result.longValue() > 0) {
             this.notifier.downloadSuccessful(this);
             Intent intent = new Intent("android.intent.action.VIEW");
             intent.setDataAndType(Uri.fromFile(new File(this.filePath, this.filename)), "application/vnd.android.package-archive");
@@ -137,17 +158,23 @@ public class DownloadFileTask extends AsyncTask<String, Integer, Boolean> {
             return;
         }
         try {
+            String message;
             Builder builder = new Builder(this.context);
-            builder.setTitle(Strings.get(this.notifier, 4));
-            builder.setMessage(Strings.get(this.notifier, 5));
-            builder.setNegativeButton(Strings.get(this.notifier, 6), new C02841());
-            builder.setPositiveButton(Strings.get(this.notifier, 7), new C02852());
+            builder.setTitle(Strings.get(this.notifier, 256));
+            if (this.downloadErrorMessage == null) {
+                message = Strings.get(this.notifier, 257);
+            } else {
+                message = this.downloadErrorMessage;
+            }
+            builder.setMessage(message);
+            builder.setNegativeButton(Strings.get(this.notifier, Strings.DOWNLOAD_FAILED_DIALOG_NEGATIVE_BUTTON_ID), new C02801());
+            builder.setPositiveButton(Strings.get(this.notifier, Strings.DOWNLOAD_FAILED_DIALOG_POSITIVE_BUTTON_ID), new C02812());
             builder.create().show();
         } catch (Exception e2) {
         }
     }
 
-    private String getURLString() {
+    protected String getURLString() {
         return this.urlString + "&type=apk";
     }
 }

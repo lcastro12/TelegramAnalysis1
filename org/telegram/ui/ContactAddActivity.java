@@ -1,43 +1,59 @@
 package org.telegram.ui;
 
+import android.content.Context;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
+import android.text.TextUtils.TruncateAt;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.AnimationUtils;
+import android.view.View.OnTouchListener;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.FrameLayout.LayoutParams;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import org.telegram.PhoneFormat.PhoneFormat;
-import org.telegram.TL.TLRPC.FileLocation;
-import org.telegram.TL.TLRPC.User;
-import org.telegram.messenger.C0419R;
-import org.telegram.messenger.ConnectionsManager;
-import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.C0553R;
+import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationCenter.NotificationCenterDelegate;
-import org.telegram.messenger.Utilities;
-import org.telegram.ui.Views.BackupImageView;
-import org.telegram.ui.Views.BaseFragment;
+import org.telegram.tgnet.TLObject;
+import org.telegram.tgnet.TLRPC.User;
+import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
+import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.Components.AvatarDrawable;
+import org.telegram.ui.Components.BackupImageView;
 
 public class ContactAddActivity extends BaseFragment implements NotificationCenterDelegate {
+    private static final int done_button = 1;
+    private boolean addContact;
     private BackupImageView avatarImage;
     private View doneButton;
     private EditText firstNameField;
     private EditText lastNameField;
-    private TextView onlineText;
+    private TextView nameTextView;
+    private TextView onlineTextView;
     private String phone = null;
-    private TextView phoneText;
     private int user_id;
 
-    class C04771 implements OnEditorActionListener {
-        C04771() {
+    class C09802 implements OnTouchListener {
+        C09802() {
+        }
+
+        public boolean onTouch(View v, MotionEvent event) {
+            return true;
+        }
+    }
+
+    class C09813 implements OnEditorActionListener {
+        C09813() {
         }
 
         public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
@@ -50,8 +66,8 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         }
     }
 
-    class C04782 implements OnEditorActionListener {
-        C04782() {
+    class C09824 implements OnEditorActionListener {
+        C09824() {
         }
 
         public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
@@ -63,170 +79,206 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
         }
     }
 
-    class C04793 implements OnClickListener {
-        C04793() {
+    class C15781 extends ActionBarMenuOnItemClick {
+        C15781() {
         }
 
-        public void onClick(View view) {
-            ContactAddActivity.this.finishFragment();
-        }
-    }
-
-    class C04804 implements OnClickListener {
-        C04804() {
-        }
-
-        public void onClick(View view) {
-            if (ContactAddActivity.this.firstNameField.getText().length() != 0) {
-                User user = (User) MessagesController.Instance.users.get(Integer.valueOf(ContactAddActivity.this.user_id));
+        public void onItemClick(int id) {
+            if (id == -1) {
+                ContactAddActivity.this.finishFragment();
+            } else if (id == 1 && ContactAddActivity.this.firstNameField.getText().length() != 0) {
+                User user = MessagesController.getInstance().getUser(Integer.valueOf(ContactAddActivity.this.user_id));
                 user.first_name = ContactAddActivity.this.firstNameField.getText().toString();
                 user.last_name = ContactAddActivity.this.lastNameField.getText().toString();
-                MessagesController.Instance.addContact(user);
+                ContactsController.getInstance().addContact(user);
                 ContactAddActivity.this.finishFragment();
+                NotificationCenter.getInstance().postNotificationName(NotificationCenter.updateInterfaces, Integer.valueOf(1));
             }
         }
     }
 
-    class C04815 implements AnimationListener {
-        C04815() {
-        }
-
-        public void onAnimationStart(Animation animation) {
-            ContactAddActivity.this.onAnimationStart();
-        }
-
-        public void onAnimationRepeat(Animation animation) {
-        }
-
-        public void onAnimationEnd(Animation animation) {
-            ContactAddActivity.this.onAnimationEnd();
-            ContactAddActivity.this.firstNameField.requestFocus();
-            Utilities.showKeyboard(ContactAddActivity.this.firstNameField);
-        }
+    public ContactAddActivity(Bundle args) {
+        super(args);
     }
 
     public boolean onFragmentCreate() {
-        super.onFragmentCreate();
-        NotificationCenter.Instance.addObserver(this, 3);
+        NotificationCenter.getInstance().addObserver(this, NotificationCenter.updateInterfaces);
         this.user_id = getArguments().getInt("user_id", 0);
         this.phone = getArguments().getString("phone");
+        this.addContact = getArguments().getBoolean("addContact", false);
+        if (MessagesController.getInstance().getUser(Integer.valueOf(this.user_id)) == null || !super.onFragmentCreate()) {
+            return false;
+        }
         return true;
     }
 
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        NotificationCenter.Instance.removeObserver(this, 3);
+        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.updateInterfaces);
     }
 
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        if (this.fragmentView == null) {
-            this.fragmentView = inflater.inflate(C0419R.layout.contact_add_layout, container, false);
-            User user = (User) MessagesController.Instance.users.get(Integer.valueOf(this.user_id));
-            if (this.phone != null) {
+    public View createView(Context context) {
+        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
+        this.actionBar.setAllowOverlayTitle(true);
+        if (this.addContact) {
+            this.actionBar.setTitle(LocaleController.getString("AddContactTitle", C0553R.string.AddContactTitle));
+        } else {
+            this.actionBar.setTitle(LocaleController.getString("EditName", C0553R.string.EditName));
+        }
+        this.actionBar.setActionBarMenuOnItemClick(new C15781());
+        this.doneButton = this.actionBar.createMenu().addItemWithWidth(1, C0553R.drawable.ic_done, AndroidUtilities.dp(56.0f));
+        this.fragmentView = new ScrollView(context);
+        LinearLayout linearLayout = new LinearLayout(context);
+        linearLayout.setOrientation(1);
+        ((ScrollView) this.fragmentView).addView(linearLayout);
+        LayoutParams layoutParams2 = (LayoutParams) linearLayout.getLayoutParams();
+        layoutParams2.width = -1;
+        layoutParams2.height = -2;
+        linearLayout.setLayoutParams(layoutParams2);
+        linearLayout.setOnTouchListener(new C09802());
+        FrameLayout frameLayout = new FrameLayout(context);
+        linearLayout.addView(frameLayout);
+        LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) frameLayout.getLayoutParams();
+        layoutParams.topMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.leftMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.rightMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.width = -1;
+        layoutParams.height = -2;
+        frameLayout.setLayoutParams(layoutParams);
+        this.avatarImage = new BackupImageView(context);
+        this.avatarImage.setRoundRadius(AndroidUtilities.dp(BitmapDescriptorFactory.HUE_ORANGE));
+        frameLayout.addView(this.avatarImage);
+        LayoutParams layoutParams3 = (LayoutParams) this.avatarImage.getLayoutParams();
+        layoutParams3.gravity = (LocaleController.isRTL ? 5 : 3) | 48;
+        layoutParams3.width = AndroidUtilities.dp(BitmapDescriptorFactory.HUE_YELLOW);
+        layoutParams3.height = AndroidUtilities.dp(BitmapDescriptorFactory.HUE_YELLOW);
+        this.avatarImage.setLayoutParams(layoutParams3);
+        this.nameTextView = new TextView(context);
+        this.nameTextView.setTextColor(-14606047);
+        this.nameTextView.setTextSize(1, 20.0f);
+        this.nameTextView.setLines(1);
+        this.nameTextView.setMaxLines(1);
+        this.nameTextView.setSingleLine(true);
+        this.nameTextView.setEllipsize(TruncateAt.END);
+        this.nameTextView.setGravity(LocaleController.isRTL ? 5 : 3);
+        this.nameTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        frameLayout.addView(this.nameTextView);
+        layoutParams3 = (LayoutParams) this.nameTextView.getLayoutParams();
+        layoutParams3.width = -2;
+        layoutParams3.height = -2;
+        layoutParams3.leftMargin = AndroidUtilities.dp(LocaleController.isRTL ? 0.0f : 80.0f);
+        layoutParams3.rightMargin = AndroidUtilities.dp(LocaleController.isRTL ? 80.0f : 0.0f);
+        layoutParams3.topMargin = AndroidUtilities.dp(3.0f);
+        layoutParams3.gravity = (LocaleController.isRTL ? 5 : 3) | 48;
+        this.nameTextView.setLayoutParams(layoutParams3);
+        this.onlineTextView = new TextView(context);
+        this.onlineTextView.setTextColor(-6710887);
+        this.onlineTextView.setTextSize(1, 14.0f);
+        this.onlineTextView.setLines(1);
+        this.onlineTextView.setMaxLines(1);
+        this.onlineTextView.setSingleLine(true);
+        this.onlineTextView.setEllipsize(TruncateAt.END);
+        this.onlineTextView.setGravity(LocaleController.isRTL ? 5 : 3);
+        frameLayout.addView(this.onlineTextView);
+        layoutParams3 = (LayoutParams) this.onlineTextView.getLayoutParams();
+        layoutParams3.width = -2;
+        layoutParams3.height = -2;
+        layoutParams3.leftMargin = AndroidUtilities.dp(LocaleController.isRTL ? 0.0f : 80.0f);
+        layoutParams3.rightMargin = AndroidUtilities.dp(LocaleController.isRTL ? 80.0f : 0.0f);
+        layoutParams3.topMargin = AndroidUtilities.dp(32.0f);
+        layoutParams3.gravity = (LocaleController.isRTL ? 5 : 3) | 48;
+        this.onlineTextView.setLayoutParams(layoutParams3);
+        this.firstNameField = new EditText(context);
+        this.firstNameField.setTextSize(1, 18.0f);
+        this.firstNameField.setHintTextColor(-6842473);
+        this.firstNameField.setTextColor(-14606047);
+        this.firstNameField.setMaxLines(1);
+        this.firstNameField.setLines(1);
+        this.firstNameField.setSingleLine(true);
+        this.firstNameField.setGravity(LocaleController.isRTL ? 5 : 3);
+        this.firstNameField.setInputType(49152);
+        this.firstNameField.setImeOptions(5);
+        this.firstNameField.setHint(LocaleController.getString("FirstName", C0553R.string.FirstName));
+        AndroidUtilities.clearCursorDrawable(this.firstNameField);
+        linearLayout.addView(this.firstNameField);
+        layoutParams = (LinearLayout.LayoutParams) this.firstNameField.getLayoutParams();
+        layoutParams.topMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.height = AndroidUtilities.dp(36.0f);
+        layoutParams.leftMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.rightMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.width = -1;
+        this.firstNameField.setLayoutParams(layoutParams);
+        this.firstNameField.setOnEditorActionListener(new C09813());
+        this.lastNameField = new EditText(context);
+        this.lastNameField.setTextSize(1, 18.0f);
+        this.lastNameField.setHintTextColor(-6842473);
+        this.lastNameField.setTextColor(-14606047);
+        this.lastNameField.setMaxLines(1);
+        this.lastNameField.setLines(1);
+        this.lastNameField.setSingleLine(true);
+        this.lastNameField.setGravity(LocaleController.isRTL ? 5 : 3);
+        this.lastNameField.setInputType(49152);
+        this.lastNameField.setImeOptions(6);
+        this.lastNameField.setHint(LocaleController.getString("LastName", C0553R.string.LastName));
+        AndroidUtilities.clearCursorDrawable(this.lastNameField);
+        linearLayout.addView(this.lastNameField);
+        layoutParams = (LinearLayout.LayoutParams) this.lastNameField.getLayoutParams();
+        layoutParams.topMargin = AndroidUtilities.dp(16.0f);
+        layoutParams.height = AndroidUtilities.dp(36.0f);
+        layoutParams.leftMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.rightMargin = AndroidUtilities.dp(24.0f);
+        layoutParams.width = -1;
+        this.lastNameField.setLayoutParams(layoutParams);
+        this.lastNameField.setOnEditorActionListener(new C09824());
+        User user = MessagesController.getInstance().getUser(Integer.valueOf(this.user_id));
+        if (user != null) {
+            if (user.phone == null && this.phone != null) {
                 user.phone = PhoneFormat.stripExceptNumbers(this.phone);
             }
-            this.onlineText = (TextView) this.fragmentView.findViewById(C0419R.id.settings_online);
-            this.avatarImage = (BackupImageView) this.fragmentView.findViewById(C0419R.id.settings_avatar_image);
-            this.phoneText = (TextView) this.fragmentView.findViewById(C0419R.id.settings_name);
-            this.phoneText.setTypeface(Utilities.getTypeface("fonts/rmedium.ttf"));
-            this.firstNameField = (EditText) this.fragmentView.findViewById(C0419R.id.first_name_field);
-            this.firstNameField.setOnEditorActionListener(new C04771());
-            this.lastNameField = (EditText) this.fragmentView.findViewById(C0419R.id.last_name_field);
-            this.lastNameField.setOnEditorActionListener(new C04782());
-            if (user != null) {
-                this.firstNameField.setText(user.first_name);
-                this.firstNameField.setSelection(this.firstNameField.length());
-                this.lastNameField.setText(user.last_name);
-            }
-            updateAvatarLayout();
-        } else {
-            ViewGroup parent = (ViewGroup) this.fragmentView.getParent();
-            if (parent != null) {
-                parent.removeView(this.fragmentView);
-            }
+            this.firstNameField.setText(user.first_name);
+            this.firstNameField.setSelection(this.firstNameField.length());
+            this.lastNameField.setText(user.last_name);
         }
         return this.fragmentView;
     }
 
     private void updateAvatarLayout() {
-        if (this.phoneText != null) {
-            User user = (User) MessagesController.Instance.users.get(Integer.valueOf(this.user_id));
+        if (this.nameTextView != null) {
+            User user = MessagesController.getInstance().getUser(Integer.valueOf(this.user_id));
             if (user != null) {
-                this.phoneText.setText(PhoneFormat.Instance.format("+" + user.phone));
-                if (user.status == null) {
-                    this.onlineText.setText(getStringEntry(C0419R.string.Offline));
-                } else {
-                    int currentTime = ConnectionsManager.Instance.getCurrentTime();
-                    if (user.status.expires > currentTime || user.status.was_online > currentTime) {
-                        this.onlineText.setText(getStringEntry(C0419R.string.Online));
-                    } else if (user.status.was_online > FileLoader.FileDidUpload || user.status.expires > FileLoader.FileDidUpload) {
-                        int value = user.status.was_online;
-                        if (value == 0) {
-                            value = user.status.expires;
-                        }
-                        this.onlineText.setText(String.format("%s %s", new Object[]{getStringEntry(C0419R.string.LastSeen), Utilities.formatDateOnline((long) value)}));
-                    } else {
-                        this.onlineText.setText(getStringEntry(C0419R.string.Invisible));
-                    }
-                }
-                FileLocation photo = null;
+                this.nameTextView.setText(PhoneFormat.getInstance().format("+" + user.phone));
+                this.onlineTextView.setText(LocaleController.formatUserStatus(user));
+                TLObject photo = null;
                 if (user.photo != null) {
                     photo = user.photo.photo_small;
                 }
-                this.avatarImage.setImage(photo, "50_50", Utilities.getUserAvatarForId(user.id));
+                this.avatarImage.setImage(photo, "50_50", new AvatarDrawable(user));
             }
         }
     }
 
     public void didReceivedNotification(int id, Object... args) {
-        if (id == 3 && (((Integer) args[0]).intValue() & 2) != 0) {
-            updateAvatarLayout();
-        }
-    }
-
-    public boolean canApplyUpdateStatus() {
-        return false;
-    }
-
-    public void applySelfActionBar() {
-        if (this.parentActivity != null) {
-            ActionBar actionBar = this.parentActivity.getSupportActionBar();
-            actionBar.setDisplayShowCustomEnabled(true);
-            actionBar.setDisplayShowHomeEnabled(false);
-            actionBar.setDisplayHomeAsUpEnabled(false);
-            actionBar.setDisplayShowTitleEnabled(false);
-            TextView title = (TextView) this.parentActivity.findViewById(C0419R.id.action_bar_title);
-            if (title == null) {
-                title = (TextView) this.parentActivity.findViewById(this.parentActivity.getResources().getIdentifier("action_bar_title", "id", "android"));
+        if (id == NotificationCenter.updateInterfaces) {
+            int mask = ((Integer) args[0]).intValue();
+            if ((mask & 2) != 0 || (mask & 4) != 0) {
+                updateAvatarLayout();
             }
-            if (title != null) {
-                title.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-                title.setCompoundDrawablePadding(0);
-            }
-            actionBar.setCustomView((int) C0419R.layout.settings_do_action_layout);
-            actionBar.getCustomView().findViewById(C0419R.id.cancel_button).setOnClickListener(new C04793());
-            this.doneButton = actionBar.getCustomView().findViewById(C0419R.id.done_button);
-            this.doneButton.setOnClickListener(new C04804());
         }
     }
 
     public void onResume() {
         super.onResume();
-        if (getActivity() != null) {
-            ((ApplicationActivity) this.parentActivity).updateActionBar();
-            if (!ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", 0).getBoolean("view_animations", true)) {
-                this.firstNameField.requestFocus();
-                Utilities.showKeyboard(this.firstNameField);
-            }
+        updateAvatarLayout();
+        if (!ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", 0).getBoolean("view_animations", true)) {
+            this.firstNameField.requestFocus();
+            AndroidUtilities.showKeyboard(this.firstNameField);
         }
     }
 
-    public Animation onCreateAnimation(int transit, boolean enter, int nextAnim) {
-        if (nextAnim == 0) {
-            return super.onCreateAnimation(transit, enter, nextAnim);
+    public void onTransitionAnimationEnd(boolean isOpen, boolean backward) {
+        if (isOpen) {
+            this.firstNameField.requestFocus();
+            AndroidUtilities.showKeyboard(this.firstNameField);
         }
-        Animation anim = AnimationUtils.loadAnimation(getActivity(), nextAnim);
-        anim.setAnimationListener(new C04815());
-        return anim;
     }
 }

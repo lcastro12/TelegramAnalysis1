@@ -5,34 +5,34 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcel;
 import android.os.RemoteException;
-import com.google.android.gms.dynamic.C0112b;
-import com.google.android.gms.dynamic.C0112b.C0655a;
+import com.google.android.gms.dynamic.C0146b;
+import com.google.android.gms.dynamic.C0146b.C1296a;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.VisibleRegion;
 
 public interface IProjectionDelegate extends IInterface {
 
-    public static abstract class C0792a extends Binder implements IProjectionDelegate {
+    public static abstract class C1384a extends Binder implements IProjectionDelegate {
 
-        private static class C0791a implements IProjectionDelegate {
-            private IBinder dG;
+        private static class C1383a implements IProjectionDelegate {
+            private IBinder f106a;
 
-            C0791a(IBinder iBinder) {
-                this.dG = iBinder;
+            C1383a(IBinder iBinder) {
+                this.f106a = iBinder;
             }
 
             public IBinder asBinder() {
-                return this.dG;
+                return this.f106a;
             }
 
-            public LatLng fromScreenLocation(C0112b point) throws RemoteException {
+            public LatLng fromScreenLocation(C0146b point) throws RemoteException {
                 LatLng latLng = null;
                 Parcel obtain = Parcel.obtain();
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IProjectionDelegate");
                     obtain.writeStrongBinder(point != null ? point.asBinder() : null);
-                    this.dG.transact(1, obtain, obtain2, 0);
+                    this.f106a.transact(1, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         latLng = LatLng.CREATOR.createFromParcel(obtain2);
@@ -51,7 +51,7 @@ public interface IProjectionDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IProjectionDelegate");
-                    this.dG.transact(3, obtain, obtain2, 0);
+                    this.f106a.transact(3, obtain, obtain2, 0);
                     obtain2.readException();
                     VisibleRegion createFromParcel = obtain2.readInt() != 0 ? VisibleRegion.CREATOR.createFromParcel(obtain2) : null;
                     obtain2.recycle();
@@ -63,7 +63,7 @@ public interface IProjectionDelegate extends IInterface {
                 }
             }
 
-            public C0112b toScreenLocation(LatLng location) throws RemoteException {
+            public C0146b toScreenLocation(LatLng location) throws RemoteException {
                 Parcel obtain = Parcel.obtain();
                 Parcel obtain2 = Parcel.obtain();
                 try {
@@ -74,10 +74,10 @@ public interface IProjectionDelegate extends IInterface {
                     } else {
                         obtain.writeInt(0);
                     }
-                    this.dG.transact(2, obtain, obtain2, 0);
+                    this.f106a.transact(2, obtain, obtain2, 0);
                     obtain2.readException();
-                    C0112b z = C0655a.m828z(obtain2.readStrongBinder());
-                    return z;
+                    C0146b l = C1296a.m652l(obtain2.readStrongBinder());
+                    return l;
                 } finally {
                     obtain2.recycle();
                     obtain.recycle();
@@ -85,12 +85,12 @@ public interface IProjectionDelegate extends IInterface {
             }
         }
 
-        public static IProjectionDelegate m1259Z(IBinder iBinder) {
+        public static IProjectionDelegate m1056K(IBinder iBinder) {
             if (iBinder == null) {
                 return null;
             }
             IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.maps.internal.IProjectionDelegate");
-            return (queryLocalInterface == null || !(queryLocalInterface instanceof IProjectionDelegate)) ? new C0791a(iBinder) : (IProjectionDelegate) queryLocalInterface;
+            return (queryLocalInterface == null || !(queryLocalInterface instanceof IProjectionDelegate)) ? new C1383a(iBinder) : (IProjectionDelegate) queryLocalInterface;
         }
 
         public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
@@ -98,7 +98,7 @@ public interface IProjectionDelegate extends IInterface {
             switch (code) {
                 case 1:
                     data.enforceInterface("com.google.android.gms.maps.internal.IProjectionDelegate");
-                    LatLng fromScreenLocation = fromScreenLocation(C0655a.m828z(data.readStrongBinder()));
+                    LatLng fromScreenLocation = fromScreenLocation(C1296a.m652l(data.readStrongBinder()));
                     reply.writeNoException();
                     if (fromScreenLocation != null) {
                         reply.writeInt(1);
@@ -109,7 +109,7 @@ public interface IProjectionDelegate extends IInterface {
                     return true;
                 case 2:
                     data.enforceInterface("com.google.android.gms.maps.internal.IProjectionDelegate");
-                    C0112b toScreenLocation = toScreenLocation(data.readInt() != 0 ? LatLng.CREATOR.createFromParcel(data) : null);
+                    C0146b toScreenLocation = toScreenLocation(data.readInt() != 0 ? LatLng.CREATOR.createFromParcel(data) : null);
                     reply.writeNoException();
                     if (toScreenLocation != null) {
                         iBinder = toScreenLocation.asBinder();
@@ -136,9 +136,9 @@ public interface IProjectionDelegate extends IInterface {
         }
     }
 
-    LatLng fromScreenLocation(C0112b c0112b) throws RemoteException;
+    LatLng fromScreenLocation(C0146b c0146b) throws RemoteException;
 
     VisibleRegion getVisibleRegion() throws RemoteException;
 
-    C0112b toScreenLocation(LatLng latLng) throws RemoteException;
+    C0146b toScreenLocation(LatLng latLng) throws RemoteException;
 }

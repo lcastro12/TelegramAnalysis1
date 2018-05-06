@@ -1,10 +1,13 @@
 package net.hockeyapp.android;
 
+import android.app.Activity;
 import android.app.AlertDialog.Builder;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
+import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import com.google.android.gms.plus.PlusShare;
 import java.io.BufferedReader;
@@ -15,24 +18,25 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.net.HttpURLConnection;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import net.hockeyapp.android.utils.ConnectionManager;
+import java.util.Map;
+import net.hockeyapp.android.objects.CrashManagerUserInput;
+import net.hockeyapp.android.objects.CrashMetaData;
+import net.hockeyapp.android.utils.HttpURLConnectionBuilder;
 import net.hockeyapp.android.utils.PrefsUtil;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.telegram.messenger.BuildConfig;
+import net.hockeyapp.android.utils.Util;
 
 public class CrashManager {
+    private static final String ALWAYS_SEND_KEY = "always_send_crash_reports";
     private static String identifier = null;
+    private static boolean submitting = false;
     private static String urlString = null;
 
-    static class C02714 implements FilenameFilter {
-        C02714() {
+    static class C02535 implements FilenameFilter {
+        C02535() {
         }
 
         public boolean accept(File dir, String name) {
@@ -63,6 +67,7 @@ public class CrashManager {
 
     public static void execute(Context context, CrashManagerListener listener) {
         boolean z;
+        boolean z2 = true;
         if (listener == null || !listener.ignoreDefaultHandler()) {
             z = false;
         } else {
@@ -72,7 +77,10 @@ public class CrashManager {
         WeakReference<Context> weakContext = new WeakReference(context);
         int foundOrSend = hasStackTraces(weakContext);
         if (foundOrSend == 1) {
-            Boolean autoSend = Boolean.valueOf(false);
+            if (context instanceof Activity) {
+                z2 = false;
+            }
+            Boolean autoSend = Boolean.valueOf(Boolean.valueOf(z2).booleanValue() | PreferenceManager.getDefaultSharedPreferences(context).getBoolean(ALWAYS_SEND_KEY, false));
             if (listener != null) {
                 autoSend = Boolean.valueOf(Boolean.valueOf(autoSend.booleanValue() | listener.shouldAutoUploadCrashes()).booleanValue() | listener.onCrashesFound());
                 listener.onNewCrashesFound();
@@ -102,7 +110,7 @@ public class CrashManager {
             try {
                 Context context = (Context) weakContext.get();
                 if (context != null) {
-                    confirmedFilenames = Arrays.asList(context.getSharedPreferences(Constants.SDK_NAME, 0).getString("ConfirmedFilenames", BuildConfig.FLAVOR).split("\\|"));
+                    confirmedFilenames = Arrays.asList(context.getSharedPreferences(Constants.SDK_NAME, 0).getString("ConfirmedFilenames", "").split("\\|"));
                 }
             } catch (Exception e) {
             }
@@ -119,55 +127,111 @@ public class CrashManager {
     }
 
     public static void submitStackTraces(WeakReference<Context> weakContext, CrashManagerListener listener) {
+        submitStackTraces(weakContext, listener, null);
+    }
+
+    public static void submitStackTraces(WeakReference<Context> weakContext, CrashManagerListener listener, CrashMetaData crashMetaData) {
         String[] list = searchForStackTraces();
         Boolean successful = Boolean.valueOf(false);
         if (list != null && list.length > 0) {
-            Log.d(Constants.TAG, "Found " + list.length + " stacktrace(s).");
+            Log.d("HockeyApp", "Found " + list.length + " stacktrace(s).");
             for (int index = 0; index < list.length; index++) {
+                HttpURLConnection urlConnection = null;
+                String str;
+                int maxRetryAttempts;
                 try {
                     String filename = list[index];
                     String stacktrace = contentsOfFile(weakContext, filename);
                     if (stacktrace.length() > 0) {
-                        Log.d(Constants.TAG, "Transmitting crash data: \n" + stacktrace);
-                        DefaultHttpClient httpClient = (DefaultHttpClient) ConnectionManager.getInstance().getHttpClient();
-                        HttpPost httpPost = new HttpPost(getURLString());
-                        List<NameValuePair> parameters = new ArrayList();
-                        parameters.add(new BasicNameValuePair("raw", stacktrace));
-                        parameters.add(new BasicNameValuePair("userID", contentsOfFile(weakContext, filename.replace(".stacktrace", ".user"))));
-                        parameters.add(new BasicNameValuePair("contact", contentsOfFile(weakContext, filename.replace(".stacktrace", ".contact"))));
-                        parameters.add(new BasicNameValuePair(PlusShare.KEY_CONTENT_DEEP_LINK_METADATA_DESCRIPTION, contentsOfFile(weakContext, filename.replace(".stacktrace", ".description"))));
-                        parameters.add(new BasicNameValuePair("sdk", Constants.SDK_NAME));
-                        parameters.add(new BasicNameValuePair("sdk_version", Constants.SDK_VERSION));
-                        httpPost.setEntity(new UrlEncodedFormEntity(parameters, "UTF-8"));
-                        httpClient.execute(httpPost);
-                        successful = Boolean.valueOf(true);
+                        Log.d("HockeyApp", "Transmitting crash data: \n" + stacktrace);
+                        String userID = contentsOfFile(weakContext, filename.replace(".stacktrace", ".user"));
+                        String contact = contentsOfFile(weakContext, filename.replace(".stacktrace", ".contact"));
+                        if (crashMetaData != null) {
+                            String crashMetaDataUserID = crashMetaData.getUserID();
+                            if (crashMetaDataUserID != null && crashMetaDataUserID.length() > 0) {
+                                userID = crashMetaDataUserID;
+                            }
+                            String crashMetaDataContact = crashMetaData.getUserEmail();
+                            if (crashMetaDataContact != null && crashMetaDataContact.length() > 0) {
+                                contact = crashMetaDataContact;
+                            }
+                        }
+                        String applicationLog = contentsOfFile(weakContext, filename.replace(".stacktrace", ".description"));
+                        String description = crashMetaData != null ? crashMetaData.getUserDescription() : "";
+                        if (applicationLog != null && applicationLog.length() > 0) {
+                            description = (description == null || description.length() <= 0) ? String.format("Log:\n%s", new Object[]{applicationLog}) : String.format("%s\n\nLog:\n%s", new Object[]{description, applicationLog});
+                        }
+                        Map<String, String> parameters = new HashMap();
+                        parameters.put("raw", stacktrace);
+                        parameters.put("userID", userID);
+                        parameters.put("contact", contact);
+                        parameters.put(PlusShare.KEY_CONTENT_DEEP_LINK_METADATA_DESCRIPTION, description);
+                        parameters.put("sdk", Constants.SDK_NAME);
+                        parameters.put("sdk_version", Constants.SDK_VERSION);
+                        urlConnection = new HttpURLConnectionBuilder(getURLString()).setRequestMethod("POST").writeFormFields(parameters).build();
+                        int responseCode = urlConnection.getResponseCode();
+                        boolean z = responseCode == 202 || responseCode == 201;
+                        successful = Boolean.valueOf(z);
+                    }
+                    if (urlConnection != null) {
+                        urlConnection.disconnect();
                     }
                     if (successful.booleanValue()) {
+                        Log.d("HockeyApp", "Transmission succeeded");
                         deleteStackTrace(weakContext, list[index]);
                         if (listener != null) {
                             listener.onCrashesSent();
+                            str = list[index];
+                            maxRetryAttempts = listener.getMaxRetryAttempts();
+                            deleteRetryCounter(weakContext, str, maxRetryAttempts);
                         }
-                    } else if (listener != null) {
-                        listener.onCrashesNotSent();
+                    } else {
+                        Log.d("HockeyApp", "Transmission failed, will retry on next register() call");
+                        if (listener != null) {
+                            listener.onCrashesNotSent();
+                            str = list[index];
+                            maxRetryAttempts = listener.getMaxRetryAttempts();
+                            updateRetryCounter(weakContext, str, maxRetryAttempts);
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
+                    if (urlConnection != null) {
+                        urlConnection.disconnect();
+                    }
                     if (successful.booleanValue()) {
+                        Log.d("HockeyApp", "Transmission succeeded");
                         deleteStackTrace(weakContext, list[index]);
                         if (listener != null) {
                             listener.onCrashesSent();
+                            str = list[index];
+                            maxRetryAttempts = listener.getMaxRetryAttempts();
                         }
-                    } else if (listener != null) {
-                        listener.onCrashesNotSent();
+                    } else {
+                        Log.d("HockeyApp", "Transmission failed, will retry on next register() call");
+                        if (listener != null) {
+                            listener.onCrashesNotSent();
+                            str = list[index];
+                            maxRetryAttempts = listener.getMaxRetryAttempts();
+                        }
                     }
                 } catch (Throwable th) {
+                    if (urlConnection != null) {
+                        urlConnection.disconnect();
+                    }
                     if (successful.booleanValue()) {
+                        Log.d("HockeyApp", "Transmission succeeded");
                         deleteStackTrace(weakContext, list[index]);
                         if (listener != null) {
                             listener.onCrashesSent();
+                            deleteRetryCounter(weakContext, list[index], listener.getMaxRetryAttempts());
                         }
-                    } else if (listener != null) {
-                        listener.onCrashesNotSent();
+                    } else {
+                        Log.d("HockeyApp", "Transmission failed, will retry on next register() call");
+                        if (listener != null) {
+                            listener.onCrashesNotSent();
+                            updateRetryCounter(weakContext, list[index], listener.getMaxRetryAttempts());
+                        }
                     }
                 }
             }
@@ -177,11 +241,11 @@ public class CrashManager {
     public static void deleteStackTraces(WeakReference<Context> weakContext) {
         String[] list = searchForStackTraces();
         if (list != null && list.length > 0) {
-            Log.d(Constants.TAG, "Found " + list.length + " stacktrace(s).");
+            Log.d("HockeyApp", "Found " + list.length + " stacktrace(s).");
             for (int index = 0; index < list.length; index++) {
                 if (weakContext != null) {
                     try {
-                        Log.d(Constants.TAG, "Delete stacktrace " + list[index] + ".");
+                        Log.d("HockeyApp", "Delete stacktrace " + list[index] + ".");
                         deleteStackTrace(weakContext, list[index]);
                         Context context = (Context) weakContext.get();
                         if (context != null) {
@@ -195,10 +259,47 @@ public class CrashManager {
         }
     }
 
+    public static boolean handleUserInput(CrashManagerUserInput userInput, CrashMetaData userProvidedMetaData, CrashManagerListener listener, WeakReference<Context> weakContext, boolean ignoreDefaultHandler) {
+        switch (userInput) {
+            case CrashManagerUserInputDontSend:
+                if (listener != null) {
+                    listener.onUserDeniedCrashes();
+                }
+                deleteStackTraces(weakContext);
+                registerHandler(weakContext, listener, ignoreDefaultHandler);
+                return true;
+            case CrashManagerUserInputAlwaysSend:
+                Context context = null;
+                if (weakContext != null) {
+                    context = (Context) weakContext.get();
+                }
+                if (context == null) {
+                    return false;
+                }
+                PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(ALWAYS_SEND_KEY, true).commit();
+                sendCrashes(weakContext, listener, ignoreDefaultHandler, userProvidedMetaData);
+                return true;
+            case CrashManagerUserInputSend:
+                sendCrashes(weakContext, listener, ignoreDefaultHandler, userProvidedMetaData);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static void resetAlwaysSend(WeakReference<Context> weakContext) {
+        if (weakContext != null) {
+            Context context = (Context) weakContext.get();
+            if (context != null) {
+                PreferenceManager.getDefaultSharedPreferences(context).edit().remove(ALWAYS_SEND_KEY).commit();
+            }
+        }
+    }
+
     private static void initialize(Context context, String urlString, String appIdentifier, CrashManagerListener listener, boolean registerHandler) {
         if (context != null) {
             urlString = urlString;
-            identifier = appIdentifier;
+            identifier = Util.sanitizeAppIdentifier(appIdentifier);
             Constants.loadFromContext(context);
             if (identifier == null) {
                 identifier = Constants.APP_PACKAGE;
@@ -216,45 +317,57 @@ public class CrashManager {
             context = (Context) weakContext.get();
         }
         if (context != null) {
-            Builder builder = new Builder(context);
-            builder.setTitle(Strings.get(listener, 0));
-            builder.setMessage(Strings.get(listener, 1));
-            builder.setNegativeButton(Strings.get(listener, 2), new OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    if (listener != null) {
-                        listener.onUserDeniedCrashes();
+            if (listener == null || !listener.onHandleAlertView()) {
+                Builder builder = new Builder(context);
+                builder.setTitle(Strings.get(listener, 0));
+                builder.setMessage(Strings.get(listener, 1));
+                builder.setNegativeButton(Strings.get(listener, 2), new OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        CrashManager.handleUserInput(CrashManagerUserInput.CrashManagerUserInputDontSend, null, listener, weakContext, ignoreDefaultHandler);
                     }
-                    CrashManager.deleteStackTraces(weakContext);
-                    CrashManager.registerHandler(weakContext, listener, ignoreDefaultHandler);
-                }
-            });
-            builder.setPositiveButton(Strings.get(listener, 3), new OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    CrashManager.sendCrashes(weakContext, listener, ignoreDefaultHandler);
-                }
-            });
-            builder.create().show();
+                });
+                builder.setNeutralButton(Strings.get(listener, 3), new OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        CrashManager.handleUserInput(CrashManagerUserInput.CrashManagerUserInputAlwaysSend, null, listener, weakContext, ignoreDefaultHandler);
+                    }
+                });
+                builder.setPositiveButton(Strings.get(listener, 4), new OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        CrashManager.handleUserInput(CrashManagerUserInput.CrashManagerUserInputSend, null, listener, weakContext, ignoreDefaultHandler);
+                    }
+                });
+                builder.create().show();
+            }
         }
     }
 
-    private static void sendCrashes(final WeakReference<Context> weakContext, final CrashManagerListener listener, final boolean ignoreDefaultHandler) {
+    private static void sendCrashes(WeakReference<Context> weakContext, CrashManagerListener listener, boolean ignoreDefaultHandler) {
+        sendCrashes(weakContext, listener, ignoreDefaultHandler, null);
+    }
+
+    private static void sendCrashes(final WeakReference<Context> weakContext, final CrashManagerListener listener, boolean ignoreDefaultHandler, final CrashMetaData crashMetaData) {
         saveConfirmedStackTraces(weakContext);
-        new Thread() {
-            public void run() {
-                CrashManager.submitStackTraces(weakContext, listener);
-                CrashManager.registerHandler(weakContext, listener, ignoreDefaultHandler);
-            }
-        }.start();
+        registerHandler(weakContext, listener, ignoreDefaultHandler);
+        Context ctx = (Context) weakContext.get();
+        if ((ctx == null || Util.isConnectedToNetwork(ctx)) && !submitting) {
+            submitting = true;
+            new Thread() {
+                public void run() {
+                    CrashManager.submitStackTraces(weakContext, listener, crashMetaData);
+                    CrashManager.submitting = false;
+                }
+            }.start();
+        }
     }
 
     private static void registerHandler(WeakReference<Context> weakReference, CrashManagerListener listener, boolean ignoreDefaultHandler) {
         if (Constants.APP_VERSION == null || Constants.APP_PACKAGE == null) {
-            Log.d(Constants.TAG, "Exception handler not set because version or package is null.");
+            Log.d("HockeyApp", "Exception handler not set because version or package is null.");
             return;
         }
         UncaughtExceptionHandler currentHandler = Thread.getDefaultUncaughtExceptionHandler();
         if (currentHandler != null) {
-            Log.d(Constants.TAG, "Current handler class = " + currentHandler.getClass().getName());
+            Log.d("HockeyApp", "Current handler class = " + currentHandler.getClass().getName());
         }
         if (currentHandler instanceof ExceptionHandler) {
             ((ExceptionHandler) currentHandler).setListener(listener);
@@ -265,6 +378,35 @@ public class CrashManager {
 
     private static String getURLString() {
         return urlString + "api/2/apps/" + identifier + "/crashes/";
+    }
+
+    private static void updateRetryCounter(WeakReference<Context> weakContext, String filename, int maxRetryAttempts) {
+        if (maxRetryAttempts != -1 && weakContext != null) {
+            Context context = (Context) weakContext.get();
+            if (context != null) {
+                SharedPreferences preferences = context.getSharedPreferences(Constants.SDK_NAME, 0);
+                Editor editor = preferences.edit();
+                int retryCounter = preferences.getInt("RETRY_COUNT: " + filename, 0);
+                if (retryCounter >= maxRetryAttempts) {
+                    deleteStackTrace(weakContext, filename);
+                    deleteRetryCounter(weakContext, filename, maxRetryAttempts);
+                    return;
+                }
+                editor.putInt("RETRY_COUNT: " + filename, retryCounter + 1);
+                editor.commit();
+            }
+        }
+    }
+
+    private static void deleteRetryCounter(WeakReference<Context> weakContext, String filename, int maxRetryAttempts) {
+        if (weakContext != null) {
+            Context context = (Context) weakContext.get();
+            if (context != null) {
+                Editor editor = context.getSharedPreferences(Constants.SDK_NAME, 0).edit();
+                editor.remove("RETRY_COUNT: " + filename);
+                editor.commit();
+            }
+        }
     }
 
     private static void deleteStackTrace(WeakReference<Context> weakContext, String filename) {
@@ -310,11 +452,10 @@ public class CrashManager {
                     if (reader2 != null) {
                         try {
                             reader2.close();
-                            reader = reader2;
                         } catch (IOException e4) {
-                            reader = reader2;
                         }
                     }
+                    reader = reader2;
                 } catch (FileNotFoundException e5) {
                     if (reader != null) {
                         try {
@@ -328,10 +469,7 @@ public class CrashManager {
                     try {
                         e.printStackTrace();
                         if (reader != null) {
-                            try {
-                                reader.close();
-                            } catch (IOException e8) {
-                            }
+                            reader.close();
                         }
                         return contents.toString();
                     } catch (Throwable th3) {
@@ -339,7 +477,7 @@ public class CrashManager {
                         if (reader != null) {
                             try {
                                 reader.close();
-                            } catch (IOException e9) {
+                            } catch (IOException e8) {
                             }
                         }
                         throw th;
@@ -379,14 +517,14 @@ public class CrashManager {
 
     private static String[] searchForStackTraces() {
         if (Constants.FILES_PATH != null) {
-            Log.d(Constants.TAG, "Looking for exceptions in: " + Constants.FILES_PATH);
+            Log.d("HockeyApp", "Looking for exceptions in: " + Constants.FILES_PATH);
             File dir = new File(Constants.FILES_PATH + "/");
             if (dir.mkdir() || dir.exists()) {
-                return dir.list(new C02714());
+                return dir.list(new C02535());
             }
             return new String[0];
         }
-        Log.d(Constants.TAG, "Can't search for exception as file path is null.");
+        Log.d("HockeyApp", "Can't search for exception as file path is null.");
         return null;
     }
 }

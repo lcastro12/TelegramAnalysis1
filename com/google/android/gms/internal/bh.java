@@ -1,173 +1,332 @@
 package com.google.android.gms.internal;
 
-import android.content.Intent;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Parcel;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.dynamic.C0112b.C0655a;
-import com.google.android.gms.dynamic.C0898c;
+import android.os.IInterface;
+import android.os.Looper;
+import android.os.RemoteException;
+import android.util.Log;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.internal.C1354k.C0179b;
+import com.google.android.gms.internal.C1354k.C1722d;
+import com.google.android.gms.internal.be.C1324a;
+import com.google.android.gms.internal.bf.C1326a;
+import com.google.android.gms.location.LocationClient.OnAddGeofencesResultListener;
+import com.google.android.gms.location.LocationClient.OnRemoveGeofencesResultListener;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationStatusCodes;
+import java.util.List;
 
-public final class bh implements SafeParcelable {
-    public static final bg CREATOR = new bg();
-    public final co eg;
-    public final be fR;
-    public final C0202q fS;
-    public final bi fT;
-    public final cq fU;
-    public final ag fV;
-    public final String fW;
-    public final boolean fX;
-    public final String fY;
-    public final bl fZ;
-    public final String fz;
-    public final int ga;
-    public final int orientation;
-    public final int versionCode;
+public class bh extends C1354k<bf> {
+    private final bk<bf> fG = new C1328c();
+    private final bg fM;
+    private final String fN;
 
-    bh(int i, be beVar, IBinder iBinder, IBinder iBinder2, IBinder iBinder3, IBinder iBinder4, String str, boolean z, String str2, IBinder iBinder5, int i2, int i3, String str3, co coVar) {
-        this.versionCode = i;
-        this.fR = beVar;
-        this.fS = (C0202q) C0898c.m1317b(C0655a.m828z(iBinder));
-        this.fT = (bi) C0898c.m1317b(C0655a.m828z(iBinder2));
-        this.fU = (cq) C0898c.m1317b(C0655a.m828z(iBinder3));
-        this.fV = (ag) C0898c.m1317b(C0655a.m828z(iBinder4));
-        this.fW = str;
-        this.fX = z;
-        this.fY = str2;
-        this.fZ = (bl) C0898c.m1317b(C0655a.m828z(iBinder5));
-        this.orientation = i2;
-        this.ga = i3;
-        this.fz = str3;
-        this.eg = coVar;
-    }
+    private final class C1327a extends C0179b<OnAddGeofencesResultListener> {
+        private final String[] fO;
+        final /* synthetic */ bh fP;
+        private final int f81p;
 
-    public bh(be beVar, C0202q c0202q, bi biVar, bl blVar, co coVar) {
-        this.versionCode = 1;
-        this.fR = beVar;
-        this.fS = c0202q;
-        this.fT = biVar;
-        this.fU = null;
-        this.fV = null;
-        this.fW = null;
-        this.fX = false;
-        this.fY = null;
-        this.fZ = blVar;
-        this.orientation = -1;
-        this.ga = 4;
-        this.fz = null;
-        this.eg = coVar;
-    }
+        public C1327a(bh bhVar, OnAddGeofencesResultListener onAddGeofencesResultListener, int i, String[] strArr) {
+            this.fP = bhVar;
+            super(bhVar, onAddGeofencesResultListener);
+            this.f81p = LocationStatusCodes.m535O(i);
+            this.fO = strArr;
+        }
 
-    public bh(C0202q c0202q, bi biVar, ag agVar, bl blVar, cq cqVar, boolean z, int i, String str, co coVar) {
-        this.versionCode = 1;
-        this.fR = null;
-        this.fS = c0202q;
-        this.fT = biVar;
-        this.fU = cqVar;
-        this.fV = agVar;
-        this.fW = null;
-        this.fX = z;
-        this.fY = null;
-        this.fZ = blVar;
-        this.orientation = i;
-        this.ga = 3;
-        this.fz = str;
-        this.eg = coVar;
-    }
+        protected void m862a(OnAddGeofencesResultListener onAddGeofencesResultListener) {
+            if (onAddGeofencesResultListener != null) {
+                onAddGeofencesResultListener.onAddGeofencesResult(this.f81p, this.fO);
+            }
+        }
 
-    public bh(C0202q c0202q, bi biVar, ag agVar, bl blVar, cq cqVar, boolean z, int i, String str, String str2, co coVar) {
-        this.versionCode = 1;
-        this.fR = null;
-        this.fS = c0202q;
-        this.fT = biVar;
-        this.fU = cqVar;
-        this.fV = agVar;
-        this.fW = str2;
-        this.fX = z;
-        this.fY = str;
-        this.fZ = blVar;
-        this.orientation = i;
-        this.ga = 3;
-        this.fz = null;
-        this.eg = coVar;
-    }
-
-    public bh(C0202q c0202q, bi biVar, bl blVar, cq cqVar, int i, co coVar) {
-        this.versionCode = 1;
-        this.fR = null;
-        this.fS = c0202q;
-        this.fT = biVar;
-        this.fU = cqVar;
-        this.fV = null;
-        this.fW = null;
-        this.fX = false;
-        this.fY = null;
-        this.fZ = blVar;
-        this.orientation = i;
-        this.ga = 1;
-        this.fz = null;
-        this.eg = coVar;
-    }
-
-    public bh(C0202q c0202q, bi biVar, bl blVar, cq cqVar, boolean z, int i, co coVar) {
-        this.versionCode = 1;
-        this.fR = null;
-        this.fS = c0202q;
-        this.fT = biVar;
-        this.fU = cqVar;
-        this.fV = null;
-        this.fW = null;
-        this.fX = z;
-        this.fY = null;
-        this.fZ = blVar;
-        this.orientation = i;
-        this.ga = 2;
-        this.fz = null;
-        this.eg = coVar;
-    }
-
-    public static bh m893a(Intent intent) {
-        try {
-            Bundle bundleExtra = intent.getBundleExtra("com.google.android.gms.ads.inernal.overlay.AdOverlayInfo");
-            bundleExtra.setClassLoader(bh.class.getClassLoader());
-            return (bh) bundleExtra.getParcelable("com.google.android.gms.ads.inernal.overlay.AdOverlayInfo");
-        } catch (Exception e) {
-            return null;
+        protected void mo1092d() {
         }
     }
 
-    public static void m894a(Intent intent, bh bhVar) {
-        Bundle bundle = new Bundle(1);
-        bundle.putParcelable("com.google.android.gms.ads.inernal.overlay.AdOverlayInfo", bhVar);
-        intent.putExtra("com.google.android.gms.ads.inernal.overlay.AdOverlayInfo", bundle);
+    private final class C1328c implements bk<bf> {
+        final /* synthetic */ bh fP;
+
+        private C1328c(bh bhVar) {
+            this.fP = bhVar;
+        }
+
+        public void mo1240B() {
+            this.fP.m989B();
+        }
+
+        public /* synthetic */ IInterface mo1241C() {
+            return aS();
+        }
+
+        public bf aS() {
+            return (bf) this.fP.m990C();
+        }
     }
 
-    IBinder m895U() {
-        return C0898c.m1318g(this.fS).asBinder();
+    private final class C1329d extends C0179b<OnRemoveGeofencesResultListener> {
+        private final String[] fO;
+        final /* synthetic */ bh fP;
+        private final int fT;
+        private final PendingIntent mPendingIntent;
+        private final int f82p;
+
+        public C1329d(bh bhVar, int i, OnRemoveGeofencesResultListener onRemoveGeofencesResultListener, int i2, PendingIntent pendingIntent) {
+            boolean z = true;
+            this.fP = bhVar;
+            super(bhVar, onRemoveGeofencesResultListener);
+            if (i != 1) {
+                z = false;
+            }
+            C0176h.m463a(z);
+            this.fT = i;
+            this.f82p = LocationStatusCodes.m535O(i2);
+            this.mPendingIntent = pendingIntent;
+            this.fO = null;
+        }
+
+        public C1329d(bh bhVar, int i, OnRemoveGeofencesResultListener onRemoveGeofencesResultListener, int i2, String[] strArr) {
+            this.fP = bhVar;
+            super(bhVar, onRemoveGeofencesResultListener);
+            C0176h.m463a(i == 2);
+            this.fT = i;
+            this.f82p = LocationStatusCodes.m535O(i2);
+            this.fO = strArr;
+            this.mPendingIntent = null;
+        }
+
+        protected void m867a(OnRemoveGeofencesResultListener onRemoveGeofencesResultListener) {
+            if (onRemoveGeofencesResultListener != null) {
+                switch (this.fT) {
+                    case 1:
+                        onRemoveGeofencesResultListener.onRemoveGeofencesByPendingIntentResult(this.f82p, this.mPendingIntent);
+                        return;
+                    case 2:
+                        onRemoveGeofencesResultListener.onRemoveGeofencesByRequestIdsResult(this.f82p, this.fO);
+                        return;
+                    default:
+                        Log.wtf("LocationClientImpl", "Unsupported action: " + this.fT);
+                        return;
+                }
+            }
+        }
+
+        protected void mo1092d() {
+        }
     }
 
-    IBinder m896V() {
-        return C0898c.m1318g(this.fT).asBinder();
+    private static final class C1706b extends C1324a {
+        private OnAddGeofencesResultListener fQ;
+        private OnRemoveGeofencesResultListener fR;
+        private bh fS;
+
+        public C1706b(OnAddGeofencesResultListener onAddGeofencesResultListener, bh bhVar) {
+            this.fQ = onAddGeofencesResultListener;
+            this.fR = null;
+            this.fS = bhVar;
+        }
+
+        public C1706b(OnRemoveGeofencesResultListener onRemoveGeofencesResultListener, bh bhVar) {
+            this.fR = onRemoveGeofencesResultListener;
+            this.fQ = null;
+            this.fS = bhVar;
+        }
+
+        public void onAddGeofencesResult(int statusCode, String[] geofenceRequestIds) throws RemoteException {
+            if (this.fS == null) {
+                Log.wtf("LocationClientImpl", "onAddGeofenceResult called multiple times");
+                return;
+            }
+            bh bhVar = this.fS;
+            bh bhVar2 = this.fS;
+            bhVar2.getClass();
+            bhVar.m993a(new C1327a(bhVar2, this.fQ, statusCode, geofenceRequestIds));
+            this.fS = null;
+            this.fQ = null;
+            this.fR = null;
+        }
+
+        public void onRemoveGeofencesByPendingIntentResult(int statusCode, PendingIntent pendingIntent) {
+            if (this.fS == null) {
+                Log.wtf("LocationClientImpl", "onRemoveGeofencesByPendingIntentResult called multiple times");
+                return;
+            }
+            bh bhVar = this.fS;
+            bh bhVar2 = this.fS;
+            bhVar2.getClass();
+            bhVar.m993a(new C1329d(bhVar2, 1, this.fR, statusCode, pendingIntent));
+            this.fS = null;
+            this.fQ = null;
+            this.fR = null;
+        }
+
+        public void onRemoveGeofencesByRequestIdsResult(int statusCode, String[] geofenceRequestIds) {
+            if (this.fS == null) {
+                Log.wtf("LocationClientImpl", "onRemoveGeofencesByRequestIdsResult called multiple times");
+                return;
+            }
+            bh bhVar = this.fS;
+            bh bhVar2 = this.fS;
+            bhVar2.getClass();
+            bhVar.m993a(new C1329d(bhVar2, 2, this.fR, statusCode, geofenceRequestIds));
+            this.fS = null;
+            this.fQ = null;
+            this.fR = null;
+        }
     }
 
-    IBinder m897W() {
-        return C0898c.m1318g(this.fU).asBinder();
+    public bh(Context context, ConnectionCallbacks connectionCallbacks, OnConnectionFailedListener onConnectionFailedListener, String str) {
+        super(context, connectionCallbacks, onConnectionFailedListener, new String[0]);
+        this.fM = new bg(context, this.fG);
+        this.fN = str;
     }
 
-    IBinder m898X() {
-        return C0898c.m1318g(this.fV).asBinder();
+    protected void mo2347a(C0187p c0187p, C1722d c1722d) throws RemoteException {
+        Bundle bundle = new Bundle();
+        bundle.putString("client_name", this.fN);
+        c0187p.mo1332e(c1722d, GooglePlayServicesUtil.GOOGLE_PLAY_SERVICES_VERSION_CODE, getContext().getPackageName(), bundle);
     }
 
-    IBinder m899Y() {
-        return C0898c.m1318g(this.fZ).asBinder();
+    public void addGeofences(List<bi> geofences, PendingIntent pendingIntent, OnAddGeofencesResultListener listener) {
+        m989B();
+        boolean z = geofences != null && geofences.size() > 0;
+        C0192s.m519b(z, (Object) "At least one geofence must be specified.");
+        C0192s.m518b((Object) pendingIntent, (Object) "PendingIntent must be specified.");
+        C0192s.m518b((Object) listener, (Object) "OnAddGeofencesResultListener not provided.");
+        if (listener == null) {
+            be beVar = null;
+        } else {
+            Object c1706b = new C1706b(listener, this);
+        }
+        try {
+            ((bf) m990C()).mo1234a(geofences, pendingIntent, beVar, getContext().getPackageName());
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
     }
 
-    public int describeContents() {
-        return 0;
+    protected String mo2349b() {
+        return "com.google.android.location.internal.GoogleLocationManagerService.START";
     }
 
-    public void writeToParcel(Parcel out, int flags) {
-        bg.m203a(this, out, flags);
+    protected /* synthetic */ IInterface mo2350c(IBinder iBinder) {
+        return m1227s(iBinder);
+    }
+
+    protected String mo2351c() {
+        return "com.google.android.gms.location.internal.IGoogleLocationManagerService";
+    }
+
+    public void disconnect() {
+        synchronized (this.fM) {
+            if (isConnected()) {
+                this.fM.removeAllListeners();
+                this.fM.aR();
+            }
+            super.disconnect();
+        }
+    }
+
+    public Location getLastLocation() {
+        return this.fM.getLastLocation();
+    }
+
+    public void removeActivityUpdates(PendingIntent callbackIntent) {
+        m989B();
+        C0192s.m521d(callbackIntent);
+        try {
+            ((bf) m990C()).removeActivityUpdates(callbackIntent);
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void removeGeofences(PendingIntent pendingIntent, OnRemoveGeofencesResultListener listener) {
+        m989B();
+        C0192s.m518b((Object) pendingIntent, (Object) "PendingIntent must be specified.");
+        C0192s.m518b((Object) listener, (Object) "OnRemoveGeofencesResultListener not provided.");
+        if (listener == null) {
+            be beVar = null;
+        } else {
+            Object c1706b = new C1706b(listener, this);
+        }
+        try {
+            ((bf) m990C()).mo1229a(pendingIntent, beVar, getContext().getPackageName());
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void removeGeofences(List<String> geofenceRequestIds, OnRemoveGeofencesResultListener listener) {
+        m989B();
+        boolean z = geofenceRequestIds != null && geofenceRequestIds.size() > 0;
+        C0192s.m519b(z, (Object) "geofenceRequestIds can't be null nor empty.");
+        C0192s.m518b((Object) listener, (Object) "OnRemoveGeofencesResultListener not provided.");
+        String[] strArr = (String[]) geofenceRequestIds.toArray(new String[0]);
+        if (listener == null) {
+            be beVar = null;
+        } else {
+            Object c1706b = new C1706b(listener, this);
+        }
+        try {
+            ((bf) m990C()).mo1235a(strArr, beVar, getContext().getPackageName());
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void removeLocationUpdates(PendingIntent callbackIntent) {
+        this.fM.removeLocationUpdates(callbackIntent);
+    }
+
+    public void removeLocationUpdates(LocationListener listener) {
+        this.fM.removeLocationUpdates(listener);
+    }
+
+    public void requestActivityUpdates(long detectionIntervalMillis, PendingIntent callbackIntent) {
+        boolean z = true;
+        m989B();
+        C0192s.m521d(callbackIntent);
+        if (detectionIntervalMillis < 0) {
+            z = false;
+        }
+        C0192s.m519b(z, (Object) "detectionIntervalMillis must be >= 0");
+        try {
+            ((bf) m990C()).mo1227a(detectionIntervalMillis, true, callbackIntent);
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void requestLocationUpdates(LocationRequest request, PendingIntent callbackIntent) {
+        this.fM.requestLocationUpdates(request, callbackIntent);
+    }
+
+    public void requestLocationUpdates(LocationRequest request, LocationListener listener) {
+        requestLocationUpdates(request, listener, null);
+    }
+
+    public void requestLocationUpdates(LocationRequest request, LocationListener listener, Looper looper) {
+        synchronized (this.fM) {
+            this.fM.requestLocationUpdates(request, listener, looper);
+        }
+    }
+
+    protected bf m1227s(IBinder iBinder) {
+        return C1326a.m861r(iBinder);
+    }
+
+    public void setMockLocation(Location mockLocation) {
+        this.fM.setMockLocation(mockLocation);
+    }
+
+    public void setMockMode(boolean isMockMode) {
+        this.fM.setMockMode(isMockMode);
     }
 }

@@ -9,6 +9,10 @@ public abstract class CrashManagerListener extends StringListener {
         return true;
     }
 
+    public boolean includeDeviceIdentifier() {
+        return true;
+    }
+
     public String getContact() {
         return null;
     }
@@ -42,5 +46,13 @@ public abstract class CrashManagerListener extends StringListener {
     }
 
     public void onUserDeniedCrashes() {
+    }
+
+    public int getMaxRetryAttempts() {
+        return 1;
+    }
+
+    public boolean onHandleAlertView() {
+        return false;
     }
 }

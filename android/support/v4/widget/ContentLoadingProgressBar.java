@@ -14,8 +14,8 @@ public class ContentLoadingProgressBar extends ProgressBar {
     private boolean mPostedShow;
     private long mStartTime;
 
-    class C00461 implements Runnable {
-        C00461() {
+    class C01011 implements Runnable {
+        C01011() {
         }
 
         public void run() {
@@ -25,8 +25,8 @@ public class ContentLoadingProgressBar extends ProgressBar {
         }
     }
 
-    class C00472 implements Runnable {
-        C00472() {
+    class C01022 implements Runnable {
+        C01022() {
         }
 
         public void run() {
@@ -48,8 +48,8 @@ public class ContentLoadingProgressBar extends ProgressBar {
         this.mPostedHide = false;
         this.mPostedShow = false;
         this.mDismissed = false;
-        this.mDelayedHide = new C00461();
-        this.mDelayedShow = new C00472();
+        this.mDelayedHide = new C01011();
+        this.mDelayedShow = new C01022();
     }
 
     public void onAttachedToWindow() {

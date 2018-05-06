@@ -45,11 +45,11 @@ public class FragmentTabHost extends TabHost implements OnTabChangeListener {
     }
 
     static class SavedState extends BaseSavedState {
-        public static final Creator<SavedState> CREATOR = new C00121();
+        public static final Creator<SavedState> CREATOR = new C00191();
         String curTab;
 
-        static class C00121 implements Creator<SavedState> {
-            C00121() {
+        static class C00191 implements Creator<SavedState> {
+            C00191() {
             }
 
             public SavedState createFromParcel(Parcel in) {

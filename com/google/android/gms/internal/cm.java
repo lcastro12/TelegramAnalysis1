@@ -1,86 +1,87 @@
 package com.google.android.gms.internal;
 
-import android.content.Context;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
-import android.provider.Settings.Secure;
-import android.support.v4.internal.view.SupportMenu;
-import android.support.v4.view.ViewCompat;
-import android.util.DisplayMetrics;
-import android.util.TypedValue;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.FrameLayout.LayoutParams;
-import android.widget.TextView;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Locale;
+import android.os.Parcel;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.safeparcel.C0141a;
+import com.google.android.gms.common.internal.safeparcel.C0141a.C0140a;
+import com.google.android.gms.common.internal.safeparcel.C0142b;
+import com.google.android.gms.internal.cc.C1721h;
+import java.util.HashSet;
+import java.util.Set;
 
-public final class cm {
-    public static final Handler hO = new Handler(Looper.getMainLooper());
-
-    public static int m285a(Context context, int i) {
-        return m286a(context.getResources().getDisplayMetrics(), i);
-    }
-
-    public static int m286a(DisplayMetrics displayMetrics, int i) {
-        return (int) TypedValue.applyDimension(1, (float) i, displayMetrics);
-    }
-
-    public static void m287a(ViewGroup viewGroup, C0771x c0771x, String str) {
-        cn.m299q(str);
-        m288a(viewGroup, c0771x, str, SupportMenu.CATEGORY_MASK, ViewCompat.MEASURED_STATE_MASK);
-    }
-
-    private static void m288a(ViewGroup viewGroup, C0771x c0771x, String str, int i, int i2) {
-        if (viewGroup.getChildCount() == 0) {
-            Context context = viewGroup.getContext();
-            View textView = new TextView(context);
-            textView.setGravity(17);
-            textView.setText(str);
-            textView.setTextColor(i);
-            textView.setBackgroundColor(i2);
-            View frameLayout = new FrameLayout(context);
-            frameLayout.setBackgroundColor(i);
-            int a = m285a(context, 3);
-            frameLayout.addView(textView, new LayoutParams(c0771x.widthPixels - a, c0771x.heightPixels - a, 17));
-            viewGroup.addView(frameLayout, c0771x.widthPixels, c0771x.heightPixels);
+public class cm implements Creator<C1721h> {
+    static void m442a(C1721h c1721h, Parcel parcel, int i) {
+        int d = C0142b.m131d(parcel);
+        Set bH = c1721h.bH();
+        if (bH.contains(Integer.valueOf(1))) {
+            C0142b.m129c(parcel, 1, c1721h.m1339i());
         }
-    }
-
-    public static boolean aq() {
-        return Build.DEVICE.startsWith("generic");
-    }
-
-    public static boolean ar() {
-        return Looper.myLooper() == Looper.getMainLooper();
-    }
-
-    public static void m289b(ViewGroup viewGroup, C0771x c0771x, String str) {
-        m288a(viewGroup, c0771x, str, ViewCompat.MEASURED_STATE_MASK, -1);
-    }
-
-    public static String m290l(Context context) {
-        String string = Secure.getString(context.getContentResolver(), "android_id");
-        if (string == null || aq()) {
-            string = "emulator";
+        if (bH.contains(Integer.valueOf(3))) {
+            C0142b.m129c(parcel, 3, c1721h.cu());
         }
-        return m291l(string);
+        if (bH.contains(Integer.valueOf(4))) {
+            C0142b.m119a(parcel, 4, c1721h.getValue(), true);
+        }
+        if (bH.contains(Integer.valueOf(5))) {
+            C0142b.m119a(parcel, 5, c1721h.getLabel(), true);
+        }
+        if (bH.contains(Integer.valueOf(6))) {
+            C0142b.m129c(parcel, 6, c1721h.getType());
+        }
+        C0142b.m110C(parcel, d);
     }
 
-    public static String m291l(String str) {
+    public C1721h m443H(Parcel parcel) {
+        String str = null;
         int i = 0;
-        while (i < 2) {
-            try {
-                MessageDigest.getInstance("MD5").update(str.getBytes());
-                return String.format(Locale.US, "%032X", new Object[]{new BigInteger(1, r1.digest())});
-            } catch (NoSuchAlgorithmException e) {
-                i++;
+        int c = C0141a.m81c(parcel);
+        Set hashSet = new HashSet();
+        int i2 = 0;
+        String str2 = null;
+        int i3 = 0;
+        while (parcel.dataPosition() < c) {
+            int b = C0141a.m78b(parcel);
+            switch (C0141a.m93m(b)) {
+                case 1:
+                    i3 = C0141a.m86f(parcel, b);
+                    hashSet.add(Integer.valueOf(1));
+                    break;
+                case 3:
+                    i = C0141a.m86f(parcel, b);
+                    hashSet.add(Integer.valueOf(3));
+                    break;
+                case 4:
+                    str = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(4));
+                    break;
+                case 5:
+                    str2 = C0141a.m92l(parcel, b);
+                    hashSet.add(Integer.valueOf(5));
+                    break;
+                case 6:
+                    i2 = C0141a.m86f(parcel, b);
+                    hashSet.add(Integer.valueOf(6));
+                    break;
+                default:
+                    C0141a.m79b(parcel, b);
+                    break;
             }
         }
-        return null;
+        if (parcel.dataPosition() == c) {
+            return new C1721h(hashSet, i3, str2, i2, str, i);
+        }
+        throw new C0140a("Overread allowed size end=" + c, parcel);
+    }
+
+    public C1721h[] ah(int i) {
+        return new C1721h[i];
+    }
+
+    public /* synthetic */ Object createFromParcel(Parcel x0) {
+        return m443H(x0);
+    }
+
+    public /* synthetic */ Object[] newArray(int x0) {
+        return ah(x0);
     }
 }

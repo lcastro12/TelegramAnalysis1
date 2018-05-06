@@ -15,6 +15,10 @@ public final class PrintHelper {
     public static final int SCALE_MODE_FIT = 1;
     PrintHelperVersionImpl mImpl;
 
+    public interface OnPrintFinishCallback {
+        void onFinish();
+    }
+
     interface PrintHelperVersionImpl {
         int getColorMode();
 
@@ -22,9 +26,9 @@ public final class PrintHelper {
 
         int getScaleMode();
 
-        void printBitmap(String str, Bitmap bitmap);
+        void printBitmap(String str, Bitmap bitmap, OnPrintFinishCallback onPrintFinishCallback);
 
-        void printBitmap(String str, Uri uri) throws FileNotFoundException;
+        void printBitmap(String str, Uri uri, OnPrintFinishCallback onPrintFinishCallback) throws FileNotFoundException;
 
         void setColorMode(int i);
 
@@ -64,12 +68,28 @@ public final class PrintHelper {
             return this.mPrintHelper.getOrientation();
         }
 
-        public void printBitmap(String jobName, Bitmap bitmap) {
-            this.mPrintHelper.printBitmap(jobName, bitmap);
+        public void printBitmap(String jobName, Bitmap bitmap, final OnPrintFinishCallback callback) {
+            android.support.v4.print.PrintHelperKitkat.OnPrintFinishCallback delegateCallback = null;
+            if (callback != null) {
+                delegateCallback = new android.support.v4.print.PrintHelperKitkat.OnPrintFinishCallback() {
+                    public void onFinish() {
+                        callback.onFinish();
+                    }
+                };
+            }
+            this.mPrintHelper.printBitmap(jobName, bitmap, delegateCallback);
         }
 
-        public void printBitmap(String jobName, Uri imageFile) throws FileNotFoundException {
-            this.mPrintHelper.printBitmap(jobName, imageFile);
+        public void printBitmap(String jobName, Uri imageFile, final OnPrintFinishCallback callback) throws FileNotFoundException {
+            android.support.v4.print.PrintHelperKitkat.OnPrintFinishCallback delegateCallback = null;
+            if (callback != null) {
+                delegateCallback = new android.support.v4.print.PrintHelperKitkat.OnPrintFinishCallback() {
+                    public void onFinish() {
+                        callback.onFinish();
+                    }
+                };
+            }
+            this.mPrintHelper.printBitmap(jobName, imageFile, delegateCallback);
         }
     }
 
@@ -108,10 +128,10 @@ public final class PrintHelper {
             return this.mScaleMode;
         }
 
-        public void printBitmap(String jobName, Bitmap bitmap) {
+        public void printBitmap(String jobName, Bitmap bitmap, OnPrintFinishCallback callback) {
         }
 
-        public void printBitmap(String jobName, Uri imageFile) {
+        public void printBitmap(String jobName, Uri imageFile, OnPrintFinishCallback callback) {
         }
     }
 
@@ -155,10 +175,18 @@ public final class PrintHelper {
     }
 
     public void printBitmap(String jobName, Bitmap bitmap) {
-        this.mImpl.printBitmap(jobName, bitmap);
+        this.mImpl.printBitmap(jobName, bitmap, null);
+    }
+
+    public void printBitmap(String jobName, Bitmap bitmap, OnPrintFinishCallback callback) {
+        this.mImpl.printBitmap(jobName, bitmap, callback);
     }
 
     public void printBitmap(String jobName, Uri imageFile) throws FileNotFoundException {
-        this.mImpl.printBitmap(jobName, imageFile);
+        this.mImpl.printBitmap(jobName, imageFile, null);
+    }
+
+    public void printBitmap(String jobName, Uri imageFile, OnPrintFinishCallback callback) throws FileNotFoundException {
+        this.mImpl.printBitmap(jobName, imageFile, callback);
     }
 }

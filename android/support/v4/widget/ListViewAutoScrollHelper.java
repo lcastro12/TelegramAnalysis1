@@ -29,6 +29,9 @@ public class ListViewAutoScrollHelper extends AutoScrollHelper {
     public boolean canTargetScrollVertically(int direction) {
         ListView target = this.mTarget;
         int itemCount = target.getCount();
+        if (itemCount == 0) {
+            return false;
+        }
         int childCount = target.getChildCount();
         int firstPosition = target.getFirstVisiblePosition();
         int lastPosition = firstPosition + childCount;

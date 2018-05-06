@@ -4,51 +4,51 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Parcel;
 import android.util.AttributeSet;
-import com.google.android.gms.C0090R;
+import com.google.android.gms.C0126R;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0210a;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.maps.internal.C0199a;
+import com.google.android.gms.maps.internal.C0215q;
 import com.google.android.gms.maps.model.CameraPosition;
 
 public final class GoogleMapOptions implements SafeParcelable {
     public static final GoogleMapOptionsCreator CREATOR = new GoogleMapOptionsCreator();
-    private final int iM;
-    private CameraPosition pA;
-    private Boolean pB;
-    private Boolean pC;
-    private Boolean pD;
-    private Boolean pE;
-    private Boolean pF;
-    private Boolean pG;
-    private Boolean px;
-    private Boolean py;
-    private int pz;
+    private final int ab;
+    private Boolean go;
+    private Boolean gp;
+    private int gq;
+    private CameraPosition gr;
+    private Boolean gs;
+    private Boolean gt;
+    private Boolean gu;
+    private Boolean gv;
+    private Boolean gw;
+    private Boolean gx;
 
     public GoogleMapOptions() {
-        this.pz = -1;
-        this.iM = 1;
+        this.gq = -1;
+        this.ab = 1;
     }
 
     GoogleMapOptions(int versionCode, byte zOrderOnTop, byte useViewLifecycleInFragment, int mapType, CameraPosition camera, byte zoomControlsEnabled, byte compassEnabled, byte scrollGesturesEnabled, byte zoomGesturesEnabled, byte tiltGesturesEnabled, byte rotateGesturesEnabled) {
-        this.pz = -1;
-        this.iM = versionCode;
-        this.px = C0210a.m710a(zOrderOnTop);
-        this.py = C0210a.m710a(useViewLifecycleInFragment);
-        this.pz = mapType;
-        this.pA = camera;
-        this.pB = C0210a.m710a(zoomControlsEnabled);
-        this.pC = C0210a.m710a(compassEnabled);
-        this.pD = C0210a.m710a(scrollGesturesEnabled);
-        this.pE = C0210a.m710a(zoomGesturesEnabled);
-        this.pF = C0210a.m710a(tiltGesturesEnabled);
-        this.pG = C0210a.m710a(rotateGesturesEnabled);
+        this.gq = -1;
+        this.ab = versionCode;
+        this.go = C0199a.m539a(zOrderOnTop);
+        this.gp = C0199a.m539a(useViewLifecycleInFragment);
+        this.gq = mapType;
+        this.gr = camera;
+        this.gs = C0199a.m539a(zoomControlsEnabled);
+        this.gt = C0199a.m539a(compassEnabled);
+        this.gu = C0199a.m539a(scrollGesturesEnabled);
+        this.gv = C0199a.m539a(zoomGesturesEnabled);
+        this.gw = C0199a.m539a(tiltGesturesEnabled);
+        this.gx = C0199a.m539a(rotateGesturesEnabled);
     }
 
     public static GoogleMapOptions createFromAttributes(Context context, AttributeSet attrs) {
         if (attrs == null) {
             return null;
         }
-        TypedArray obtainAttributes = context.getResources().obtainAttributes(attrs, C0090R.styleable.MapAttrs);
+        TypedArray obtainAttributes = context.getResources().obtainAttributes(attrs, C0126R.styleable.MapAttrs);
         GoogleMapOptions googleMapOptions = new GoogleMapOptions();
         if (obtainAttributes.hasValue(0)) {
             googleMapOptions.mapType(obtainAttributes.getInt(0, -1));
@@ -82,46 +82,46 @@ public final class GoogleMapOptions implements SafeParcelable {
         return googleMapOptions;
     }
 
-    byte cA() {
-        return C0210a.m711b(this.pE);
+    byte aZ() {
+        return C0199a.m540b(this.go);
     }
 
-    byte cB() {
-        return C0210a.m711b(this.pF);
+    byte ba() {
+        return C0199a.m540b(this.gp);
     }
 
-    byte cC() {
-        return C0210a.m711b(this.pG);
+    byte bb() {
+        return C0199a.m540b(this.gs);
+    }
+
+    byte bc() {
+        return C0199a.m540b(this.gt);
+    }
+
+    byte bd() {
+        return C0199a.m540b(this.gu);
+    }
+
+    byte be() {
+        return C0199a.m540b(this.gv);
+    }
+
+    byte bf() {
+        return C0199a.m540b(this.gw);
+    }
+
+    byte bg() {
+        return C0199a.m540b(this.gx);
     }
 
     public GoogleMapOptions camera(CameraPosition camera) {
-        this.pA = camera;
+        this.gr = camera;
         return this;
     }
 
     public GoogleMapOptions compassEnabled(boolean enabled) {
-        this.pC = Boolean.valueOf(enabled);
+        this.gt = Boolean.valueOf(enabled);
         return this;
-    }
-
-    byte cv() {
-        return C0210a.m711b(this.px);
-    }
-
-    byte cw() {
-        return C0210a.m711b(this.py);
-    }
-
-    byte cx() {
-        return C0210a.m711b(this.pB);
-    }
-
-    byte cy() {
-        return C0210a.m711b(this.pC);
-    }
-
-    byte cz() {
-        return C0210a.m711b(this.pD);
     }
 
     public int describeContents() {
@@ -129,94 +129,94 @@ public final class GoogleMapOptions implements SafeParcelable {
     }
 
     public CameraPosition getCamera() {
-        return this.pA;
+        return this.gr;
     }
 
     public Boolean getCompassEnabled() {
-        return this.pC;
+        return this.gt;
     }
 
     public int getMapType() {
-        return this.pz;
+        return this.gq;
     }
 
     public Boolean getRotateGesturesEnabled() {
-        return this.pG;
+        return this.gx;
     }
 
     public Boolean getScrollGesturesEnabled() {
-        return this.pD;
+        return this.gu;
     }
 
     public Boolean getTiltGesturesEnabled() {
-        return this.pF;
+        return this.gw;
     }
 
     public Boolean getUseViewLifecycleInFragment() {
-        return this.py;
-    }
-
-    int getVersionCode() {
-        return this.iM;
+        return this.gp;
     }
 
     public Boolean getZOrderOnTop() {
-        return this.px;
+        return this.go;
     }
 
     public Boolean getZoomControlsEnabled() {
-        return this.pB;
+        return this.gs;
     }
 
     public Boolean getZoomGesturesEnabled() {
-        return this.pE;
+        return this.gv;
+    }
+
+    int m1045i() {
+        return this.ab;
     }
 
     public GoogleMapOptions mapType(int mapType) {
-        this.pz = mapType;
+        this.gq = mapType;
         return this;
     }
 
     public GoogleMapOptions rotateGesturesEnabled(boolean enabled) {
-        this.pG = Boolean.valueOf(enabled);
+        this.gx = Boolean.valueOf(enabled);
         return this;
     }
 
     public GoogleMapOptions scrollGesturesEnabled(boolean enabled) {
-        this.pD = Boolean.valueOf(enabled);
+        this.gu = Boolean.valueOf(enabled);
         return this;
     }
 
     public GoogleMapOptions tiltGesturesEnabled(boolean enabled) {
-        this.pF = Boolean.valueOf(enabled);
+        this.gw = Boolean.valueOf(enabled);
         return this;
     }
 
     public GoogleMapOptions useViewLifecycleInFragment(boolean useViewLifecycleInFragment) {
-        this.py = Boolean.valueOf(useViewLifecycleInFragment);
+        this.gp = Boolean.valueOf(useViewLifecycleInFragment);
         return this;
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0209a.m709a(this, out, flags);
+        if (C0215q.bn()) {
+            C0198a.m538a(this, out, flags);
         } else {
-            GoogleMapOptionsCreator.m708a(this, out, flags);
+            GoogleMapOptionsCreator.m537a(this, out, flags);
         }
     }
 
     public GoogleMapOptions zOrderOnTop(boolean zOrderOnTop) {
-        this.px = Boolean.valueOf(zOrderOnTop);
+        this.go = Boolean.valueOf(zOrderOnTop);
         return this;
     }
 
     public GoogleMapOptions zoomControlsEnabled(boolean enabled) {
-        this.pB = Boolean.valueOf(enabled);
+        this.gs = Boolean.valueOf(enabled);
         return this;
     }
 
     public GoogleMapOptions zoomGesturesEnabled(boolean enabled) {
-        this.pE = Boolean.valueOf(enabled);
+        this.gv = Boolean.valueOf(enabled);
         return this;
     }
 }

@@ -1,149 +1,203 @@
 package com.google.android.gms.internal;
 
-import android.content.Context;
-import android.text.TextUtils;
-import com.google.android.gms.internal.by.C0704a;
-import com.google.android.gms.location.LocationStatusCodes;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
+import android.os.Parcel;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.internal.ae.C1308a;
+import com.google.android.gms.plus.model.moments.ItemScope;
+import com.google.android.gms.plus.model.moments.Moment;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
-public final class bz extends C0704a {
-    private static final Object gL = new Object();
-    private static bz gM;
-    private final al gN;
-    private final Context mContext;
+public final class bz extends ae implements SafeParcelable, Moment {
+    public static final ca CREATOR = new ca();
+    private static final HashMap<String, C1308a<?, ?>> iC = new HashMap();
+    private final int ab;
+    private final Set<Integer> iD;
+    private bx jB;
+    private bx jC;
+    private String jh;
+    private String js;
+    private String jy;
 
-    private bz(Context context, al alVar) {
-        this.mContext = context;
-        this.gN = alVar;
+    static {
+        iC.put("id", C1308a.m675f("id", 2));
+        iC.put("result", C1308a.m669a("result", 4, bx.class));
+        iC.put("startDate", C1308a.m675f("startDate", 5));
+        iC.put("target", C1308a.m669a("target", 6, bx.class));
+        iC.put("type", C1308a.m675f("type", 7));
     }
 
-    private static bw m1350a(final Context context, al alVar, final bu buVar) {
-        cn.m295m("Starting ad request from service.");
-        alVar.init();
-        cd cdVar = new cd(context);
-        if (cdVar.hs == -1) {
-            cn.m295m("Device is offline.");
-            return new bw(2);
-        }
-        final cb cbVar = new cb();
-        final String a = ca.m233a(buVar, cdVar, alVar.mo771a(250));
-        if (a == null) {
-            return new bw(0);
-        }
-        cm.hO.post(new Runnable() {
-            public void run() {
-                cq a = cq.m303a(context, new C0771x(), false, false, null, buVar.eg);
-                a.setWillNotDraw(true);
-                cbVar.m241b(a);
-                cr aw = a.aw();
-                aw.m316a("/invalidRequest", cbVar.gU);
-                aw.m316a("/loadAdURL", cbVar.gV);
-                aw.m316a("/log", ah.eE);
-                cn.m295m("Getting the ad request URL.");
-                a.loadDataWithBaseURL("http://googleads.g.doubleclick.net", "<!DOCTYPE html><html><head><script src=\"http://googleads.g.doubleclick.net/mads/static/sdk/native/sdk-core-v40.js\"></script><script>AFMA_buildAdURL(" + a + ");</script></head><body></body></html>", "text/html", "UTF-8", null);
-            }
-        });
-        a = cbVar.aj();
-        return TextUtils.isEmpty(a) ? new bw(cbVar.getErrorCode()) : m1351a(context, buVar.eg.hP, a);
+    public bz() {
+        this.ab = 1;
+        this.iD = new HashSet();
     }
 
-    private static bw m1351a(Context context, String str, String str2) {
-        HttpURLConnection httpURLConnection;
-        try {
-            int responseCode;
-            bw bwVar;
-            cc ccVar = new cc();
-            URL url = new URL(str2);
-            int i = 0;
-            while (true) {
-                httpURLConnection = (HttpURLConnection) url.openConnection();
-                ci.m263a(context, str, false, httpURLConnection);
-                responseCode = httpURLConnection.getResponseCode();
-                Map headerFields = httpURLConnection.getHeaderFields();
-                if (responseCode < 200 || responseCode >= 300) {
-                    m1353a(url.toString(), headerFields, null, responseCode);
-                    if (responseCode < 300 || responseCode >= 400) {
-                        break;
-                    }
-                    Object headerField = httpURLConnection.getHeaderField("Location");
-                    if (TextUtils.isEmpty(headerField)) {
-                        cn.m299q("No location header to follow redirect.");
-                        bwVar = new bw(0);
-                        httpURLConnection.disconnect();
-                        return bwVar;
-                    }
-                    url = new URL(headerField);
-                    i++;
-                    if (i > 5) {
-                        cn.m299q("Too many redirects.");
-                        bwVar = new bw(0);
-                        httpURLConnection.disconnect();
-                        return bwVar;
-                    }
-                    ccVar.m252d(headerFields);
-                    httpURLConnection.disconnect();
-                } else {
-                    String url2 = url.toString();
-                    String a = ci.m257a(new InputStreamReader(httpURLConnection.getInputStream()));
-                    m1353a(url2, headerFields, a, responseCode);
-                    ccVar.m251a(url2, headerFields, a);
-                    bwVar = ccVar.ak();
-                    httpURLConnection.disconnect();
-                    return bwVar;
+    bz(Set<Integer> set, int i, String str, bx bxVar, String str2, bx bxVar2, String str3) {
+        this.iD = set;
+        this.ab = i;
+        this.jh = str;
+        this.jB = bxVar;
+        this.js = str2;
+        this.jC = bxVar2;
+        this.jy = str3;
+    }
+
+    public bz(Set<Integer> set, String str, bx bxVar, String str2, bx bxVar2, String str3) {
+        this.iD = set;
+        this.ab = 1;
+        this.jh = str;
+        this.jB = bxVar;
+        this.js = str2;
+        this.jC = bxVar2;
+        this.jy = str3;
+    }
+
+    public HashMap<String, C1308a<?, ?>> mo1087T() {
+        return iC;
+    }
+
+    protected boolean mo2354a(C1308a c1308a) {
+        return this.iD.contains(Integer.valueOf(c1308a.aa()));
+    }
+
+    protected Object mo2355b(C1308a c1308a) {
+        switch (c1308a.aa()) {
+            case 2:
+                return this.jh;
+            case 4:
+                return this.jB;
+            case 5:
+                return this.js;
+            case 6:
+                return this.jC;
+            case 7:
+                return this.jy;
+            default:
+                throw new IllegalStateException("Unknown safe parcelable id=" + c1308a.aa());
+        }
+    }
+
+    Set<Integer> bH() {
+        return this.iD;
+    }
+
+    bx bY() {
+        return this.jB;
+    }
+
+    bx bZ() {
+        return this.jC;
+    }
+
+    public bz ca() {
+        return this;
+    }
+
+    public int describeContents() {
+        ca caVar = CREATOR;
+        return 0;
+    }
+
+    public boolean equals(Object obj) {
+        if (!(obj instanceof bz)) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+        bz bzVar = (bz) obj;
+        for (C1308a c1308a : iC.values()) {
+            if (mo2354a(c1308a)) {
+                if (!bzVar.mo2354a(c1308a)) {
+                    return false;
                 }
+                if (!mo2355b(c1308a).equals(bzVar.mo2355b(c1308a))) {
+                    return false;
+                }
+            } else if (bzVar.mo2354a(c1308a)) {
+                return false;
             }
-            cn.m299q("Received error HTTP response code: " + responseCode);
-            bwVar = new bw(0);
-            httpURLConnection.disconnect();
-            return bwVar;
-        } catch (IOException e) {
-            cn.m299q("Error while connecting to ad server: " + e.getMessage());
-            return new bw(2);
-        } catch (Throwable th) {
-            httpURLConnection.disconnect();
         }
+        return true;
     }
 
-    public static bz m1352a(Context context, al alVar) {
-        bz bzVar;
-        synchronized (gL) {
-            if (gM == null) {
-                gM = new bz(context.getApplicationContext(), alVar);
-            }
-            bzVar = gM;
-        }
-        return bzVar;
+    public /* synthetic */ Object freeze() {
+        return ca();
     }
 
-    private static void m1353a(String str, Map<String, List<String>> map, String str2, int i) {
-        if (cn.m294k(2)) {
-            cn.m298p("Http Response: {\n  URL:\n    " + str + "\n  Headers:");
-            if (map != null) {
-                for (String str3 : map.keySet()) {
-                    cn.m298p("    " + str3 + ":");
-                    for (String str32 : (List) map.get(str32)) {
-                        cn.m298p("      " + str32);
-                    }
-                }
-            }
-            cn.m298p("  Body:");
-            if (str2 != null) {
-                for (int i2 = 0; i2 < Math.min(str2.length(), 100000); i2 += LocationStatusCodes.GEOFENCE_NOT_AVAILABLE) {
-                    cn.m298p(str2.substring(i2, Math.min(str2.length(), i2 + LocationStatusCodes.GEOFENCE_NOT_AVAILABLE)));
-                }
+    public String getId() {
+        return this.jh;
+    }
+
+    public ItemScope getResult() {
+        return this.jB;
+    }
+
+    public String getStartDate() {
+        return this.js;
+    }
+
+    public ItemScope getTarget() {
+        return this.jC;
+    }
+
+    public String getType() {
+        return this.jy;
+    }
+
+    public boolean hasId() {
+        return this.iD.contains(Integer.valueOf(2));
+    }
+
+    public boolean hasResult() {
+        return this.iD.contains(Integer.valueOf(4));
+    }
+
+    public boolean hasStartDate() {
+        return this.iD.contains(Integer.valueOf(5));
+    }
+
+    public boolean hasTarget() {
+        return this.iD.contains(Integer.valueOf(6));
+    }
+
+    public boolean hasType() {
+        return this.iD.contains(Integer.valueOf(7));
+    }
+
+    public int hashCode() {
+        int i = 0;
+        for (C1308a c1308a : iC.values()) {
+            int hashCode;
+            if (mo2354a(c1308a)) {
+                hashCode = mo2355b(c1308a).hashCode() + (i + c1308a.aa());
             } else {
-                cn.m298p("    null");
+                hashCode = i;
             }
-            cn.m298p("  Response Code:\n    " + i + "\n}");
+            i = hashCode;
         }
+        return i;
     }
 
-    public bw mo812a(bu buVar) {
-        return m1350a(this.mContext, this.gN, buVar);
+    int m1274i() {
+        return this.ab;
+    }
+
+    public boolean isDataValid() {
+        return true;
+    }
+
+    protected Object mo1088m(String str) {
+        return null;
+    }
+
+    protected boolean mo1089n(String str) {
+        return false;
+    }
+
+    public void writeToParcel(Parcel out, int flags) {
+        ca caVar = CREATOR;
+        ca.m418a(this, out, flags);
     }
 }

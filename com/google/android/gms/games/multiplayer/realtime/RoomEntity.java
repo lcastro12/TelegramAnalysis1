@@ -7,36 +7,36 @@ import android.os.Parcelable.Creator;
 import com.google.android.gms.games.Player;
 import com.google.android.gms.games.multiplayer.Participant;
 import com.google.android.gms.games.multiplayer.ParticipantEntity;
-import com.google.android.gms.internal.dd;
-import com.google.android.gms.internal.dl;
-import com.google.android.gms.internal.eg;
-import com.google.android.gms.internal.en;
+import com.google.android.gms.internal.C0191r;
+import com.google.android.gms.internal.C1351j;
+import com.google.android.gms.internal.ao;
+import com.google.android.gms.internal.av;
 import java.util.ArrayList;
 
-public final class RoomEntity extends en implements Room {
-    public static final Creator<RoomEntity> CREATOR = new C0663a();
-    private final int iM;
-    private final String mo;
-    private final long nN;
-    private final ArrayList<ParticipantEntity> nQ;
-    private final int nR;
-    private final String nb;
-    private final Bundle oh;
-    private final String ol;
-    private final int om;
-    private final int on;
+public final class RoomEntity extends av implements Room {
+    public static final Creator<RoomEntity> CREATOR = new C1304a();
+    private final int ab;
+    private final String dV;
+    private final String di;
+    private final long eG;
+    private final ArrayList<ParticipantEntity> eJ;
+    private final int eK;
+    private final Bundle fa;
+    private final String fe;
+    private final int ff;
+    private final int fg;
 
-    static final class C0663a extends C0124b {
-        C0663a() {
+    static final class C1304a extends C0158b {
+        C1304a() {
         }
 
         public /* synthetic */ Object createFromParcel(Parcel x0) {
-            return mo750y(x0);
+            return mo1082s(x0);
         }
 
-        public RoomEntity mo750y(Parcel parcel) {
-            if (en.m1439c(dd.aW()) || dd.m942y(RoomEntity.class.getCanonicalName())) {
-                return super.mo750y(parcel);
+        public RoomEntity mo1082s(Parcel parcel) {
+            if (av.m1217c(C1351j.m970v()) || C1351j.m968h(RoomEntity.class.getCanonicalName())) {
+                return super.mo1082s(parcel);
             }
             String readString = parcel.readString();
             String readString2 = parcel.readString();
@@ -55,41 +55,41 @@ public final class RoomEntity extends en implements Room {
     }
 
     RoomEntity(int versionCode, String roomId, String creatorId, long creationTimestamp, int roomStatus, String description, int variant, Bundle autoMatchCriteria, ArrayList<ParticipantEntity> participants, int autoMatchWaitEstimateSeconds) {
-        this.iM = versionCode;
-        this.nb = roomId;
-        this.ol = creatorId;
-        this.nN = creationTimestamp;
-        this.om = roomStatus;
-        this.mo = description;
-        this.nR = variant;
-        this.oh = autoMatchCriteria;
-        this.nQ = participants;
-        this.on = autoMatchWaitEstimateSeconds;
+        this.ab = versionCode;
+        this.dV = roomId;
+        this.fe = creatorId;
+        this.eG = creationTimestamp;
+        this.ff = roomStatus;
+        this.di = description;
+        this.eK = variant;
+        this.fa = autoMatchCriteria;
+        this.eJ = participants;
+        this.fg = autoMatchWaitEstimateSeconds;
     }
 
     public RoomEntity(Room room) {
-        this.iM = 2;
-        this.nb = room.getRoomId();
-        this.ol = room.getCreatorId();
-        this.nN = room.getCreationTimestamp();
-        this.om = room.getStatus();
-        this.mo = room.getDescription();
-        this.nR = room.getVariant();
-        this.oh = room.getAutoMatchCriteria();
+        this.ab = 2;
+        this.dV = room.getRoomId();
+        this.fe = room.getCreatorId();
+        this.eG = room.getCreationTimestamp();
+        this.ff = room.getStatus();
+        this.di = room.getDescription();
+        this.eK = room.getVariant();
+        this.fa = room.getAutoMatchCriteria();
         ArrayList participants = room.getParticipants();
         int size = participants.size();
-        this.nQ = new ArrayList(size);
+        this.eJ = new ArrayList(size);
         for (int i = 0; i < size; i++) {
-            this.nQ.add((ParticipantEntity) ((Participant) participants.get(i)).freeze());
+            this.eJ.add((ParticipantEntity) ((Participant) participants.get(i)).freeze());
         }
-        this.on = room.getAutoMatchWaitEstimateSeconds();
+        this.fg = room.getAutoMatchWaitEstimateSeconds();
     }
 
-    static int m1595a(Room room) {
-        return dl.hashCode(room.getRoomId(), room.getCreatorId(), Long.valueOf(room.getCreationTimestamp()), Integer.valueOf(room.getStatus()), room.getDescription(), Integer.valueOf(room.getVariant()), room.getAutoMatchCriteria(), room.getParticipants(), Integer.valueOf(room.getAutoMatchWaitEstimateSeconds()));
+    static int m1382a(Room room) {
+        return C0191r.hashCode(room.getRoomId(), room.getCreatorId(), Long.valueOf(room.getCreationTimestamp()), Integer.valueOf(room.getStatus()), room.getDescription(), Integer.valueOf(room.getVariant()), room.getAutoMatchCriteria(), room.getParticipants(), Integer.valueOf(room.getAutoMatchWaitEstimateSeconds()));
     }
 
-    static boolean m1596a(Room room, Object obj) {
+    static boolean m1383a(Room room, Object obj) {
         if (!(obj instanceof Room)) {
             return false;
         }
@@ -97,11 +97,11 @@ public final class RoomEntity extends en implements Room {
             return true;
         }
         Room room2 = (Room) obj;
-        return dl.equal(room2.getRoomId(), room.getRoomId()) && dl.equal(room2.getCreatorId(), room.getCreatorId()) && dl.equal(Long.valueOf(room2.getCreationTimestamp()), Long.valueOf(room.getCreationTimestamp())) && dl.equal(Integer.valueOf(room2.getStatus()), Integer.valueOf(room.getStatus())) && dl.equal(room2.getDescription(), room.getDescription()) && dl.equal(Integer.valueOf(room2.getVariant()), Integer.valueOf(room.getVariant())) && dl.equal(room2.getAutoMatchCriteria(), room.getAutoMatchCriteria()) && dl.equal(room2.getParticipants(), room.getParticipants()) && dl.equal(Integer.valueOf(room2.getAutoMatchWaitEstimateSeconds()), Integer.valueOf(room.getAutoMatchWaitEstimateSeconds()));
+        return C0191r.m513a(room2.getRoomId(), room.getRoomId()) && C0191r.m513a(room2.getCreatorId(), room.getCreatorId()) && C0191r.m513a(Long.valueOf(room2.getCreationTimestamp()), Long.valueOf(room.getCreationTimestamp())) && C0191r.m513a(Integer.valueOf(room2.getStatus()), Integer.valueOf(room.getStatus())) && C0191r.m513a(room2.getDescription(), room.getDescription()) && C0191r.m513a(Integer.valueOf(room2.getVariant()), Integer.valueOf(room.getVariant())) && C0191r.m513a(room2.getAutoMatchCriteria(), room.getAutoMatchCriteria()) && C0191r.m513a(room2.getParticipants(), room.getParticipants()) && C0191r.m513a(Integer.valueOf(room2.getAutoMatchWaitEstimateSeconds()), Integer.valueOf(room.getAutoMatchWaitEstimateSeconds()));
     }
 
-    static String m1597b(Room room) {
-        return dl.m387d(room).m386a("RoomId", room.getRoomId()).m386a("CreatorId", room.getCreatorId()).m386a("CreationTimestamp", Long.valueOf(room.getCreationTimestamp())).m386a("RoomStatus", Integer.valueOf(room.getStatus())).m386a("Description", room.getDescription()).m386a("Variant", Integer.valueOf(room.getVariant())).m386a("AutoMatchCriteria", room.getAutoMatchCriteria()).m386a("Participants", room.getParticipants()).m386a("AutoMatchWaitEstimateSeconds", Integer.valueOf(room.getAutoMatchWaitEstimateSeconds())).toString();
+    static String m1384b(Room room) {
+        return C0191r.m514c(room).m512a("RoomId", room.getRoomId()).m512a("CreatorId", room.getCreatorId()).m512a("CreationTimestamp", Long.valueOf(room.getCreationTimestamp())).m512a("RoomStatus", Integer.valueOf(room.getStatus())).m512a("Description", room.getDescription()).m512a("Variant", Integer.valueOf(room.getVariant())).m512a("AutoMatchCriteria", room.getAutoMatchCriteria()).m512a("Participants", room.getParticipants()).m512a("AutoMatchWaitEstimateSeconds", Integer.valueOf(room.getAutoMatchWaitEstimateSeconds())).toString();
     }
 
     public int describeContents() {
@@ -109,7 +109,7 @@ public final class RoomEntity extends en implements Room {
     }
 
     public boolean equals(Object obj) {
-        return m1596a(this, obj);
+        return m1383a(this, obj);
     }
 
     public Room freeze() {
@@ -117,33 +117,33 @@ public final class RoomEntity extends en implements Room {
     }
 
     public Bundle getAutoMatchCriteria() {
-        return this.oh;
+        return this.fa;
     }
 
     public int getAutoMatchWaitEstimateSeconds() {
-        return this.on;
+        return this.fg;
     }
 
     public long getCreationTimestamp() {
-        return this.nN;
+        return this.eG;
     }
 
     public String getCreatorId() {
-        return this.ol;
+        return this.fe;
     }
 
     public String getDescription() {
-        return this.mo;
+        return this.di;
     }
 
     public void getDescription(CharArrayBuffer dataOut) {
-        eg.m447b(this.mo, dataOut);
+        ao.m215b(this.di, dataOut);
     }
 
     public String getParticipantId(String playerId) {
-        int size = this.nQ.size();
+        int size = this.eJ.size();
         for (int i = 0; i < size; i++) {
-            Participant participant = (Participant) this.nQ.get(i);
+            Participant participant = (Participant) this.eJ.get(i);
             Player player = participant.getPlayer();
             if (player != null && player.getPlayerId().equals(playerId)) {
                 return participant.getParticipantId();
@@ -153,18 +153,18 @@ public final class RoomEntity extends en implements Room {
     }
 
     public ArrayList<String> getParticipantIds() {
-        int size = this.nQ.size();
+        int size = this.eJ.size();
         ArrayList<String> arrayList = new ArrayList(size);
         for (int i = 0; i < size; i++) {
-            arrayList.add(((ParticipantEntity) this.nQ.get(i)).getParticipantId());
+            arrayList.add(((ParticipantEntity) this.eJ.get(i)).getParticipantId());
         }
         return arrayList;
     }
 
     public int getParticipantStatus(String participantId) {
-        int size = this.nQ.size();
+        int size = this.eJ.size();
         for (int i = 0; i < size; i++) {
-            Participant participant = (Participant) this.nQ.get(i);
+            Participant participant = (Participant) this.eJ.get(i);
             if (participant.getParticipantId().equals(participantId)) {
                 return participant.getStatus();
             }
@@ -173,27 +173,27 @@ public final class RoomEntity extends en implements Room {
     }
 
     public ArrayList<Participant> getParticipants() {
-        return new ArrayList(this.nQ);
+        return new ArrayList(this.eJ);
     }
 
     public String getRoomId() {
-        return this.nb;
+        return this.dV;
     }
 
     public int getStatus() {
-        return this.om;
+        return this.ff;
     }
 
     public int getVariant() {
-        return this.nR;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
+        return this.eK;
     }
 
     public int hashCode() {
-        return m1595a(this);
+        return m1382a(this);
+    }
+
+    public int m1387i() {
+        return this.ab;
     }
 
     public boolean isDataValid() {
@@ -201,25 +201,25 @@ public final class RoomEntity extends en implements Room {
     }
 
     public String toString() {
-        return m1597b((Room) this);
+        return m1384b((Room) this);
     }
 
     public void writeToParcel(Parcel dest, int flags) {
-        if (aX()) {
-            dest.writeString(this.nb);
-            dest.writeString(this.ol);
-            dest.writeLong(this.nN);
-            dest.writeInt(this.om);
-            dest.writeString(this.mo);
-            dest.writeInt(this.nR);
-            dest.writeBundle(this.oh);
-            int size = this.nQ.size();
+        if (m971w()) {
+            dest.writeString(this.dV);
+            dest.writeString(this.fe);
+            dest.writeLong(this.eG);
+            dest.writeInt(this.ff);
+            dest.writeString(this.di);
+            dest.writeInt(this.eK);
+            dest.writeBundle(this.fa);
+            int size = this.eJ.size();
             dest.writeInt(size);
             for (int i = 0; i < size; i++) {
-                ((ParticipantEntity) this.nQ.get(i)).writeToParcel(dest, flags);
+                ((ParticipantEntity) this.eJ.get(i)).writeToParcel(dest, flags);
             }
             return;
         }
-        C0124b.m162a(this, dest, flags);
+        C0158b.m160a(this, dest, flags);
     }
 }

@@ -3,7 +3,6 @@ package android.support.v4.widget;
 import android.content.Context;
 import android.view.View;
 import android.widget.SearchView;
-import org.telegram.messenger.BuildConfig;
 
 class SearchViewCompatIcs {
 
@@ -13,7 +12,7 @@ class SearchViewCompatIcs {
         }
 
         public void onActionViewCollapsed() {
-            setQuery(BuildConfig.FLAVOR, false);
+            setQuery("", false);
             super.onActionViewCollapsed();
         }
     }

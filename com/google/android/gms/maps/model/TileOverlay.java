@@ -1,19 +1,19 @@
 package com.google.android.gms.maps.model;
 
 import android.os.RemoteException;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.maps.model.internal.C0242f;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.maps.model.internal.C0230f;
 
 public final class TileOverlay {
-    private final C0242f qO;
+    private final C0230f hF;
 
-    public TileOverlay(C0242f delegate) {
-        this.qO = (C0242f) dm.m392e(delegate);
+    public TileOverlay(C0230f delegate) {
+        this.hF = (C0230f) C0192s.m521d(delegate);
     }
 
     public void clearTileCache() {
         try {
-            this.qO.clearTileCache();
+            this.hF.clearTileCache();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -24,7 +24,7 @@ public final class TileOverlay {
             return false;
         }
         try {
-            return this.qO.mo1307a(((TileOverlay) other).qO);
+            return this.hF.mo1573a(((TileOverlay) other).hF);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -32,7 +32,7 @@ public final class TileOverlay {
 
     public String getId() {
         try {
-            return this.qO.getId();
+            return this.hF.getId();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -40,7 +40,7 @@ public final class TileOverlay {
 
     public float getZIndex() {
         try {
-            return this.qO.getZIndex();
+            return this.hF.getZIndex();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -48,7 +48,7 @@ public final class TileOverlay {
 
     public int hashCode() {
         try {
-            return this.qO.hashCodeRemote();
+            return this.hF.hashCodeRemote();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -56,7 +56,7 @@ public final class TileOverlay {
 
     public boolean isVisible() {
         try {
-            return this.qO.isVisible();
+            return this.hF.isVisible();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -64,7 +64,7 @@ public final class TileOverlay {
 
     public void remove() {
         try {
-            this.qO.remove();
+            this.hF.remove();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -72,7 +72,7 @@ public final class TileOverlay {
 
     public void setVisible(boolean visible) {
         try {
-            this.qO.setVisible(visible);
+            this.hF.setVisible(visible);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -80,7 +80,7 @@ public final class TileOverlay {
 
     public void setZIndex(float zIndex) {
         try {
-            this.qO.setZIndex(zIndex);
+            this.hF.setZIndex(zIndex);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }

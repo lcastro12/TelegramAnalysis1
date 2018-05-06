@@ -1,113 +1,185 @@
 package com.google.android.gms.internal;
 
-import android.os.IBinder;
-import android.os.Parcel;
-import android.os.Parcelable.Creator;
-import com.google.android.gms.common.internal.safeparcel.C0107a;
-import com.google.android.gms.common.internal.safeparcel.C0107a.C0106a;
-import com.google.android.gms.common.internal.safeparcel.C0108b;
+import android.app.PendingIntent;
+import android.content.ContentProviderClient;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.location.Location;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import com.google.android.gms.location.C0197a;
+import com.google.android.gms.location.C0197a.C1365a;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import java.util.HashMap;
 
-public class bg implements Creator<bh> {
-    static void m203a(bh bhVar, Parcel parcel, int i) {
-        int k = C0108b.m133k(parcel);
-        C0108b.m131c(parcel, 1, bhVar.versionCode);
-        C0108b.m120a(parcel, 2, bhVar.fR, i, false);
-        C0108b.m118a(parcel, 3, bhVar.m895U(), false);
-        C0108b.m118a(parcel, 4, bhVar.m896V(), false);
-        C0108b.m118a(parcel, 5, bhVar.m897W(), false);
-        C0108b.m118a(parcel, 6, bhVar.m898X(), false);
-        C0108b.m121a(parcel, 7, bhVar.fW, false);
-        C0108b.m124a(parcel, 8, bhVar.fX);
-        C0108b.m121a(parcel, 9, bhVar.fY, false);
-        C0108b.m118a(parcel, 10, bhVar.m899Y(), false);
-        C0108b.m131c(parcel, 11, bhVar.orientation);
-        C0108b.m131c(parcel, 12, bhVar.ga);
-        C0108b.m121a(parcel, 13, bhVar.fz, false);
-        C0108b.m120a(parcel, 14, bhVar.eg, i, false);
-        C0108b.m112C(parcel, k);
-    }
+public class bg {
+    private final bk<bf> fG;
+    private ContentProviderClient fH = null;
+    private boolean fI = false;
+    private HashMap<LocationListener, C1705b> fJ = new HashMap();
+    private final ContentResolver mContentResolver;
 
-    public /* synthetic */ Object createFromParcel(Parcel x0) {
-        return m204d(x0);
-    }
+    private static class C0164a extends Handler {
+        private final LocationListener fK;
 
-    public bh m204d(Parcel parcel) {
-        int j = C0107a.m92j(parcel);
-        int i = 0;
-        be beVar = null;
-        IBinder iBinder = null;
-        IBinder iBinder2 = null;
-        IBinder iBinder3 = null;
-        IBinder iBinder4 = null;
-        String str = null;
-        boolean z = false;
-        String str2 = null;
-        IBinder iBinder5 = null;
-        int i2 = 0;
-        int i3 = 0;
-        String str3 = null;
-        co coVar = null;
-        while (parcel.dataPosition() < j) {
-            int i4 = C0107a.m90i(parcel);
-            switch (C0107a.m107y(i4)) {
+        public C0164a(LocationListener locationListener) {
+            this.fK = locationListener;
+        }
+
+        public C0164a(LocationListener locationListener, Looper looper) {
+            super(looper);
+            this.fK = locationListener;
+        }
+
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
                 case 1:
-                    i = C0107a.m86f(parcel, i4);
-                    break;
-                case 2:
-                    beVar = (be) C0107a.m77a(parcel, i4, be.CREATOR);
-                    break;
-                case 3:
-                    iBinder = C0107a.m95m(parcel, i4);
-                    break;
-                case 4:
-                    iBinder2 = C0107a.m95m(parcel, i4);
-                    break;
-                case 5:
-                    iBinder3 = C0107a.m95m(parcel, i4);
-                    break;
-                case 6:
-                    iBinder4 = C0107a.m95m(parcel, i4);
-                    break;
-                case 7:
-                    str = C0107a.m94l(parcel, i4);
-                    break;
-                case 8:
-                    z = C0107a.m83c(parcel, i4);
-                    break;
-                case 9:
-                    str2 = C0107a.m94l(parcel, i4);
-                    break;
-                case 10:
-                    iBinder5 = C0107a.m95m(parcel, i4);
-                    break;
-                case 11:
-                    i2 = C0107a.m86f(parcel, i4);
-                    break;
-                case 12:
-                    i3 = C0107a.m86f(parcel, i4);
-                    break;
-                case 13:
-                    str3 = C0107a.m94l(parcel, i4);
-                    break;
-                case 14:
-                    coVar = (co) C0107a.m77a(parcel, i4, co.CREATOR);
-                    break;
+                    this.fK.onLocationChanged(new Location((Location) msg.obj));
+                    return;
                 default:
-                    C0107a.m80b(parcel, i4);
-                    break;
+                    Log.e("LocationClientHelper", "unknown message in LocationHandler.handleMessage");
+                    return;
             }
         }
-        if (parcel.dataPosition() == j) {
-            return new bh(i, beVar, iBinder, iBinder2, iBinder3, iBinder4, str, z, str2, iBinder5, i2, i3, str3, coVar);
+    }
+
+    private static class C1705b extends C1365a {
+        private Handler fL;
+
+        C1705b(LocationListener locationListener, Looper looper) {
+            this.fL = looper == null ? new C0164a(locationListener) : new C0164a(locationListener, looper);
         }
-        throw new C0106a("Overread allowed size end=" + j, parcel);
+
+        public void onLocationChanged(Location location) {
+            if (this.fL == null) {
+                Log.e("LocationClientHelper", "Received a location in client after calling removeLocationUpdates.");
+                return;
+            }
+            Message obtain = Message.obtain();
+            obtain.what = 1;
+            obtain.obj = location;
+            this.fL.sendMessage(obtain);
+        }
+
+        public void release() {
+            this.fL = null;
+        }
     }
 
-    public bh[] m205h(int i) {
-        return new bh[i];
+    public bg(Context context, bk<bf> bkVar) {
+        this.fG = bkVar;
+        this.mContentResolver = context.getContentResolver();
     }
 
-    public /* synthetic */ Object[] newArray(int x0) {
-        return m205h(x0);
+    public void aR() {
+        if (this.fI) {
+            setMockMode(false);
+        }
+    }
+
+    public Location getLastLocation() {
+        this.fG.mo1240B();
+        try {
+            return ((bf) this.fG.mo1241C()).aQ();
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void removeAllListeners() {
+        try {
+            synchronized (this.fJ) {
+                for (C0197a c0197a : this.fJ.values()) {
+                    if (c0197a != null) {
+                        ((bf) this.fG.mo1241C()).mo1233a(c0197a);
+                    }
+                }
+                this.fJ.clear();
+            }
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void removeLocationUpdates(PendingIntent callbackIntent) {
+        this.fG.mo1240B();
+        try {
+            ((bf) this.fG.mo1241C()).mo1228a(callbackIntent);
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void removeLocationUpdates(LocationListener listener) {
+        this.fG.mo1240B();
+        C0192s.m518b((Object) listener, (Object) "Invalid null listener");
+        synchronized (this.fJ) {
+            C0197a c0197a = (C1705b) this.fJ.remove(listener);
+            if (this.fH != null && this.fJ.isEmpty()) {
+                this.fH.release();
+                this.fH = null;
+            }
+            if (c0197a != null) {
+                c0197a.release();
+                try {
+                    ((bf) this.fG.mo1241C()).mo1233a(c0197a);
+                } catch (Throwable e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        }
+    }
+
+    public void requestLocationUpdates(LocationRequest request, PendingIntent callbackIntent) {
+        this.fG.mo1240B();
+        try {
+            ((bf) this.fG.mo1241C()).mo1231a(request, callbackIntent);
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void requestLocationUpdates(LocationRequest request, LocationListener listener, Looper looper) {
+        this.fG.mo1240B();
+        if (looper == null) {
+            C0192s.m518b(Looper.myLooper(), (Object) "Can't create handler inside thread that has not called Looper.prepare()");
+        }
+        synchronized (this.fJ) {
+            C0197a c1705b;
+            C1705b c1705b2 = (C1705b) this.fJ.get(listener);
+            if (c1705b2 == null) {
+                c1705b = new C1705b(listener, looper);
+            } else {
+                Object obj = c1705b2;
+            }
+            this.fJ.put(listener, c1705b);
+            try {
+                ((bf) this.fG.mo1241C()).mo1232a(request, c1705b);
+            } catch (Throwable e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    public void setMockLocation(Location mockLocation) {
+        this.fG.mo1240B();
+        try {
+            ((bf) this.fG.mo1241C()).setMockLocation(mockLocation);
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void setMockMode(boolean isMockMode) {
+        this.fG.mo1240B();
+        try {
+            ((bf) this.fG.mo1241C()).setMockMode(isMockMode);
+            this.fI = isMockMode;
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

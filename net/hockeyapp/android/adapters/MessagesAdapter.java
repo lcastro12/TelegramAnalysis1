@@ -9,10 +9,15 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import net.hockeyapp.android.objects.FeedbackAttachment;
 import net.hockeyapp.android.objects.FeedbackMessage;
+import net.hockeyapp.android.tasks.AttachmentDownloader;
+import net.hockeyapp.android.views.AttachmentListView;
+import net.hockeyapp.android.views.AttachmentView;
 import net.hockeyapp.android.views.FeedbackMessageView;
 
 public class MessagesAdapter extends BaseAdapter {
+    private AttachmentListView attachmentListView;
     private TextView authorTextView;
     private Context context;
     private Date date;
@@ -40,9 +45,10 @@ public class MessagesAdapter extends BaseAdapter {
             view = (FeedbackMessageView) convertView;
         }
         if (feedbackMessage != null) {
-            this.authorTextView = (TextView) view.findViewById(FeedbackMessageView.AUTHOR_TEXT_VIEW_ID);
-            this.dateTextView = (TextView) view.findViewById(FeedbackMessageView.DATE_TEXT_VIEW_ID);
-            this.messageTextView = (TextView) view.findViewById(FeedbackMessageView.MESSAGE_TEXT_VIEW_ID);
+            this.authorTextView = (TextView) view.findViewById(12289);
+            this.dateTextView = (TextView) view.findViewById(12290);
+            this.messageTextView = (TextView) view.findViewById(12291);
+            this.attachmentListView = (AttachmentListView) view.findViewById(12292);
             try {
                 this.date = this.format.parse(feedbackMessage.getCreatedAt());
                 this.dateTextView.setText(this.formatNew.format(this.date));
@@ -51,6 +57,12 @@ public class MessagesAdapter extends BaseAdapter {
             }
             this.authorTextView.setText(feedbackMessage.getName());
             this.messageTextView.setText(feedbackMessage.getText());
+            this.attachmentListView.removeAllViews();
+            for (FeedbackAttachment feedbackAttachment : feedbackMessage.getFeedbackAttachments()) {
+                AttachmentView attachmentView = new AttachmentView(this.context, this.attachmentListView, feedbackAttachment, false);
+                AttachmentDownloader.getInstance().download(feedbackAttachment, attachmentView);
+                this.attachmentListView.addView(attachmentView);
+            }
         }
         view.setFeedbackMessageViewBgAndTextColor(position % 2 == 0 ? 0 : 1);
         return view;

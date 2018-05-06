@@ -1,26 +1,21 @@
 package android.support.v4.text;
 
 import android.os.Build.VERSION;
+import java.util.Locale;
 
 public class ICUCompat {
     private static final ICUCompatImpl IMPL;
 
     interface ICUCompatImpl {
-        String addLikelySubtags(String str);
-
-        String getScript(String str);
+        String maximizeAndGetScript(Locale locale);
     }
 
     static class ICUCompatImplBase implements ICUCompatImpl {
         ICUCompatImplBase() {
         }
 
-        public String getScript(String locale) {
+        public String maximizeAndGetScript(Locale locale) {
             return null;
-        }
-
-        public String addLikelySubtags(String locale) {
-            return locale;
         }
     }
 
@@ -28,28 +23,32 @@ public class ICUCompat {
         ICUCompatImplIcs() {
         }
 
-        public String getScript(String locale) {
-            return ICUCompatIcs.getScript(locale);
+        public String maximizeAndGetScript(Locale locale) {
+            return ICUCompatIcs.maximizeAndGetScript(locale);
+        }
+    }
+
+    static class ICUCompatImplLollipop implements ICUCompatImpl {
+        ICUCompatImplLollipop() {
         }
 
-        public String addLikelySubtags(String locale) {
-            return ICUCompatIcs.addLikelySubtags(locale);
+        public String maximizeAndGetScript(Locale locale) {
+            return ICUCompatApi23.maximizeAndGetScript(locale);
         }
     }
 
     static {
-        if (VERSION.SDK_INT >= 14) {
+        int version = VERSION.SDK_INT;
+        if (version >= 21) {
+            IMPL = new ICUCompatImplLollipop();
+        } else if (version >= 14) {
             IMPL = new ICUCompatImplIcs();
         } else {
             IMPL = new ICUCompatImplBase();
         }
     }
 
-    public static String getScript(String locale) {
-        return IMPL.getScript(locale);
-    }
-
-    public static String addLikelySubtags(String locale) {
-        return IMPL.addLikelySubtags(locale);
+    public static String maximizeAndGetScript(Locale locale) {
+        return IMPL.maximizeAndGetScript(locale);
     }
 }

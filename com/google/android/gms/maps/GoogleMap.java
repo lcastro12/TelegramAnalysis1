@@ -4,25 +4,24 @@ import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.RemoteException;
 import android.view.View;
-import com.google.android.gms.dynamic.C0112b;
-import com.google.android.gms.dynamic.C0898c;
-import com.google.android.gms.internal.dm;
+import com.google.android.gms.dynamic.C0146b;
+import com.google.android.gms.dynamic.C1689c;
+import com.google.android.gms.internal.C0192s;
 import com.google.android.gms.maps.LocationSource.OnLocationChangedListener;
-import com.google.android.gms.maps.internal.C0211b.C0796a;
-import com.google.android.gms.maps.internal.C0213d.C0800a;
-import com.google.android.gms.maps.internal.C0214e.C0802a;
-import com.google.android.gms.maps.internal.C0215f.C0804a;
-import com.google.android.gms.maps.internal.C0216g;
-import com.google.android.gms.maps.internal.C0217h.C0808a;
-import com.google.android.gms.maps.internal.C0218i.C0810a;
-import com.google.android.gms.maps.internal.C0219j.C0812a;
-import com.google.android.gms.maps.internal.C0220k.C0814a;
-import com.google.android.gms.maps.internal.C0221l.C0816a;
-import com.google.android.gms.maps.internal.C0222m.C0818a;
-import com.google.android.gms.maps.internal.C0223n.C0820a;
-import com.google.android.gms.maps.internal.C0224o.C0822a;
+import com.google.android.gms.maps.internal.C0200b.C1388a;
+import com.google.android.gms.maps.internal.C0202d.C1392a;
+import com.google.android.gms.maps.internal.C0203e.C1394a;
+import com.google.android.gms.maps.internal.C0204f.C1396a;
+import com.google.android.gms.maps.internal.C0205g;
+import com.google.android.gms.maps.internal.C0206h.C1400a;
+import com.google.android.gms.maps.internal.C0207i.C1402a;
+import com.google.android.gms.maps.internal.C0208j.C1404a;
+import com.google.android.gms.maps.internal.C0209k.C1406a;
+import com.google.android.gms.maps.internal.C0210l.C1408a;
+import com.google.android.gms.maps.internal.C0211m.C1410a;
+import com.google.android.gms.maps.internal.C0212n.C1412a;
 import com.google.android.gms.maps.internal.IGoogleMapDelegate;
-import com.google.android.gms.maps.internal.ILocationSourceDelegate.C0786a;
+import com.google.android.gms.maps.internal.ILocationSourceDelegate.C1378a;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
@@ -38,9 +37,9 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RuntimeRemoteException;
 import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.TileOverlayOptions;
-import com.google.android.gms.maps.model.internal.C0239c;
-import com.google.android.gms.maps.model.internal.C0240d;
-import com.google.android.gms.maps.model.internal.C0242f;
+import com.google.android.gms.maps.model.internal.C0227c;
+import com.google.android.gms.maps.model.internal.C0228d;
+import com.google.android.gms.maps.model.internal.C0230f;
 
 public final class GoogleMap {
     public static final int MAP_TYPE_HYBRID = 4;
@@ -48,8 +47,8 @@ public final class GoogleMap {
     public static final int MAP_TYPE_NORMAL = 1;
     public static final int MAP_TYPE_SATELLITE = 2;
     public static final int MAP_TYPE_TERRAIN = 3;
-    private final IGoogleMapDelegate pf;
-    private UiSettings pg;
+    private final IGoogleMapDelegate fX;
+    private UiSettings fY;
 
     public interface CancelableCallback {
         void onCancel();
@@ -73,10 +72,6 @@ public final class GoogleMap {
 
     public interface OnMapClickListener {
         void onMapClick(LatLng latLng);
-    }
-
-    public interface OnMapLoadedCallback {
-        void onMapLoaded();
     }
 
     public interface OnMapLongClickListener {
@@ -108,29 +103,33 @@ public final class GoogleMap {
         void onSnapshotReady(Bitmap bitmap);
     }
 
-    private static final class C0946a extends C0796a {
-        private final CancelableCallback pw;
+    private static final class C1732a extends C1388a {
+        private final CancelableCallback gn;
 
-        C0946a(CancelableCallback cancelableCallback) {
-            this.pw = cancelableCallback;
+        C1732a(CancelableCallback cancelableCallback) {
+            this.gn = cancelableCallback;
         }
 
         public void onCancel() {
-            this.pw.onCancel();
+            this.gn.onCancel();
         }
 
         public void onFinish() {
-            this.pw.onFinish();
+            this.gn.onFinish();
         }
     }
 
     protected GoogleMap(IGoogleMapDelegate map) {
-        this.pf = (IGoogleMapDelegate) dm.m392e(map);
+        this.fX = (IGoogleMapDelegate) C0192s.m521d(map);
+    }
+
+    IGoogleMapDelegate aY() {
+        return this.fX;
     }
 
     public final Circle addCircle(CircleOptions options) {
         try {
-            return new Circle(this.pf.addCircle(options));
+            return new Circle(this.fX.addCircle(options));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -138,7 +137,7 @@ public final class GoogleMap {
 
     public final GroundOverlay addGroundOverlay(GroundOverlayOptions options) {
         try {
-            C0239c addGroundOverlay = this.pf.addGroundOverlay(options);
+            C0227c addGroundOverlay = this.fX.addGroundOverlay(options);
             return addGroundOverlay != null ? new GroundOverlay(addGroundOverlay) : null;
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
@@ -147,7 +146,7 @@ public final class GoogleMap {
 
     public final Marker addMarker(MarkerOptions options) {
         try {
-            C0240d addMarker = this.pf.addMarker(options);
+            C0228d addMarker = this.fX.addMarker(options);
             return addMarker != null ? new Marker(addMarker) : null;
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
@@ -156,7 +155,7 @@ public final class GoogleMap {
 
     public final Polygon addPolygon(PolygonOptions options) {
         try {
-            return new Polygon(this.pf.addPolygon(options));
+            return new Polygon(this.fX.addPolygon(options));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -164,7 +163,7 @@ public final class GoogleMap {
 
     public final Polyline addPolyline(PolylineOptions options) {
         try {
-            return new Polyline(this.pf.addPolyline(options));
+            return new Polyline(this.fX.addPolyline(options));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -172,7 +171,7 @@ public final class GoogleMap {
 
     public final TileOverlay addTileOverlay(TileOverlayOptions options) {
         try {
-            C0242f addTileOverlay = this.pf.addTileOverlay(options);
+            C0230f addTileOverlay = this.fX.addTileOverlay(options);
             return addTileOverlay != null ? new TileOverlay(addTileOverlay) : null;
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
@@ -181,7 +180,7 @@ public final class GoogleMap {
 
     public final void animateCamera(CameraUpdate update) {
         try {
-            this.pf.animateCamera(update.cs());
+            this.fX.animateCamera(update.aW());
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -189,7 +188,7 @@ public final class GoogleMap {
 
     public final void animateCamera(CameraUpdate update, int durationMs, CancelableCallback callback) {
         try {
-            this.pf.animateCameraWithDurationAndCallback(update.cs(), durationMs, callback == null ? null : new C0946a(callback));
+            this.fX.animateCameraWithDurationAndCallback(update.aW(), durationMs, callback == null ? null : new C1732a(callback));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -197,7 +196,7 @@ public final class GoogleMap {
 
     public final void animateCamera(CameraUpdate update, CancelableCallback callback) {
         try {
-            this.pf.animateCameraWithCallback(update.cs(), callback == null ? null : new C0946a(callback));
+            this.fX.animateCameraWithCallback(update.aW(), callback == null ? null : new C1732a(callback));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -205,19 +204,15 @@ public final class GoogleMap {
 
     public final void clear() {
         try {
-            this.pf.clear();
+            this.fX.clear();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
     }
 
-    IGoogleMapDelegate cu() {
-        return this.pf;
-    }
-
     public final CameraPosition getCameraPosition() {
         try {
-            return this.pf.getCameraPosition();
+            return this.fX.getCameraPosition();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -225,7 +220,7 @@ public final class GoogleMap {
 
     public final int getMapType() {
         try {
-            return this.pf.getMapType();
+            return this.fX.getMapType();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -233,7 +228,7 @@ public final class GoogleMap {
 
     public final float getMaxZoomLevel() {
         try {
-            return this.pf.getMaxZoomLevel();
+            return this.fX.getMaxZoomLevel();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -241,7 +236,7 @@ public final class GoogleMap {
 
     public final float getMinZoomLevel() {
         try {
-            return this.pf.getMinZoomLevel();
+            return this.fX.getMinZoomLevel();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -250,7 +245,7 @@ public final class GoogleMap {
     @Deprecated
     public final Location getMyLocation() {
         try {
-            return this.pf.getMyLocation();
+            return this.fX.getMyLocation();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -258,7 +253,7 @@ public final class GoogleMap {
 
     public final Projection getProjection() {
         try {
-            return new Projection(this.pf.getProjection());
+            return new Projection(this.fX.getProjection());
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -266,18 +261,10 @@ public final class GoogleMap {
 
     public final UiSettings getUiSettings() {
         try {
-            if (this.pg == null) {
-                this.pg = new UiSettings(this.pf.getUiSettings());
+            if (this.fY == null) {
+                this.fY = new UiSettings(this.fX.getUiSettings());
             }
-            return this.pg;
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public final boolean isBuildingsEnabled() {
-        try {
-            return this.pf.isBuildingsEnabled();
+            return this.fY;
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -285,7 +272,7 @@ public final class GoogleMap {
 
     public final boolean isIndoorEnabled() {
         try {
-            return this.pf.isIndoorEnabled();
+            return this.fX.isIndoorEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -293,7 +280,7 @@ public final class GoogleMap {
 
     public final boolean isMyLocationEnabled() {
         try {
-            return this.pf.isMyLocationEnabled();
+            return this.fX.isMyLocationEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -301,7 +288,7 @@ public final class GoogleMap {
 
     public final boolean isTrafficEnabled() {
         try {
-            return this.pf.isTrafficEnabled();
+            return this.fX.isTrafficEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -309,15 +296,7 @@ public final class GoogleMap {
 
     public final void moveCamera(CameraUpdate update) {
         try {
-            this.pf.moveCamera(update.cs());
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public final void setBuildingsEnabled(boolean enabled) {
-        try {
-            this.pf.setBuildingsEnabled(enabled);
+            this.fX.moveCamera(update.aW());
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -325,7 +304,7 @@ public final class GoogleMap {
 
     public final boolean setIndoorEnabled(boolean enabled) {
         try {
-            return this.pf.setIndoorEnabled(enabled);
+            return this.fX.setIndoorEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -334,21 +313,21 @@ public final class GoogleMap {
     public final void setInfoWindowAdapter(final InfoWindowAdapter adapter) {
         if (adapter == null) {
             try {
-                this.pf.setInfoWindowAdapter(null);
+                this.fX.setInfoWindowAdapter(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setInfoWindowAdapter(new C0800a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setInfoWindowAdapter(new C1392a(this) {
+            final /* synthetic */ GoogleMap ga;
 
-            public C0112b mo1182f(C0240d c0240d) {
-                return C0898c.m1318g(adapter.getInfoWindow(new Marker(c0240d)));
+            public C0146b mo1453f(C0228d c0228d) {
+                return C1689c.m1135f(adapter.getInfoWindow(new Marker(c0228d)));
             }
 
-            public C0112b mo1183g(C0240d c0240d) {
-                return C0898c.m1318g(adapter.getInfoContents(new Marker(c0240d)));
+            public C0146b mo1454g(C0228d c0228d) {
+                return C1689c.m1135f(adapter.getInfoContents(new Marker(c0228d)));
             }
         });
     }
@@ -356,22 +335,22 @@ public final class GoogleMap {
     public final void setLocationSource(final LocationSource source) {
         if (source == null) {
             try {
-                this.pf.setLocationSource(null);
+                this.fX.setLocationSource(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setLocationSource(new C0786a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setLocationSource(new C1378a(this) {
+            final /* synthetic */ GoogleMap ga;
 
-            public void activate(final C0216g listener) {
+            public void activate(final C0205g listener) {
                 source.activate(new OnLocationChangedListener(this) {
-                    final /* synthetic */ C09371 pk;
+                    final /* synthetic */ C17231 gc;
 
                     public void onLocationChanged(Location location) {
                         try {
-                            listener.mo1186g(C0898c.m1318g(location));
+                            listener.mo1457e(C1689c.m1135f(location));
                         } catch (RemoteException e) {
                             throw new RuntimeRemoteException(e);
                         }
@@ -387,7 +366,7 @@ public final class GoogleMap {
 
     public final void setMapType(int type) {
         try {
-            this.pf.setMapType(type);
+            this.fX.setMapType(type);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -395,7 +374,7 @@ public final class GoogleMap {
 
     public final void setMyLocationEnabled(boolean enabled) {
         try {
-            this.pf.setMyLocationEnabled(enabled);
+            this.fX.setMyLocationEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -404,14 +383,14 @@ public final class GoogleMap {
     public final void setOnCameraChangeListener(final OnCameraChangeListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnCameraChangeListener(null);
+                this.fX.setOnCameraChangeListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnCameraChangeListener(new C0802a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnCameraChangeListener(new C1394a(this) {
+            final /* synthetic */ GoogleMap ga;
 
             public void onCameraChange(CameraPosition position) {
                 listener.onCameraChange(position);
@@ -422,17 +401,17 @@ public final class GoogleMap {
     public final void setOnInfoWindowClickListener(final OnInfoWindowClickListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnInfoWindowClickListener(null);
+                this.fX.setOnInfoWindowClickListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnInfoWindowClickListener(new C0804a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnInfoWindowClickListener(new C1396a(this) {
+            final /* synthetic */ GoogleMap ga;
 
-            public void mo1185e(C0240d c0240d) {
-                listener.onInfoWindowClick(new Marker(c0240d));
+            public void mo1456e(C0228d c0228d) {
+                listener.onInfoWindowClick(new Marker(c0228d));
             }
         });
     }
@@ -440,14 +419,14 @@ public final class GoogleMap {
     public final void setOnMapClickListener(final OnMapClickListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnMapClickListener(null);
+                this.fX.setOnMapClickListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnMapClickListener(new C0808a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnMapClickListener(new C1400a(this) {
+            final /* synthetic */ GoogleMap ga;
 
             public void onMapClick(LatLng point) {
                 listener.onMapClick(point);
@@ -455,35 +434,17 @@ public final class GoogleMap {
         });
     }
 
-    public void setOnMapLoadedCallback(final OnMapLoadedCallback callback) {
-        if (callback == null) {
-            try {
-                this.pf.setOnMapLoadedCallback(null);
-                return;
-            } catch (RemoteException e) {
-                throw new RuntimeRemoteException(e);
-            }
-        }
-        this.pf.setOnMapLoadedCallback(new C0810a(this) {
-            final /* synthetic */ GoogleMap pi;
-
-            public void onMapLoaded() throws RemoteException {
-                callback.onMapLoaded();
-            }
-        });
-    }
-
     public final void setOnMapLongClickListener(final OnMapLongClickListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnMapLongClickListener(null);
+                this.fX.setOnMapLongClickListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnMapLongClickListener(new C0812a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnMapLongClickListener(new C1402a(this) {
+            final /* synthetic */ GoogleMap ga;
 
             public void onMapLongClick(LatLng point) {
                 listener.onMapLongClick(point);
@@ -494,17 +455,17 @@ public final class GoogleMap {
     public final void setOnMarkerClickListener(final OnMarkerClickListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnMarkerClickListener(null);
+                this.fX.setOnMarkerClickListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnMarkerClickListener(new C0814a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnMarkerClickListener(new C1404a(this) {
+            final /* synthetic */ GoogleMap ga;
 
-            public boolean mo1190a(C0240d c0240d) {
-                return listener.onMarkerClick(new Marker(c0240d));
+            public boolean mo1460a(C0228d c0228d) {
+                return listener.onMarkerClick(new Marker(c0228d));
             }
         });
     }
@@ -512,25 +473,25 @@ public final class GoogleMap {
     public final void setOnMarkerDragListener(final OnMarkerDragListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnMarkerDragListener(null);
+                this.fX.setOnMarkerDragListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnMarkerDragListener(new C0816a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnMarkerDragListener(new C1406a(this) {
+            final /* synthetic */ GoogleMap ga;
 
-            public void mo1191b(C0240d c0240d) {
-                listener.onMarkerDragStart(new Marker(c0240d));
+            public void mo1461b(C0228d c0228d) {
+                listener.onMarkerDragStart(new Marker(c0228d));
             }
 
-            public void mo1192c(C0240d c0240d) {
-                listener.onMarkerDragEnd(new Marker(c0240d));
+            public void mo1462c(C0228d c0228d) {
+                listener.onMarkerDragEnd(new Marker(c0228d));
             }
 
-            public void mo1193d(C0240d c0240d) {
-                listener.onMarkerDrag(new Marker(c0240d));
+            public void mo1463d(C0228d c0228d) {
+                listener.onMarkerDrag(new Marker(c0228d));
             }
         });
     }
@@ -538,14 +499,14 @@ public final class GoogleMap {
     public final void setOnMyLocationButtonClickListener(final OnMyLocationButtonClickListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnMyLocationButtonClickListener(null);
+                this.fX.setOnMyLocationButtonClickListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnMyLocationButtonClickListener(new C0818a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnMyLocationButtonClickListener(new C1408a(this) {
+            final /* synthetic */ GoogleMap ga;
 
             public boolean onMyLocationButtonClick() throws RemoteException {
                 return listener.onMyLocationButtonClick();
@@ -557,24 +518,24 @@ public final class GoogleMap {
     public final void setOnMyLocationChangeListener(final OnMyLocationChangeListener listener) {
         if (listener == null) {
             try {
-                this.pf.setOnMyLocationChangeListener(null);
+                this.fX.setOnMyLocationChangeListener(null);
                 return;
             } catch (RemoteException e) {
                 throw new RuntimeRemoteException(e);
             }
         }
-        this.pf.setOnMyLocationChangeListener(new C0820a(this) {
-            final /* synthetic */ GoogleMap pi;
+        this.fX.setOnMyLocationChangeListener(new C1410a(this) {
+            final /* synthetic */ GoogleMap ga;
 
-            public void mo1195d(C0112b c0112b) {
-                listener.onMyLocationChange((Location) C0898c.m1317b(c0112b));
+            public void mo1465b(C0146b c0146b) {
+                listener.onMyLocationChange((Location) C1689c.m1134a(c0146b));
             }
         });
     }
 
     public final void setPadding(int left, int top, int right, int bottom) {
         try {
-            this.pf.setPadding(left, top, right, bottom);
+            this.fX.setPadding(left, top, right, bottom);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -582,7 +543,7 @@ public final class GoogleMap {
 
     public final void setTrafficEnabled(boolean enabled) {
         try {
-            this.pf.setTrafficEnabled(enabled);
+            this.fX.setTrafficEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -594,17 +555,13 @@ public final class GoogleMap {
 
     public final void snapshot(final SnapshotReadyCallback callback, Bitmap bitmap) {
         try {
-            this.pf.snapshot(new C0822a(this) {
-                final /* synthetic */ GoogleMap pi;
-
-                public void mo1196c(C0112b c0112b) throws RemoteException {
-                    callback.onSnapshotReady((Bitmap) C0898c.m1317b(c0112b));
-                }
+            this.fX.snapshot(new C1412a(this) {
+                final /* synthetic */ GoogleMap ga;
 
                 public void onSnapshotReady(Bitmap snapshot) throws RemoteException {
                     callback.onSnapshotReady(snapshot);
                 }
-            }, (C0898c) (bitmap != null ? C0898c.m1318g(bitmap) : null));
+            }, (C1689c) (bitmap != null ? C1689c.m1135f(bitmap) : null));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -612,7 +569,7 @@ public final class GoogleMap {
 
     public final void stopAnimation() {
         try {
-            this.pf.stopAnimation();
+            this.fX.stopAnimation();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }

@@ -3,17 +3,14 @@ package com.google.android.gms.common.data;
 import java.util.Iterator;
 
 public abstract class DataBuffer<T> implements Iterable<T> {
-    protected final C0646d jf;
+    protected final C1287d f29S;
 
-    protected DataBuffer(C0646d dataHolder) {
-        this.jf = dataHolder;
-        if (this.jf != null) {
-            this.jf.m810b(this);
-        }
+    protected DataBuffer(C1287d dataHolder) {
+        this.f29S = dataHolder;
     }
 
     public void close() {
-        this.jf.close();
+        this.f29S.close();
     }
 
     public int describeContents() {
@@ -23,14 +20,14 @@ public abstract class DataBuffer<T> implements Iterable<T> {
     public abstract T get(int i);
 
     public int getCount() {
-        return this.jf.getCount();
+        return this.f29S.getCount();
     }
 
     public boolean isClosed() {
-        return this.jf.isClosed();
+        return this.f29S.isClosed();
     }
 
     public Iterator<T> iterator() {
-        return new C0095a(this);
+        return new C0129a(this);
     }
 }

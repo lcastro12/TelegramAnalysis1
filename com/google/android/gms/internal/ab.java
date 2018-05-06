@@ -1,152 +1,113 @@
 package com.google.android.gms.internal;
 
-import android.os.Binder;
-import android.os.IBinder;
-import android.os.IInterface;
 import android.os.Parcel;
-import android.os.RemoteException;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.internal.ae.C0161b;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
-public interface ab extends IInterface {
+public final class ab implements SafeParcelable, C0161b<String, Integer> {
+    public static final ac CREATOR = new ac();
+    private final int ab;
+    private final HashMap<String, Integer> co;
+    private final HashMap<Integer, String> cp;
+    private final ArrayList<C1307a> cq;
 
-    public static abstract class C0666a extends Binder implements ab {
+    public static final class C1307a implements SafeParcelable {
+        public static final ad CREATOR = new ad();
+        final String cr;
+        final int cs;
+        final int versionCode;
 
-        private static class C0665a implements ab {
-            private IBinder dG;
-
-            C0665a(IBinder iBinder) {
-                this.dG = iBinder;
-            }
-
-            public IBinder asBinder() {
-                return this.dG;
-            }
-
-            public void onAdClosed() throws RemoteException {
-                Parcel obtain = Parcel.obtain();
-                Parcel obtain2 = Parcel.obtain();
-                try {
-                    obtain.writeInterfaceToken("com.google.android.gms.ads.internal.client.IAdListener");
-                    this.dG.transact(1, obtain, obtain2, 0);
-                    obtain2.readException();
-                } finally {
-                    obtain2.recycle();
-                    obtain.recycle();
-                }
-            }
-
-            public void onAdFailedToLoad(int errorCode) throws RemoteException {
-                Parcel obtain = Parcel.obtain();
-                Parcel obtain2 = Parcel.obtain();
-                try {
-                    obtain.writeInterfaceToken("com.google.android.gms.ads.internal.client.IAdListener");
-                    obtain.writeInt(errorCode);
-                    this.dG.transact(2, obtain, obtain2, 0);
-                    obtain2.readException();
-                } finally {
-                    obtain2.recycle();
-                    obtain.recycle();
-                }
-            }
-
-            public void onAdLeftApplication() throws RemoteException {
-                Parcel obtain = Parcel.obtain();
-                Parcel obtain2 = Parcel.obtain();
-                try {
-                    obtain.writeInterfaceToken("com.google.android.gms.ads.internal.client.IAdListener");
-                    this.dG.transact(3, obtain, obtain2, 0);
-                    obtain2.readException();
-                } finally {
-                    obtain2.recycle();
-                    obtain.recycle();
-                }
-            }
-
-            public void onAdLoaded() throws RemoteException {
-                Parcel obtain = Parcel.obtain();
-                Parcel obtain2 = Parcel.obtain();
-                try {
-                    obtain.writeInterfaceToken("com.google.android.gms.ads.internal.client.IAdListener");
-                    this.dG.transact(4, obtain, obtain2, 0);
-                    obtain2.readException();
-                } finally {
-                    obtain2.recycle();
-                    obtain.recycle();
-                }
-            }
-
-            public void onAdOpened() throws RemoteException {
-                Parcel obtain = Parcel.obtain();
-                Parcel obtain2 = Parcel.obtain();
-                try {
-                    obtain.writeInterfaceToken("com.google.android.gms.ads.internal.client.IAdListener");
-                    this.dG.transact(5, obtain, obtain2, 0);
-                    obtain2.readException();
-                } finally {
-                    obtain2.recycle();
-                    obtain.recycle();
-                }
-            }
+        C1307a(int i, String str, int i2) {
+            this.versionCode = i;
+            this.cr = str;
+            this.cs = i2;
         }
 
-        public C0666a() {
-            attachInterface(this, "com.google.android.gms.ads.internal.client.IAdListener");
+        C1307a(String str, int i) {
+            this.versionCode = 1;
+            this.cr = str;
+            this.cs = i;
         }
 
-        public static ab m836e(IBinder iBinder) {
-            if (iBinder == null) {
-                return null;
-            }
-            IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.ads.internal.client.IAdListener");
-            return (queryLocalInterface == null || !(queryLocalInterface instanceof ab)) ? new C0665a(iBinder) : (ab) queryLocalInterface;
+        public int describeContents() {
+            ad adVar = CREATOR;
+            return 0;
         }
 
-        public IBinder asBinder() {
-            return this;
-        }
-
-        public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
-            switch (code) {
-                case 1:
-                    data.enforceInterface("com.google.android.gms.ads.internal.client.IAdListener");
-                    onAdClosed();
-                    reply.writeNoException();
-                    return true;
-                case 2:
-                    data.enforceInterface("com.google.android.gms.ads.internal.client.IAdListener");
-                    onAdFailedToLoad(data.readInt());
-                    reply.writeNoException();
-                    return true;
-                case 3:
-                    data.enforceInterface("com.google.android.gms.ads.internal.client.IAdListener");
-                    onAdLeftApplication();
-                    reply.writeNoException();
-                    return true;
-                case 4:
-                    data.enforceInterface("com.google.android.gms.ads.internal.client.IAdListener");
-                    onAdLoaded();
-                    reply.writeNoException();
-                    return true;
-                case 5:
-                    data.enforceInterface("com.google.android.gms.ads.internal.client.IAdListener");
-                    onAdOpened();
-                    reply.writeNoException();
-                    return true;
-                case 1598968902:
-                    reply.writeString("com.google.android.gms.ads.internal.client.IAdListener");
-                    return true;
-                default:
-                    return super.onTransact(code, data, reply, flags);
-            }
+        public void writeToParcel(Parcel out, int flags) {
+            ad adVar = CREATOR;
+            ad.m173a(this, out, flags);
         }
     }
 
-    void onAdClosed() throws RemoteException;
+    public ab() {
+        this.ab = 1;
+        this.co = new HashMap();
+        this.cp = new HashMap();
+        this.cq = null;
+    }
 
-    void onAdFailedToLoad(int i) throws RemoteException;
+    ab(int i, ArrayList<C1307a> arrayList) {
+        this.ab = i;
+        this.co = new HashMap();
+        this.cp = new HashMap();
+        this.cq = null;
+        m660a((ArrayList) arrayList);
+    }
 
-    void onAdLeftApplication() throws RemoteException;
+    private void m660a(ArrayList<C1307a> arrayList) {
+        Iterator it = arrayList.iterator();
+        while (it.hasNext()) {
+            C1307a c1307a = (C1307a) it.next();
+            m665b(c1307a.cr, c1307a.cs);
+        }
+    }
 
-    void onAdLoaded() throws RemoteException;
+    ArrayList<C1307a> m661Q() {
+        ArrayList<C1307a> arrayList = new ArrayList();
+        for (String str : this.co.keySet()) {
+            arrayList.add(new C1307a(str, ((Integer) this.co.get(str)).intValue()));
+        }
+        return arrayList;
+    }
 
-    void onAdOpened() throws RemoteException;
+    public int mo1084R() {
+        return 7;
+    }
+
+    public int mo1085S() {
+        return 0;
+    }
+
+    public String m664a(Integer num) {
+        String str = (String) this.cp.get(num);
+        return (str == null && this.co.containsKey("gms_unknown")) ? "gms_unknown" : str;
+    }
+
+    public ab m665b(String str, int i) {
+        this.co.put(str, Integer.valueOf(i));
+        this.cp.put(Integer.valueOf(i), str);
+        return this;
+    }
+
+    public int describeContents() {
+        ac acVar = CREATOR;
+        return 0;
+    }
+
+    public /* synthetic */ Object mo1086e(Object obj) {
+        return m664a((Integer) obj);
+    }
+
+    int m667i() {
+        return this.ab;
+    }
+
+    public void writeToParcel(Parcel out, int flags) {
+        ac acVar = CREATOR;
+        ac.m170a(this, out, flags);
+    }
 }

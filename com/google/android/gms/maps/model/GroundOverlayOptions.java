@@ -3,73 +3,73 @@ package com.google.android.gms.maps.model;
 import android.os.IBinder;
 import android.os.Parcel;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.dynamic.C0112b.C0655a;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.dynamic.C0146b.C1296a;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.maps.internal.C0215q;
 
 public final class GroundOverlayOptions implements SafeParcelable {
     public static final GroundOverlayOptionsCreator CREATOR = new GroundOverlayOptionsCreator();
     public static final float NO_DIMENSION = -1.0f;
-    private final int iM;
-    private float qd;
-    private float qk;
-    private boolean ql;
-    private BitmapDescriptor qn;
-    private LatLng qo;
-    private float qp;
-    private float qq;
-    private LatLngBounds qr;
-    private float qs;
-    private float qt;
-    private float qu;
+    private final int ab;
+    private float gU;
+    private float hb;
+    private boolean hc;
+    private BitmapDescriptor he;
+    private LatLng hf;
+    private float hg;
+    private float hh;
+    private LatLngBounds hi;
+    private float hj;
+    private float hk;
+    private float hl;
 
     public GroundOverlayOptions() {
-        this.ql = true;
-        this.qs = 0.0f;
-        this.qt = 0.5f;
-        this.qu = 0.5f;
-        this.iM = 1;
+        this.hc = true;
+        this.hj = 0.0f;
+        this.hk = 0.5f;
+        this.hl = 0.5f;
+        this.ab = 1;
     }
 
     GroundOverlayOptions(int versionCode, IBinder wrappedImage, LatLng location, float width, float height, LatLngBounds bounds, float bearing, float zIndex, boolean visible, float transparency, float anchorU, float anchorV) {
-        this.ql = true;
-        this.qs = 0.0f;
-        this.qt = 0.5f;
-        this.qu = 0.5f;
-        this.iM = versionCode;
-        this.qn = new BitmapDescriptor(C0655a.m828z(wrappedImage));
-        this.qo = location;
-        this.qp = width;
-        this.qq = height;
-        this.qr = bounds;
-        this.qd = bearing;
-        this.qk = zIndex;
-        this.ql = visible;
-        this.qs = transparency;
-        this.qt = anchorU;
-        this.qu = anchorV;
+        this.hc = true;
+        this.hj = 0.0f;
+        this.hk = 0.5f;
+        this.hl = 0.5f;
+        this.ab = versionCode;
+        this.he = new BitmapDescriptor(C1296a.m652l(wrappedImage));
+        this.hf = location;
+        this.hg = width;
+        this.hh = height;
+        this.hi = bounds;
+        this.gU = bearing;
+        this.hb = zIndex;
+        this.hc = visible;
+        this.hj = transparency;
+        this.hk = anchorU;
+        this.hl = anchorV;
     }
 
-    private GroundOverlayOptions m1287a(LatLng latLng, float f, float f2) {
-        this.qo = latLng;
-        this.qp = f;
-        this.qq = f2;
+    private GroundOverlayOptions m1086a(LatLng latLng, float f, float f2) {
+        this.hf = latLng;
+        this.hg = f;
+        this.hh = f2;
         return this;
     }
 
     public GroundOverlayOptions anchor(float u, float v) {
-        this.qt = u;
-        this.qu = v;
+        this.hk = u;
+        this.hl = v;
         return this;
     }
 
     public GroundOverlayOptions bearing(float bearing) {
-        this.qd = ((bearing % 360.0f) + 360.0f) % 360.0f;
+        this.gU = ((bearing % 360.0f) + 360.0f) % 360.0f;
         return this;
     }
 
-    IBinder cM() {
-        return this.qn.cs().asBinder();
+    IBinder bp() {
+        return this.he.aW().asBinder();
     }
 
     public int describeContents() {
@@ -77,109 +77,109 @@ public final class GroundOverlayOptions implements SafeParcelable {
     }
 
     public float getAnchorU() {
-        return this.qt;
+        return this.hk;
     }
 
     public float getAnchorV() {
-        return this.qu;
+        return this.hl;
     }
 
     public float getBearing() {
-        return this.qd;
+        return this.gU;
     }
 
     public LatLngBounds getBounds() {
-        return this.qr;
+        return this.hi;
     }
 
     public float getHeight() {
-        return this.qq;
+        return this.hh;
     }
 
     public BitmapDescriptor getImage() {
-        return this.qn;
+        return this.he;
     }
 
     public LatLng getLocation() {
-        return this.qo;
+        return this.hf;
     }
 
     public float getTransparency() {
-        return this.qs;
-    }
-
-    int getVersionCode() {
-        return this.iM;
+        return this.hj;
     }
 
     public float getWidth() {
-        return this.qp;
+        return this.hg;
     }
 
     public float getZIndex() {
-        return this.qk;
+        return this.hb;
+    }
+
+    int m1087i() {
+        return this.ab;
     }
 
     public GroundOverlayOptions image(BitmapDescriptor image) {
-        this.qn = image;
+        this.he = image;
         return this;
     }
 
     public boolean isVisible() {
-        return this.ql;
+        return this.hc;
     }
 
     public GroundOverlayOptions position(LatLng location, float width) {
         boolean z = true;
-        dm.m389a(this.qr == null, (Object) "Position has already been set using positionFromBounds");
-        dm.m391b(location != null, "Location must be specified");
+        C0192s.m516a(this.hi == null, "Position has already been set using positionFromBounds");
+        C0192s.m519b(location != null, (Object) "Location must be specified");
         if (width < 0.0f) {
             z = false;
         }
-        dm.m391b(z, "Width must be non-negative");
-        return m1287a(location, width, NO_DIMENSION);
+        C0192s.m519b(z, (Object) "Width must be non-negative");
+        return m1086a(location, width, NO_DIMENSION);
     }
 
     public GroundOverlayOptions position(LatLng location, float width, float height) {
         boolean z = true;
-        dm.m389a(this.qr == null, (Object) "Position has already been set using positionFromBounds");
-        dm.m391b(location != null, "Location must be specified");
-        dm.m391b(width >= 0.0f, "Width must be non-negative");
+        C0192s.m516a(this.hi == null, "Position has already been set using positionFromBounds");
+        C0192s.m519b(location != null, (Object) "Location must be specified");
+        C0192s.m519b(width >= 0.0f, (Object) "Width must be non-negative");
         if (height < 0.0f) {
             z = false;
         }
-        dm.m391b(z, "Height must be non-negative");
-        return m1287a(location, width, height);
+        C0192s.m519b(z, (Object) "Height must be non-negative");
+        return m1086a(location, width, height);
     }
 
     public GroundOverlayOptions positionFromBounds(LatLngBounds bounds) {
-        dm.m389a(this.qo == null, "Position has already been set using position: " + this.qo);
-        this.qr = bounds;
+        C0192s.m516a(this.hf == null, "Position has already been set using position: " + this.hf);
+        this.hi = bounds;
         return this;
     }
 
     public GroundOverlayOptions transparency(float transparency) {
         boolean z = transparency >= 0.0f && transparency <= 1.0f;
-        dm.m391b(z, "Transparency must be in the range [0..1]");
-        this.qs = transparency;
+        C0192s.m519b(z, (Object) "Transparency must be in the range [0..1]");
+        this.hj = transparency;
         return this;
     }
 
     public GroundOverlayOptions visible(boolean visible) {
-        this.ql = visible;
+        this.hc = visible;
         return this;
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0230c.m747a(this, out, flags);
+        if (C0215q.bn()) {
+            C0218c.m576a(this, out, flags);
         } else {
-            GroundOverlayOptionsCreator.m735a(this, out, flags);
+            GroundOverlayOptionsCreator.m564a(this, out, flags);
         }
     }
 
     public GroundOverlayOptions zIndex(float zIndex) {
-        this.qk = zIndex;
+        this.hb = zIndex;
         return this;
     }
 }

@@ -13,27 +13,27 @@ public class SmsListener extends BroadcastReceiver {
     private SharedPreferences preferences;
 
     public void onReceive(Context context, Intent intent) {
-        if (intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED")) {
+        if (intent.getAction().equals("android.provider.Telephony.SMS_RECEIVED") && AndroidUtilities.isWaitingForSms()) {
             Bundle bundle = intent.getExtras();
             if (bundle != null) {
                 try {
                     Object[] pdus = (Object[]) bundle.get("pdus");
                     SmsMessage[] msgs = new SmsMessage[pdus.length];
-                    String wholeString = BuildConfig.FLAVOR;
+                    String wholeString = "";
                     for (int i = 0; i < msgs.length; i++) {
                         msgs[i] = SmsMessage.createFromPdu((byte[]) pdus[i]);
                         wholeString = wholeString + msgs[i].getMessageBody();
                     }
-                    try {
-                        Matcher matcher = Pattern.compile("[0-9]+").matcher(wholeString);
-                        if (matcher.find() && matcher.group(0).length() >= 3) {
-                            NotificationCenter.Instance.postNotificationName(998, matcher.group(0));
-                        }
-                    } catch (Exception e) {
-                        FileLog.m799e("tmessages", e);
+                    final Matcher matcher = Pattern.compile("[0-9]+").matcher(wholeString);
+                    if (matcher.find() && matcher.group(0).length() >= 3) {
+                        AndroidUtilities.runOnUIThread(new Runnable() {
+                            public void run() {
+                                NotificationCenter.getInstance().postNotificationName(NotificationCenter.didReceiveSmsCode, matcher.group(0));
+                            }
+                        });
                     }
-                } catch (Exception e2) {
-                    FileLog.m799e("tmessages", e2);
+                } catch (Throwable e) {
+                    FileLog.m611e("tmessages", e);
                 }
             }
         }

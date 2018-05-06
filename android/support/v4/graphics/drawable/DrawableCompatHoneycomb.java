@@ -9,4 +9,11 @@ class DrawableCompatHoneycomb {
     public static void jumpToCurrentState(Drawable drawable) {
         drawable.jumpToCurrentState();
     }
+
+    public static Drawable wrapForTinting(Drawable drawable) {
+        if (drawable instanceof DrawableWrapperHoneycomb) {
+            return drawable;
+        }
+        return new DrawableWrapperHoneycomb(drawable);
+    }
 }

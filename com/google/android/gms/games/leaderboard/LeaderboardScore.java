@@ -28,7 +28,5 @@ public interface LeaderboardScore extends Freezable<LeaderboardScore> {
 
     Uri getScoreHolderIconImageUri();
 
-    String getScoreTag();
-
     long getTimestampMillis();
 }

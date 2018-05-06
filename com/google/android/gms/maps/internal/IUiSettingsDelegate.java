@@ -8,17 +8,17 @@ import android.os.RemoteException;
 
 public interface IUiSettingsDelegate extends IInterface {
 
-    public static abstract class C0794a extends Binder implements IUiSettingsDelegate {
+    public static abstract class C1386a extends Binder implements IUiSettingsDelegate {
 
-        private static class C0793a implements IUiSettingsDelegate {
-            private IBinder dG;
+        private static class C1385a implements IUiSettingsDelegate {
+            private IBinder f107a;
 
-            C0793a(IBinder iBinder) {
-                this.dG = iBinder;
+            C1385a(IBinder iBinder) {
+                this.f107a = iBinder;
             }
 
             public IBinder asBinder() {
-                return this.dG;
+                return this.f107a;
             }
 
             public boolean isCompassEnabled() throws RemoteException {
@@ -27,7 +27,7 @@ public interface IUiSettingsDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-                    this.dG.transact(10, obtain, obtain2, 0);
+                    this.f107a.transact(10, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -47,7 +47,7 @@ public interface IUiSettingsDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-                    this.dG.transact(11, obtain, obtain2, 0);
+                    this.f107a.transact(11, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -67,7 +67,7 @@ public interface IUiSettingsDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-                    this.dG.transact(15, obtain, obtain2, 0);
+                    this.f107a.transact(15, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -87,7 +87,7 @@ public interface IUiSettingsDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-                    this.dG.transact(12, obtain, obtain2, 0);
+                    this.f107a.transact(12, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -107,7 +107,7 @@ public interface IUiSettingsDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-                    this.dG.transact(14, obtain, obtain2, 0);
+                    this.f107a.transact(14, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -127,7 +127,7 @@ public interface IUiSettingsDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-                    this.dG.transact(9, obtain, obtain2, 0);
+                    this.f107a.transact(9, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -147,7 +147,7 @@ public interface IUiSettingsDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-                    this.dG.transact(13, obtain, obtain2, 0);
+                    this.f107a.transact(13, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -171,7 +171,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(8, obtain, obtain2, 0);
+                    this.f107a.transact(8, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -189,7 +189,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(2, obtain, obtain2, 0);
+                    this.f107a.transact(2, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -207,7 +207,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(3, obtain, obtain2, 0);
+                    this.f107a.transact(3, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -225,7 +225,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(7, obtain, obtain2, 0);
+                    this.f107a.transact(7, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -243,7 +243,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(4, obtain, obtain2, 0);
+                    this.f107a.transact(4, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -261,7 +261,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(6, obtain, obtain2, 0);
+                    this.f107a.transact(6, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -279,7 +279,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 0;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(1, obtain, obtain2, 0);
+                    this.f107a.transact(1, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -297,7 +297,7 @@ public interface IUiSettingsDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(5, obtain, obtain2, 0);
+                    this.f107a.transact(5, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -306,12 +306,12 @@ public interface IUiSettingsDelegate extends IInterface {
             }
         }
 
-        public static IUiSettingsDelegate ab(IBinder iBinder) {
+        public static IUiSettingsDelegate m1057M(IBinder iBinder) {
             if (iBinder == null) {
                 return null;
             }
             IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.maps.internal.IUiSettingsDelegate");
-            return (queryLocalInterface == null || !(queryLocalInterface instanceof IUiSettingsDelegate)) ? new C0793a(iBinder) : (IUiSettingsDelegate) queryLocalInterface;
+            return (queryLocalInterface == null || !(queryLocalInterface instanceof IUiSettingsDelegate)) ? new C1385a(iBinder) : (IUiSettingsDelegate) queryLocalInterface;
         }
 
         public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {

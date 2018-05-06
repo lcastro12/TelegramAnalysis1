@@ -2,7 +2,7 @@ package com.google.android.gms.maps;
 
 import android.graphics.Point;
 import android.os.RemoteException;
-import com.google.android.gms.internal.dm;
+import com.google.android.gms.internal.C0192s;
 import com.google.android.gms.maps.internal.ICameraUpdateFactoryDelegate;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -10,24 +10,24 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.RuntimeRemoteException;
 
 public final class CameraUpdateFactory {
-    private static ICameraUpdateFactoryDelegate pe;
+    private static ICameraUpdateFactoryDelegate fW;
 
     private CameraUpdateFactory() {
     }
 
-    static void m707a(ICameraUpdateFactoryDelegate iCameraUpdateFactoryDelegate) {
-        if (pe == null) {
-            pe = (ICameraUpdateFactoryDelegate) dm.m392e(iCameraUpdateFactoryDelegate);
+    static void m536a(ICameraUpdateFactoryDelegate iCameraUpdateFactoryDelegate) {
+        if (fW == null) {
+            fW = (ICameraUpdateFactoryDelegate) C0192s.m521d(iCameraUpdateFactoryDelegate);
         }
     }
 
-    private static ICameraUpdateFactoryDelegate ct() {
-        return (ICameraUpdateFactoryDelegate) dm.m388a(pe, (Object) "CameraUpdateFactory is not initialized");
+    private static ICameraUpdateFactoryDelegate aX() {
+        return (ICameraUpdateFactoryDelegate) C0192s.m518b(fW, (Object) "CameraUpdateFactory is not initialized");
     }
 
     public static CameraUpdate newCameraPosition(CameraPosition cameraPosition) {
         try {
-            return new CameraUpdate(ct().newCameraPosition(cameraPosition));
+            return new CameraUpdate(aX().newCameraPosition(cameraPosition));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -35,7 +35,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate newLatLng(LatLng latLng) {
         try {
-            return new CameraUpdate(ct().newLatLng(latLng));
+            return new CameraUpdate(aX().newLatLng(latLng));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -43,7 +43,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate newLatLngBounds(LatLngBounds bounds, int padding) {
         try {
-            return new CameraUpdate(ct().newLatLngBounds(bounds, padding));
+            return new CameraUpdate(aX().newLatLngBounds(bounds, padding));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -51,7 +51,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate newLatLngBounds(LatLngBounds bounds, int width, int height, int padding) {
         try {
-            return new CameraUpdate(ct().newLatLngBoundsWithSize(bounds, width, height, padding));
+            return new CameraUpdate(aX().newLatLngBoundsWithSize(bounds, width, height, padding));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -59,7 +59,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate newLatLngZoom(LatLng latLng, float zoom) {
         try {
-            return new CameraUpdate(ct().newLatLngZoom(latLng, zoom));
+            return new CameraUpdate(aX().newLatLngZoom(latLng, zoom));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -67,7 +67,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate scrollBy(float xPixel, float yPixel) {
         try {
-            return new CameraUpdate(ct().scrollBy(xPixel, yPixel));
+            return new CameraUpdate(aX().scrollBy(xPixel, yPixel));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -75,7 +75,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate zoomBy(float amount) {
         try {
-            return new CameraUpdate(ct().zoomBy(amount));
+            return new CameraUpdate(aX().zoomBy(amount));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -83,7 +83,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate zoomBy(float amount, Point focus) {
         try {
-            return new CameraUpdate(ct().zoomByWithFocus(amount, focus.x, focus.y));
+            return new CameraUpdate(aX().zoomByWithFocus(amount, focus.x, focus.y));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -91,7 +91,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate zoomIn() {
         try {
-            return new CameraUpdate(ct().zoomIn());
+            return new CameraUpdate(aX().zoomIn());
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -99,7 +99,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate zoomOut() {
         try {
-            return new CameraUpdate(ct().zoomOut());
+            return new CameraUpdate(aX().zoomOut());
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -107,7 +107,7 @@ public final class CameraUpdateFactory {
 
     public static CameraUpdate zoomTo(float zoom) {
         try {
-            return new CameraUpdate(ct().zoomTo(zoom));
+            return new CameraUpdate(aX().zoomTo(zoom));
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }

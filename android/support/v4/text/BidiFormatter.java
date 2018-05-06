@@ -73,7 +73,7 @@ public final class BidiFormatter {
     }
 
     private static class DirectionalityEstimator {
-        private static final byte[] DIR_TYPE_CACHE = new byte[DIR_TYPE_CACHE_SIZE];
+        private static final byte[] DIR_TYPE_CACHE = new byte[1792];
         private static final int DIR_TYPE_CACHE_SIZE = 1792;
         private int charIndex;
         private final boolean isHtml;
@@ -82,7 +82,7 @@ public final class BidiFormatter {
         private final String text;
 
         static {
-            for (int i = 0; i < DIR_TYPE_CACHE_SIZE; i++) {
+            for (int i = 0; i < 1792; i++) {
                 DIR_TYPE_CACHE[i] = Character.getDirectionality(i);
             }
         }
@@ -414,6 +414,9 @@ public final class BidiFormatter {
     }
 
     public String unicodeWrap(String str, TextDirectionHeuristicCompat heuristic, boolean isolate) {
+        if (str == null) {
+            return null;
+        }
         boolean isRtl = heuristic.isRtl((CharSequence) str, 0, str.length());
         StringBuilder result = new StringBuilder();
         if (getStereoReset() && isolate) {

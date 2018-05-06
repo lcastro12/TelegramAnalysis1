@@ -1,52 +1,52 @@
 package com.google.android.gms.plus.model.moments;
 
 import com.google.android.gms.common.data.Freezable;
-import com.google.android.gms.internal.fq;
-import com.google.android.gms.internal.fs;
+import com.google.android.gms.internal.bx;
+import com.google.android.gms.internal.bz;
 import java.util.HashSet;
 import java.util.Set;
 
 public interface Moment extends Freezable<Moment> {
 
     public static class Builder {
-        private final Set<Integer> rI = new HashSet();
-        private String sD;
-        private fq sG;
-        private fq sH;
-        private String sm;
-        private String sx;
+        private final Set<Integer> iD = new HashSet();
+        private bx jB;
+        private bx jC;
+        private String jh;
+        private String js;
+        private String jy;
 
         public Moment build() {
-            return new fs(this.rI, this.sm, this.sG, this.sx, this.sH, this.sD);
+            return new bz(this.iD, this.jh, this.jB, this.js, this.jC, this.jy);
         }
 
         public Builder setId(String id) {
-            this.sm = id;
-            this.rI.add(Integer.valueOf(2));
+            this.jh = id;
+            this.iD.add(Integer.valueOf(2));
             return this;
         }
 
         public Builder setResult(ItemScope result) {
-            this.sG = (fq) result;
-            this.rI.add(Integer.valueOf(4));
+            this.jB = (bx) result;
+            this.iD.add(Integer.valueOf(4));
             return this;
         }
 
         public Builder setStartDate(String startDate) {
-            this.sx = startDate;
-            this.rI.add(Integer.valueOf(5));
+            this.js = startDate;
+            this.iD.add(Integer.valueOf(5));
             return this;
         }
 
         public Builder setTarget(ItemScope target) {
-            this.sH = (fq) target;
-            this.rI.add(Integer.valueOf(6));
+            this.jC = (bx) target;
+            this.iD.add(Integer.valueOf(6));
             return this;
         }
 
         public Builder setType(String type) {
-            this.sD = type;
-            this.rI.add(Integer.valueOf(7));
+            this.jy = type;
+            this.iD.add(Integer.valueOf(7));
             return this;
         }
     }

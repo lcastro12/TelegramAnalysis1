@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="abc_action_bar_home_description">Πλοήγηση στην αρχική σελίδα</string>
-    <string name="abc_action_bar_up_description">Πλοήγηση προς τα επάνω</string>
-    <string name="abc_action_menu_overflow_description">Περισσότερες επιλογές</string>
-    <string name="abc_action_mode_done">Τέλος</string>
-    <string name="abc_activity_chooser_view_see_all">Προβολή όλων</string>
-    <string name="abc_activitychooserview_choose_application">Επιλέξτε κάποια εφαρμογή</string>
-    <string name="abc_searchview_description_clear">Διαγραφή ερωτήματος</string>
-    <string name="abc_searchview_description_query">Ερώτημα αναζήτησης</string>
-    <string name="abc_searchview_description_search">Αναζήτηση</string>
-    <string name="abc_searchview_description_submit">Υποβολή ερωτήματος</string>
-    <string name="abc_searchview_description_voice">Φωνητική αναζήτηση</string>
-    <string name="abc_shareactionprovider_share_with">Κοινή χρήση με</string>
-    <string name="abc_shareactionprovider_share_with_application">Κοινή χρήση με %s</string>
     <string name="auth_client_needs_enabling_title">Μια εφαρμογή απαιτεί τις Υπηρεσίες Google Play για ενεργοποίηση.</string>
     <string name="auth_client_needs_installation_title">Μια εφαρμογή απαιτεί την εγκατάσταση των Υπηρεσιών Google Play.</string>
     <string name="auth_client_needs_update_title">Μια εφαρμογή απαιτεί μια ενημέρωση για τις Υπηρεσίες Google Play.</string>
@@ -31,7 +18,6 @@
     <string name="common_google_play_services_network_error_text">Απαιτείται σύνδεση δεδομένων για να συνδεθείτε με τις Υπηρεσίες Google Play.</string>
     <string name="common_google_play_services_network_error_title">Σφάλμα δικτύου</string>
     <string name="common_google_play_services_unknown_issue">Άγνωστο πρόβλημα με τις υπηρεσίες Google Play.</string>
-    <string name="common_google_play_services_unsupported_date_text">Η ημερομηνία στη συσκευή φαίνεται λανθασμένη. Ελέγξτε την ημερομηνία στη συσκευή.</string>
     <string name="common_google_play_services_unsupported_text">Οι υπηρεσίες Google Play, στις οποίες βασίζονται ορισμένες από τις εφαρμογές σας, δεν υποστηρίζονται στη συσκευή σας. Επικοινωνήστε με τον κατασκευαστή για υποστήριξη.</string>
     <string name="common_google_play_services_unsupported_title">Υπηρεσίες Google Play</string>
     <string name="common_google_play_services_update_button">Ενημέρωση</string>

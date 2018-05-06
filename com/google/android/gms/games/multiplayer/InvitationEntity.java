@@ -4,34 +4,34 @@ import android.os.Parcel;
 import android.os.Parcelable.Creator;
 import com.google.android.gms.games.Game;
 import com.google.android.gms.games.GameEntity;
-import com.google.android.gms.internal.dd;
-import com.google.android.gms.internal.dl;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.internal.en;
+import com.google.android.gms.internal.C0191r;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.internal.C1351j;
+import com.google.android.gms.internal.av;
 import java.util.ArrayList;
 
-public final class InvitationEntity extends en implements Invitation {
-    public static final Creator<InvitationEntity> CREATOR = new C0661a();
-    private final int iM;
-    private final GameEntity nL;
-    private final String nM;
-    private final long nN;
-    private final int nO;
-    private final ParticipantEntity nP;
-    private final ArrayList<ParticipantEntity> nQ;
-    private final int nR;
+public final class InvitationEntity extends av implements Invitation {
+    public static final Creator<InvitationEntity> CREATOR = new C1302a();
+    private final int ab;
+    private final GameEntity eE;
+    private final String eF;
+    private final long eG;
+    private final int eH;
+    private final ParticipantEntity eI;
+    private final ArrayList<ParticipantEntity> eJ;
+    private final int eK;
 
-    static final class C0661a extends C0120a {
-        C0661a() {
+    static final class C1302a extends C0154a {
+        C1302a() {
         }
 
         public /* synthetic */ Object createFromParcel(Parcel x0) {
-            return mo746v(x0);
+            return mo1078p(x0);
         }
 
-        public InvitationEntity mo746v(Parcel parcel) {
-            if (en.m1439c(dd.aW()) || dd.m942y(InvitationEntity.class.getCanonicalName())) {
-                return super.mo746v(parcel);
+        public InvitationEntity mo1078p(Parcel parcel) {
+            if (av.m1217c(C1351j.m970v()) || C1351j.m968h(InvitationEntity.class.getCanonicalName())) {
+                return super.mo1078p(parcel);
             }
             GameEntity gameEntity = (GameEntity) GameEntity.CREATOR.createFromParcel(parcel);
             String readString = parcel.readString();
@@ -48,44 +48,44 @@ public final class InvitationEntity extends en implements Invitation {
     }
 
     InvitationEntity(int versionCode, GameEntity game, String invitationId, long creationTimestamp, int invitationType, ParticipantEntity inviter, ArrayList<ParticipantEntity> participants, int variant) {
-        this.iM = versionCode;
-        this.nL = game;
-        this.nM = invitationId;
-        this.nN = creationTimestamp;
-        this.nO = invitationType;
-        this.nP = inviter;
-        this.nQ = participants;
-        this.nR = variant;
+        this.ab = versionCode;
+        this.eE = game;
+        this.eF = invitationId;
+        this.eG = creationTimestamp;
+        this.eH = invitationType;
+        this.eI = inviter;
+        this.eJ = participants;
+        this.eK = variant;
     }
 
     InvitationEntity(Invitation invitation) {
-        this.iM = 1;
-        this.nL = new GameEntity(invitation.getGame());
-        this.nM = invitation.getInvitationId();
-        this.nN = invitation.getCreationTimestamp();
-        this.nO = invitation.ch();
-        this.nR = invitation.getVariant();
+        this.ab = 1;
+        this.eE = new GameEntity(invitation.getGame());
+        this.eF = invitation.getInvitationId();
+        this.eG = invitation.getCreationTimestamp();
+        this.eH = invitation.aL();
+        this.eK = invitation.getVariant();
         String participantId = invitation.getInviter().getParticipantId();
         Object obj = null;
         ArrayList participants = invitation.getParticipants();
         int size = participants.size();
-        this.nQ = new ArrayList(size);
+        this.eJ = new ArrayList(size);
         for (int i = 0; i < size; i++) {
             Participant participant = (Participant) participants.get(i);
             if (participant.getParticipantId().equals(participantId)) {
                 obj = participant;
             }
-            this.nQ.add((ParticipantEntity) participant.freeze());
+            this.eJ.add((ParticipantEntity) participant.freeze());
         }
-        dm.m388a(obj, (Object) "Must have a valid inviter!");
-        this.nP = (ParticipantEntity) obj.freeze();
+        C0192s.m518b(obj, (Object) "Must have a valid inviter!");
+        this.eI = (ParticipantEntity) obj.freeze();
     }
 
-    static int m1585a(Invitation invitation) {
-        return dl.hashCode(invitation.getGame(), invitation.getInvitationId(), Long.valueOf(invitation.getCreationTimestamp()), Integer.valueOf(invitation.ch()), invitation.getInviter(), invitation.getParticipants(), Integer.valueOf(invitation.getVariant()));
+    static int m1370a(Invitation invitation) {
+        return C0191r.hashCode(invitation.getGame(), invitation.getInvitationId(), Long.valueOf(invitation.getCreationTimestamp()), Integer.valueOf(invitation.aL()), invitation.getInviter(), invitation.getParticipants(), Integer.valueOf(invitation.getVariant()));
     }
 
-    static boolean m1586a(Invitation invitation, Object obj) {
+    static boolean m1371a(Invitation invitation, Object obj) {
         if (!(obj instanceof Invitation)) {
             return false;
         }
@@ -93,15 +93,15 @@ public final class InvitationEntity extends en implements Invitation {
             return true;
         }
         Invitation invitation2 = (Invitation) obj;
-        return dl.equal(invitation2.getGame(), invitation.getGame()) && dl.equal(invitation2.getInvitationId(), invitation.getInvitationId()) && dl.equal(Long.valueOf(invitation2.getCreationTimestamp()), Long.valueOf(invitation.getCreationTimestamp())) && dl.equal(Integer.valueOf(invitation2.ch()), Integer.valueOf(invitation.ch())) && dl.equal(invitation2.getInviter(), invitation.getInviter()) && dl.equal(invitation2.getParticipants(), invitation.getParticipants()) && dl.equal(Integer.valueOf(invitation2.getVariant()), Integer.valueOf(invitation.getVariant()));
+        return C0191r.m513a(invitation2.getGame(), invitation.getGame()) && C0191r.m513a(invitation2.getInvitationId(), invitation.getInvitationId()) && C0191r.m513a(Long.valueOf(invitation2.getCreationTimestamp()), Long.valueOf(invitation.getCreationTimestamp())) && C0191r.m513a(Integer.valueOf(invitation2.aL()), Integer.valueOf(invitation.aL())) && C0191r.m513a(invitation2.getInviter(), invitation.getInviter()) && C0191r.m513a(invitation2.getParticipants(), invitation.getParticipants()) && C0191r.m513a(Integer.valueOf(invitation2.getVariant()), Integer.valueOf(invitation.getVariant()));
     }
 
-    static String m1587b(Invitation invitation) {
-        return dl.m387d(invitation).m386a("Game", invitation.getGame()).m386a("InvitationId", invitation.getInvitationId()).m386a("CreationTimestamp", Long.valueOf(invitation.getCreationTimestamp())).m386a("InvitationType", Integer.valueOf(invitation.ch())).m386a("Inviter", invitation.getInviter()).m386a("Participants", invitation.getParticipants()).m386a("Variant", Integer.valueOf(invitation.getVariant())).toString();
+    static String m1372b(Invitation invitation) {
+        return C0191r.m514c(invitation).m512a("Game", invitation.getGame()).m512a("InvitationId", invitation.getInvitationId()).m512a("CreationTimestamp", Long.valueOf(invitation.getCreationTimestamp())).m512a("InvitationType", Integer.valueOf(invitation.aL())).m512a("Inviter", invitation.getInviter()).m512a("Participants", invitation.getParticipants()).m512a("Variant", Integer.valueOf(invitation.getVariant())).toString();
     }
 
-    public int ch() {
-        return this.nO;
+    public int aL() {
+        return this.eH;
     }
 
     public int describeContents() {
@@ -109,7 +109,7 @@ public final class InvitationEntity extends en implements Invitation {
     }
 
     public boolean equals(Object obj) {
-        return m1586a(this, obj);
+        return m1371a(this, obj);
     }
 
     public Invitation freeze() {
@@ -117,35 +117,35 @@ public final class InvitationEntity extends en implements Invitation {
     }
 
     public long getCreationTimestamp() {
-        return this.nN;
+        return this.eG;
     }
 
     public Game getGame() {
-        return this.nL;
+        return this.eE;
     }
 
     public String getInvitationId() {
-        return this.nM;
+        return this.eF;
     }
 
     public Participant getInviter() {
-        return this.nP;
+        return this.eI;
     }
 
     public ArrayList<Participant> getParticipants() {
-        return new ArrayList(this.nQ);
+        return new ArrayList(this.eJ);
     }
 
     public int getVariant() {
-        return this.nR;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
+        return this.eK;
     }
 
     public int hashCode() {
-        return m1585a(this);
+        return m1370a(this);
+    }
+
+    public int m1375i() {
+        return this.ab;
     }
 
     public boolean isDataValid() {
@@ -153,23 +153,23 @@ public final class InvitationEntity extends en implements Invitation {
     }
 
     public String toString() {
-        return m1587b((Invitation) this);
+        return m1372b((Invitation) this);
     }
 
     public void writeToParcel(Parcel dest, int flags) {
-        if (aX()) {
-            this.nL.writeToParcel(dest, flags);
-            dest.writeString(this.nM);
-            dest.writeLong(this.nN);
-            dest.writeInt(this.nO);
-            this.nP.writeToParcel(dest, flags);
-            int size = this.nQ.size();
+        if (m971w()) {
+            this.eE.writeToParcel(dest, flags);
+            dest.writeString(this.eF);
+            dest.writeLong(this.eG);
+            dest.writeInt(this.eH);
+            this.eI.writeToParcel(dest, flags);
+            int size = this.eJ.size();
             dest.writeInt(size);
             for (int i = 0; i < size; i++) {
-                ((ParticipantEntity) this.nQ.get(i)).writeToParcel(dest, flags);
+                ((ParticipantEntity) this.eJ.get(i)).writeToParcel(dest, flags);
             }
             return;
         }
-        C0120a.m154a(this, dest, flags);
+        C0154a.m152a(this, dest, flags);
     }
 }

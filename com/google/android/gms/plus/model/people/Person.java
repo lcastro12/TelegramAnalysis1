@@ -5,6 +5,12 @@ import java.util.List;
 
 public interface Person extends Freezable<Person> {
 
+    @Deprecated
+    public interface Collection {
+        @Deprecated
+        public static final int VISIBLE = 0;
+    }
+
     public static final class Gender {
         public static final int FEMALE = 1;
         public static final int MALE = 0;
@@ -20,6 +26,14 @@ public interface Person extends Freezable<Person> {
 
         private ObjectType() {
         }
+    }
+
+    @Deprecated
+    public interface OrderBy {
+        @Deprecated
+        public static final int ALPHABETICAL = 0;
+        @Deprecated
+        public static final int BEST = 1;
     }
 
     public static final class RelationshipStatus {
@@ -91,6 +105,41 @@ public interface Person extends Freezable<Person> {
         boolean hasCoverPhoto();
 
         boolean hasLayout();
+    }
+
+    @Deprecated
+    public interface Emails extends Freezable<Emails> {
+
+        @Deprecated
+        public static final class Type {
+            @Deprecated
+            public static final int HOME = 0;
+            @Deprecated
+            public static final int OTHER = 2;
+            @Deprecated
+            public static final int WORK = 1;
+
+            private Type() {
+            }
+        }
+
+        @Deprecated
+        int getType();
+
+        @Deprecated
+        String getValue();
+
+        @Deprecated
+        boolean hasPrimary();
+
+        @Deprecated
+        boolean hasType();
+
+        @Deprecated
+        boolean hasValue();
+
+        @Deprecated
+        boolean isPrimary();
     }
 
     public interface Image extends Freezable<Image> {
@@ -223,6 +272,9 @@ public interface Person extends Freezable<Person> {
 
     String getDisplayName();
 
+    @Deprecated
+    List<Emails> getEmails();
+
     int getGender();
 
     String getId();
@@ -266,6 +318,9 @@ public interface Person extends Freezable<Person> {
     boolean hasCurrentLocation();
 
     boolean hasDisplayName();
+
+    @Deprecated
+    boolean hasEmails();
 
     boolean hasGender();
 

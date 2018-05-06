@@ -2,9 +2,14 @@ package android.support.v4.print;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapFactory.Options;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.pdf.PdfDocument.Page;
 import android.net.Uri;
@@ -45,6 +50,10 @@ class PrintHelperKitkat {
     int mOrientation = 1;
     int mScaleMode = 2;
 
+    public interface OnPrintFinishCallback {
+        void onFinish();
+    }
+
     PrintHelperKitkat(Context context) {
         this.mContext = context;
     }
@@ -73,7 +82,7 @@ class PrintHelperKitkat {
         return this.mColorMode;
     }
 
-    public void printBitmap(final String jobName, final Bitmap bitmap) {
+    public void printBitmap(String jobName, Bitmap bitmap, OnPrintFinishCallback callback) {
         if (bitmap != null) {
             final int fittingMode = this.mScaleMode;
             PrintManager printManager = (PrintManager) this.mContext.getSystemService("print");
@@ -81,13 +90,16 @@ class PrintHelperKitkat {
             if (bitmap.getWidth() > bitmap.getHeight()) {
                 mediaSize = MediaSize.UNKNOWN_LANDSCAPE;
             }
+            final String str = jobName;
+            final Bitmap bitmap2 = bitmap;
+            final OnPrintFinishCallback onPrintFinishCallback = callback;
             printManager.print(jobName, new PrintDocumentAdapter() {
                 private PrintAttributes mAttributes;
 
                 public void onLayout(PrintAttributes oldPrintAttributes, PrintAttributes newPrintAttributes, CancellationSignal cancellationSignal, LayoutResultCallback layoutResultCallback, Bundle bundle) {
                     boolean changed = true;
                     this.mAttributes = newPrintAttributes;
-                    PrintDocumentInfo info = new Builder(jobName).setContentType(1).setPageCount(1).build();
+                    PrintDocumentInfo info = new Builder(str).setContentType(1).setPageCount(1).build();
                     if (newPrintAttributes.equals(oldPrintAttributes)) {
                         changed = false;
                     }
@@ -96,9 +108,10 @@ class PrintHelperKitkat {
 
                 public void onWrite(PageRange[] pageRanges, ParcelFileDescriptor fileDescriptor, CancellationSignal cancellationSignal, WriteResultCallback writeResultCallback) {
                     PrintedPdfDocument pdfDocument = new PrintedPdfDocument(PrintHelperKitkat.this.mContext, this.mAttributes);
+                    Bitmap maybeGrayscale = PrintHelperKitkat.this.convertBitmapForColorMode(bitmap2, this.mAttributes.getColorMode());
                     try {
                         Page page = pdfDocument.startPage(1);
-                        page.getCanvas().drawBitmap(bitmap, PrintHelperKitkat.this.getMatrix(bitmap.getWidth(), bitmap.getHeight(), new RectF(page.getInfo().getContentRect()), fittingMode), null);
+                        page.getCanvas().drawBitmap(maybeGrayscale, PrintHelperKitkat.this.getMatrix(maybeGrayscale.getWidth(), maybeGrayscale.getHeight(), new RectF(page.getInfo().getContentRect()), fittingMode), null);
                         pdfDocument.finishPage(page);
                         pdfDocument.writeTo(new FileOutputStream(fileDescriptor.getFileDescriptor()));
                         writeResultCallback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
@@ -115,6 +128,9 @@ class PrintHelperKitkat {
                             } catch (IOException e) {
                             }
                         }
+                        if (maybeGrayscale != bitmap2) {
+                            maybeGrayscale.recycle();
+                        }
                     }
                     if (pdfDocument != null) {
                         pdfDocument.close();
@@ -124,6 +140,15 @@ class PrintHelperKitkat {
                             fileDescriptor.close();
                         } catch (IOException e2) {
                         }
+                    }
+                    if (maybeGrayscale != bitmap2) {
+                        maybeGrayscale.recycle();
+                    }
+                }
+
+                public void onFinish() {
+                    if (onPrintFinishCallback != null) {
+                        onPrintFinishCallback.onFinish();
                     }
                 }
             }, new PrintAttributes.Builder().setMediaSize(mediaSize).setColorMode(this.mColorMode).build());
@@ -143,20 +168,23 @@ class PrintHelperKitkat {
         return matrix;
     }
 
-    public void printBitmap(final String jobName, final Uri imageFile) throws FileNotFoundException {
+    public void printBitmap(String jobName, Uri imageFile, OnPrintFinishCallback callback) throws FileNotFoundException {
         final int fittingMode = this.mScaleMode;
+        final String str = jobName;
+        final Uri uri = imageFile;
+        final OnPrintFinishCallback onPrintFinishCallback = callback;
         PrintDocumentAdapter printDocumentAdapter = new PrintDocumentAdapter() {
-            AsyncTask<Uri, Boolean, Bitmap> loadBitmap;
             private PrintAttributes mAttributes;
             Bitmap mBitmap = null;
+            AsyncTask<Uri, Boolean, Bitmap> mLoadBitmap;
 
             public void onLayout(PrintAttributes oldPrintAttributes, PrintAttributes newPrintAttributes, CancellationSignal cancellationSignal, LayoutResultCallback layoutResultCallback, Bundle bundle) {
                 boolean changed = true;
+                this.mAttributes = newPrintAttributes;
                 if (cancellationSignal.isCanceled()) {
                     layoutResultCallback.onLayoutCancelled();
-                    this.mAttributes = newPrintAttributes;
                 } else if (this.mBitmap != null) {
-                    PrintDocumentInfo info = new Builder(jobName).setContentType(1).setPageCount(1).build();
+                    PrintDocumentInfo info = new Builder(str).setContentType(1).setPageCount(1).build();
                     if (newPrintAttributes.equals(oldPrintAttributes)) {
                         changed = false;
                     }
@@ -166,25 +194,25 @@ class PrintHelperKitkat {
                     final PrintAttributes printAttributes = newPrintAttributes;
                     final PrintAttributes printAttributes2 = oldPrintAttributes;
                     final LayoutResultCallback layoutResultCallback2 = layoutResultCallback;
-                    this.loadBitmap = new AsyncTask<Uri, Boolean, Bitmap>() {
+                    this.mLoadBitmap = new AsyncTask<Uri, Boolean, Bitmap>() {
 
-                        class C00281 implements OnCancelListener {
-                            C00281() {
+                        class C00731 implements OnCancelListener {
+                            C00731() {
                             }
 
                             public void onCancel() {
-                                C00302.this.cancelLoad();
-                                C00291.this.cancel(false);
+                                C00752.this.cancelLoad();
+                                C00741.this.cancel(false);
                             }
                         }
 
                         protected void onPreExecute() {
-                            cancellationSignal2.setOnCancelListener(new C00281());
+                            cancellationSignal2.setOnCancelListener(new C00731());
                         }
 
                         protected Bitmap doInBackground(Uri... uris) {
                             try {
-                                return PrintHelperKitkat.this.loadConstrainedBitmap(imageFile, PrintHelperKitkat.MAX_PRINT_SIZE);
+                                return PrintHelperKitkat.this.loadConstrainedBitmap(uri, PrintHelperKitkat.MAX_PRINT_SIZE);
                             } catch (FileNotFoundException e) {
                                 return null;
                             }
@@ -193,24 +221,24 @@ class PrintHelperKitkat {
                         protected void onPostExecute(Bitmap bitmap) {
                             boolean changed = true;
                             super.onPostExecute(bitmap);
-                            C00302.this.mBitmap = bitmap;
+                            C00752.this.mBitmap = bitmap;
                             if (bitmap != null) {
-                                PrintDocumentInfo info = new Builder(jobName).setContentType(1).setPageCount(1).build();
+                                PrintDocumentInfo info = new Builder(str).setContentType(1).setPageCount(1).build();
                                 if (printAttributes.equals(printAttributes2)) {
                                     changed = false;
                                 }
                                 layoutResultCallback2.onLayoutFinished(info, changed);
-                                return;
+                            } else {
+                                layoutResultCallback2.onLayoutFailed(null);
                             }
-                            layoutResultCallback2.onLayoutFailed(null);
+                            C00752.this.mLoadBitmap = null;
                         }
 
                         protected void onCancelled(Bitmap result) {
                             layoutResultCallback2.onLayoutCancelled();
+                            C00752.this.mLoadBitmap = null;
                         }
-                    };
-                    this.loadBitmap.execute(new Uri[0]);
-                    this.mAttributes = newPrintAttributes;
+                    }.execute(new Uri[0]);
                 }
             }
 
@@ -226,14 +254,24 @@ class PrintHelperKitkat {
             public void onFinish() {
                 super.onFinish();
                 cancelLoad();
-                this.loadBitmap.cancel(true);
+                if (this.mLoadBitmap != null) {
+                    this.mLoadBitmap.cancel(true);
+                }
+                if (onPrintFinishCallback != null) {
+                    onPrintFinishCallback.onFinish();
+                }
+                if (this.mBitmap != null) {
+                    this.mBitmap.recycle();
+                    this.mBitmap = null;
+                }
             }
 
             public void onWrite(PageRange[] pageRanges, ParcelFileDescriptor fileDescriptor, CancellationSignal cancellationSignal, WriteResultCallback writeResultCallback) {
                 PrintedPdfDocument pdfDocument = new PrintedPdfDocument(PrintHelperKitkat.this.mContext, this.mAttributes);
+                Bitmap maybeGrayscale = PrintHelperKitkat.this.convertBitmapForColorMode(this.mBitmap, this.mAttributes.getColorMode());
                 try {
                     Page page = pdfDocument.startPage(1);
-                    page.getCanvas().drawBitmap(this.mBitmap, PrintHelperKitkat.this.getMatrix(this.mBitmap.getWidth(), this.mBitmap.getHeight(), new RectF(page.getInfo().getContentRect()), fittingMode), null);
+                    page.getCanvas().drawBitmap(maybeGrayscale, PrintHelperKitkat.this.getMatrix(this.mBitmap.getWidth(), this.mBitmap.getHeight(), new RectF(page.getInfo().getContentRect()), fittingMode), null);
                     pdfDocument.finishPage(page);
                     pdfDocument.writeTo(new FileOutputStream(fileDescriptor.getFileDescriptor()));
                     writeResultCallback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
@@ -250,6 +288,9 @@ class PrintHelperKitkat {
                         } catch (IOException e) {
                         }
                     }
+                    if (maybeGrayscale != this.mBitmap) {
+                        maybeGrayscale.recycle();
+                    }
                 }
                 if (pdfDocument != null) {
                     pdfDocument.close();
@@ -259,6 +300,9 @@ class PrintHelperKitkat {
                         fileDescriptor.close();
                     } catch (IOException e2) {
                     }
+                }
+                if (maybeGrayscale != this.mBitmap) {
+                    maybeGrayscale.recycle();
                 }
             }
         };
@@ -338,5 +382,20 @@ class PrintHelperKitkat {
                 }
             }
         }
+    }
+
+    private Bitmap convertBitmapForColorMode(Bitmap original, int colorMode) {
+        if (colorMode != 1) {
+            return original;
+        }
+        Bitmap grayscale = Bitmap.createBitmap(original.getWidth(), original.getHeight(), Config.ARGB_8888);
+        Canvas c = new Canvas(grayscale);
+        Paint p = new Paint();
+        ColorMatrix cm = new ColorMatrix();
+        cm.setSaturation(0.0f);
+        p.setColorFilter(new ColorMatrixColorFilter(cm));
+        c.drawBitmap(original, 0.0f, 0.0f, p);
+        c.setBitmap(null);
+        return grayscale;
     }
 }

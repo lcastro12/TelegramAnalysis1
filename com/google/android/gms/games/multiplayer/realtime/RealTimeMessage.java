@@ -3,33 +3,33 @@ package com.google.android.gms.games.multiplayer.realtime;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.internal.dm;
+import com.google.android.gms.internal.C0192s;
 
 public final class RealTimeMessage implements Parcelable {
-    public static final Creator<RealTimeMessage> CREATOR = new C01221();
+    public static final Creator<RealTimeMessage> CREATOR = new C01561();
     public static final int RELIABLE = 1;
     public static final int UNRELIABLE = 0;
-    private final String oa;
-    private final byte[] ob;
-    private final int oc;
+    private final String eT;
+    private final byte[] eU;
+    private final int eV;
 
-    static class C01221 implements Creator<RealTimeMessage> {
-        C01221() {
+    static class C01561 implements Creator<RealTimeMessage> {
+        C01561() {
         }
 
-        public RealTimeMessage[] m160U(int i) {
+        public RealTimeMessage[] m158J(int i) {
             return new RealTimeMessage[i];
         }
 
         public /* synthetic */ Object createFromParcel(Parcel x0) {
-            return m161x(x0);
+            return m159r(x0);
         }
 
         public /* synthetic */ Object[] newArray(int x0) {
-            return m160U(x0);
+            return m158J(x0);
         }
 
-        public RealTimeMessage m161x(Parcel parcel) {
+        public RealTimeMessage m159r(Parcel parcel) {
             return new RealTimeMessage(parcel);
         }
     }
@@ -39,9 +39,9 @@ public final class RealTimeMessage implements Parcelable {
     }
 
     public RealTimeMessage(String senderParticipantId, byte[] messageData, int isReliable) {
-        this.oa = (String) dm.m392e(senderParticipantId);
-        this.ob = (byte[]) ((byte[]) dm.m392e(messageData)).clone();
-        this.oc = isReliable;
+        this.eT = (String) C0192s.m521d(senderParticipantId);
+        this.eU = (byte[]) ((byte[]) C0192s.m521d(messageData)).clone();
+        this.eV = isReliable;
     }
 
     public int describeContents() {
@@ -49,20 +49,20 @@ public final class RealTimeMessage implements Parcelable {
     }
 
     public byte[] getMessageData() {
-        return this.ob;
+        return this.eU;
     }
 
     public String getSenderParticipantId() {
-        return this.oa;
+        return this.eT;
     }
 
     public boolean isReliable() {
-        return this.oc == 1;
+        return this.eV == 1;
     }
 
     public void writeToParcel(Parcel parcel, int flag) {
-        parcel.writeString(this.oa);
-        parcel.writeByteArray(this.ob);
-        parcel.writeInt(this.oc);
+        parcel.writeString(this.eT);
+        parcel.writeByteArray(this.eU);
+        parcel.writeInt(this.eV);
     }
 }

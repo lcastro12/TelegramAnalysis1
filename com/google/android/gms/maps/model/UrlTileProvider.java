@@ -7,15 +7,15 @@ import java.io.OutputStream;
 import java.net.URL;
 
 public abstract class UrlTileProvider implements TileProvider {
-    private final int dP;
-    private final int dQ;
+    private final int hL;
+    private final int hM;
 
     public UrlTileProvider(int width, int height) {
-        this.dP = width;
-        this.dQ = height;
+        this.hL = width;
+        this.hM = height;
     }
 
-    private static long m1295a(InputStream inputStream, OutputStream outputStream) throws IOException {
+    private static long m1102a(InputStream inputStream, OutputStream outputStream) throws IOException {
         byte[] bArr = new byte[4096];
         long j = 0;
         while (true) {
@@ -28,9 +28,9 @@ public abstract class UrlTileProvider implements TileProvider {
         }
     }
 
-    private static byte[] m1296a(InputStream inputStream) throws IOException {
+    private static byte[] m1103a(InputStream inputStream) throws IOException {
         OutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        m1295a(inputStream, byteArrayOutputStream);
+        m1102a(inputStream, byteArrayOutputStream);
         return byteArrayOutputStream.toByteArray();
     }
 
@@ -40,7 +40,7 @@ public abstract class UrlTileProvider implements TileProvider {
             return NO_TILE;
         }
         try {
-            return new Tile(this.dP, this.dQ, m1296a(tileUrl.openStream()));
+            return new Tile(this.hL, this.hM, m1103a(tileUrl.openStream()));
         } catch (IOException e) {
             return null;
         }

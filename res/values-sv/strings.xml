@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="abc_action_bar_home_description">Visa startsidan</string>
-    <string name="abc_action_bar_up_description">Navigera uppåt</string>
-    <string name="abc_action_menu_overflow_description">Fler alternativ</string>
-    <string name="abc_action_mode_done">Klart</string>
-    <string name="abc_activity_chooser_view_see_all">Visa alla</string>
-    <string name="abc_activitychooserview_choose_application">Välj en app</string>
-    <string name="abc_searchview_description_clear">Ta bort frågan</string>
-    <string name="abc_searchview_description_query">Sökfråga</string>
-    <string name="abc_searchview_description_search">Sök</string>
-    <string name="abc_searchview_description_submit">Skicka fråga</string>
-    <string name="abc_searchview_description_voice">Röstsökning</string>
-    <string name="abc_shareactionprovider_share_with">Dela med</string>
-    <string name="abc_shareactionprovider_share_with_application">Dela med %s</string>
     <string name="auth_client_needs_enabling_title">Google Play Tjänster måste aktiveras för en att app ska fungera.</string>
     <string name="auth_client_needs_installation_title">Google Play Tjänster måste installeras för att en app ska fungera.</string>
     <string name="auth_client_needs_update_title">Google Play Tjänster måste uppdateras för en app ska fungera.</string>
@@ -31,7 +18,6 @@
     <string name="common_google_play_services_network_error_text">En dataanslutning krävs för att ansluta till Google Plays tjänster.</string>
     <string name="common_google_play_services_network_error_title">Nätverksfel</string>
     <string name="common_google_play_services_unknown_issue">Okänt problem med Google Play Tjänster</string>
-    <string name="common_google_play_services_unsupported_date_text">Datumet på enheten verkar inte vara rätt. Kontrollera datumet på enheten.</string>
     <string name="common_google_play_services_unsupported_text">Några av dina appar använder Google Play-tjänster som inte stöds av din enhet. Kontakta tillverkaren om du vill ha hjälp.</string>
     <string name="common_google_play_services_unsupported_title">Google Play-tjänster</string>
     <string name="common_google_play_services_update_button">Uppdatera</string>

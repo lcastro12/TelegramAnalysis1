@@ -1,21 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Base" parent="@android:style/Theme.Holo">
+    <style name="Theme.TMessages" parent="@android:style/Theme.Holo.Light">
+        <item name="android:colorBackground">@android:color/white</item>
+        <item name="android:windowBackground">@android:color/white</item>
         <item name="android:windowNoTitle">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:editTextStyle">@style/Theme.TMessages.EditText</item>
+        <item name="android:listViewStyle">@style/Theme.TMessages.ListView</item>
+        <item name="android:itemTextAppearance">@style/ActionBar.Transparent.TMessages.Item</item>
         <item name="android:windowActionBar">false</item>
-        <item name="buttonBarButtonStyle">?android:buttonBarButtonStyle</item>
-        <item name="buttonBarStyle">?android:buttonBarStyle</item>
-        <item name="selectableItemBackground">?android:selectableItemBackground</item>
+        <item name="android:windowActionBarOverlay">false</item>
+        <item name="android:listChoiceBackgroundIndicator">@drawable/list_selector</item>
     </style>
-    <style name="Theme.Base.Light" parent="@android:style/Theme.Holo.Light">
+    <style name="Theme.TMessages.PopupNotification" parent="@style/Theme.TMessages">
+        <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
         <item name="android:windowActionBar">false</item>
-        <item name="buttonBarButtonStyle">?android:buttonBarButtonStyle</item>
-        <item name="buttonBarStyle">?android:buttonBarStyle</item>
-        <item name="selectableItemBackground">?android:selectableItemBackground</item>
     </style>
-    <style name="Widget.AppCompat.Base.AutoCompleteTextView" parent="@android:style/Widget.Holo.AutoCompleteTextView" />
-    <style name="Widget.AppCompat.Base.ProgressBar" parent="@android:style/Widget.Holo.ProgressBar" />
-    <style name="Widget.AppCompat.Base.ProgressBar.Horizontal" parent="@android:style/Widget.Holo.ProgressBar.Horizontal" />
-    <style name="Widget.AppCompat.Light.Base.AutoCompleteTextView" parent="@android:style/Widget.Holo.Light.AutoCompleteTextView" />
+    <style name="Theme.TMessages.Start" parent="@android:style/Theme.Holo.Light">
+        <item name="android:colorBackground">@android:color/white</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:actionBarStyle">@style/ActionBar.Transparent.TMessages.Start</item>
+    </style>
 </resources>

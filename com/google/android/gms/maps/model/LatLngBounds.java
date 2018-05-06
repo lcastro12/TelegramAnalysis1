@@ -2,28 +2,28 @@ package com.google.android.gms.maps.model;
 
 import android.os.Parcel;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.internal.dl;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.internal.C0191r;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.maps.internal.C0215q;
 
 public final class LatLngBounds implements SafeParcelable {
     public static final LatLngBoundsCreator CREATOR = new LatLngBoundsCreator();
-    private final int iM;
+    private final int ab;
     public final LatLng northeast;
     public final LatLng southwest;
 
     public static final class Builder {
-        private double qv = Double.POSITIVE_INFINITY;
-        private double qw = Double.NEGATIVE_INFINITY;
-        private double qx = Double.NaN;
-        private double qy = Double.NaN;
+        private double hm = Double.POSITIVE_INFINITY;
+        private double hn = Double.NEGATIVE_INFINITY;
+        private double ho = Double.NaN;
+        private double hp = Double.NaN;
 
-        private boolean m736b(double d) {
+        private boolean m565b(double d) {
             boolean z = false;
-            if (this.qx <= this.qy) {
-                return this.qx <= d && d <= this.qy;
+            if (this.ho <= this.hp) {
+                return this.ho <= d && d <= this.hp;
             } else {
-                if (this.qx <= d || d <= this.qy) {
+                if (this.ho <= d || d <= this.hp) {
                     z = true;
                 }
                 return z;
@@ -31,22 +31,22 @@ public final class LatLngBounds implements SafeParcelable {
         }
 
         public LatLngBounds build() {
-            dm.m389a(!Double.isNaN(this.qx), (Object) "no included points");
-            return new LatLngBounds(new LatLng(this.qv, this.qx), new LatLng(this.qw, this.qy));
+            C0192s.m516a(!Double.isNaN(this.ho), "no included points");
+            return new LatLngBounds(new LatLng(this.hm, this.ho), new LatLng(this.hn, this.hp));
         }
 
         public Builder include(LatLng point) {
-            this.qv = Math.min(this.qv, point.latitude);
-            this.qw = Math.max(this.qw, point.latitude);
+            this.hm = Math.min(this.hm, point.latitude);
+            this.hn = Math.max(this.hn, point.latitude);
             double d = point.longitude;
-            if (Double.isNaN(this.qx)) {
-                this.qx = d;
-                this.qy = d;
-            } else if (!m736b(d)) {
-                if (LatLngBounds.m1289b(this.qx, d) < LatLngBounds.m1291c(this.qy, d)) {
-                    this.qx = d;
+            if (Double.isNaN(this.ho)) {
+                this.ho = d;
+                this.hp = d;
+            } else if (!m565b(d)) {
+                if (LatLngBounds.m1090b(this.ho, d) < LatLngBounds.m1092c(this.hp, d)) {
+                    this.ho = d;
                 } else {
-                    this.qy = d;
+                    this.hp = d;
                 }
             }
             return this;
@@ -54,10 +54,10 @@ public final class LatLngBounds implements SafeParcelable {
     }
 
     LatLngBounds(int versionCode, LatLng southwest, LatLng northeast) {
-        dm.m388a((Object) southwest, (Object) "null southwest");
-        dm.m388a((Object) northeast, (Object) "null northeast");
-        dm.m390a(northeast.latitude >= southwest.latitude, "southern latitude exceeds northern latitude (%s > %s)", Double.valueOf(southwest.latitude), Double.valueOf(northeast.latitude));
-        this.iM = versionCode;
+        C0192s.m518b((Object) southwest, (Object) "null southwest");
+        C0192s.m518b((Object) northeast, (Object) "null northeast");
+        C0192s.m517a(northeast.latitude >= southwest.latitude, "southern latitude exceeds northern latitude (%s > %s)", Double.valueOf(southwest.latitude), Double.valueOf(northeast.latitude));
+        this.ab = versionCode;
         this.southwest = southwest;
         this.northeast = northeast;
     }
@@ -66,15 +66,15 @@ public final class LatLngBounds implements SafeParcelable {
         this(1, southwest, northeast);
     }
 
-    private boolean m1288a(double d) {
+    private boolean m1089a(double d) {
         return this.southwest.latitude <= d && d <= this.northeast.latitude;
     }
 
-    private static double m1289b(double d, double d2) {
+    private static double m1090b(double d, double d2) {
         return ((d - d2) + 360.0d) % 360.0d;
     }
 
-    private boolean m1290b(double d) {
+    private boolean m1091b(double d) {
         boolean z = false;
         if (this.southwest.longitude <= this.northeast.longitude) {
             return this.southwest.longitude <= d && d <= this.northeast.longitude;
@@ -90,12 +90,12 @@ public final class LatLngBounds implements SafeParcelable {
         return new Builder();
     }
 
-    private static double m1291c(double d, double d2) {
+    private static double m1092c(double d, double d2) {
         return ((d2 - d) + 360.0d) % 360.0d;
     }
 
     public boolean contains(LatLng point) {
-        return m1288a(point.latitude) && m1290b(point.longitude);
+        return m1089a(point.latitude) && m1091b(point.longitude);
     }
 
     public int describeContents() {
@@ -120,12 +120,12 @@ public final class LatLngBounds implements SafeParcelable {
         return new LatLng(d, d3 <= d2 ? (d2 + d3) / 2.0d : ((d2 + 360.0d) + d3) / 2.0d);
     }
 
-    int getVersionCode() {
-        return this.iM;
+    public int hashCode() {
+        return C0191r.hashCode(this.southwest, this.northeast);
     }
 
-    public int hashCode() {
-        return dl.hashCode(this.southwest, this.northeast);
+    int m1095i() {
+        return this.ab;
     }
 
     public LatLngBounds including(LatLng point) {
@@ -134,10 +134,10 @@ public final class LatLngBounds implements SafeParcelable {
         double d = this.northeast.longitude;
         double d2 = this.southwest.longitude;
         double d3 = point.longitude;
-        if (m1290b(d3)) {
+        if (m1091b(d3)) {
             d3 = d2;
             d2 = d;
-        } else if (m1289b(d2, d3) < m1291c(d, d3)) {
+        } else if (m1090b(d2, d3) < m1092c(d, d3)) {
             d2 = d;
         } else {
             double d4 = d2;
@@ -148,14 +148,14 @@ public final class LatLngBounds implements SafeParcelable {
     }
 
     public String toString() {
-        return dl.m387d(this).m386a("southwest", this.southwest).m386a("northeast", this.northeast).toString();
+        return C0191r.m514c(this).m512a("southwest", this.southwest).m512a("northeast", this.northeast).toString();
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0231d.m748a(this, out, flags);
+        if (C0215q.bn()) {
+            C0219d.m577a(this, out, flags);
         } else {
-            LatLngBoundsCreator.m737a(this, out, flags);
+            LatLngBoundsCreator.m566a(this, out, flags);
         }
     }
 }

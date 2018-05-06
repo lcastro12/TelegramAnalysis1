@@ -11,7 +11,6 @@ import android.widget.BaseAdapter;
 import android.widget.Filter;
 import android.widget.FilterQueryProvider;
 import android.widget.Filterable;
-import org.telegram.messenger.BuildConfig;
 
 public abstract class CursorAdapter extends BaseAdapter implements Filterable, CursorFilterClient {
     @Deprecated
@@ -216,7 +215,7 @@ public abstract class CursorAdapter extends BaseAdapter implements Filterable, C
     }
 
     public CharSequence convertToString(Cursor cursor) {
-        return cursor == null ? BuildConfig.FLAVOR : cursor.toString();
+        return cursor == null ? "" : cursor.toString();
     }
 
     public Cursor runQueryOnBackgroundThread(CharSequence constraint) {

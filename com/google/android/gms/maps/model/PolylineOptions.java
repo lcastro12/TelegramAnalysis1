@@ -3,65 +3,65 @@ package com.google.android.gms.maps.model;
 import android.os.Parcel;
 import android.support.v4.view.ViewCompat;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.maps.internal.C0215q;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public final class PolylineOptions implements SafeParcelable {
     public static final PolylineOptionsCreator CREATOR = new PolylineOptionsCreator();
-    private final int iM;
-    private int jc;
-    private final List<LatLng> qK;
-    private boolean qM;
-    private float qk;
-    private boolean ql;
-    private float qp;
+    private int f121P;
+    private final int ab;
+    private final List<LatLng> hB;
+    private boolean hD;
+    private float hb;
+    private boolean hc;
+    private float hg;
 
     public PolylineOptions() {
-        this.qp = 10.0f;
-        this.jc = ViewCompat.MEASURED_STATE_MASK;
-        this.qk = 0.0f;
-        this.ql = true;
-        this.qM = false;
-        this.iM = 1;
-        this.qK = new ArrayList();
+        this.hg = 10.0f;
+        this.f121P = ViewCompat.MEASURED_STATE_MASK;
+        this.hb = 0.0f;
+        this.hc = true;
+        this.hD = false;
+        this.ab = 1;
+        this.hB = new ArrayList();
     }
 
     PolylineOptions(int versionCode, List points, float width, int color, float zIndex, boolean visible, boolean geodesic) {
-        this.qp = 10.0f;
-        this.jc = ViewCompat.MEASURED_STATE_MASK;
-        this.qk = 0.0f;
-        this.ql = true;
-        this.qM = false;
-        this.iM = versionCode;
-        this.qK = points;
-        this.qp = width;
-        this.jc = color;
-        this.qk = zIndex;
-        this.ql = visible;
-        this.qM = geodesic;
+        this.hg = 10.0f;
+        this.f121P = ViewCompat.MEASURED_STATE_MASK;
+        this.hb = 0.0f;
+        this.hc = true;
+        this.hD = false;
+        this.ab = versionCode;
+        this.hB = points;
+        this.hg = width;
+        this.f121P = color;
+        this.hb = zIndex;
+        this.hc = visible;
+        this.hD = geodesic;
     }
 
     public PolylineOptions add(LatLng point) {
-        this.qK.add(point);
+        this.hB.add(point);
         return this;
     }
 
     public PolylineOptions add(LatLng... points) {
-        this.qK.addAll(Arrays.asList(points));
+        this.hB.addAll(Arrays.asList(points));
         return this;
     }
 
     public PolylineOptions addAll(Iterable<LatLng> points) {
         for (LatLng add : points) {
-            this.qK.add(add);
+            this.hB.add(add);
         }
         return this;
     }
 
     public PolylineOptions color(int color) {
-        this.jc = color;
+        this.f121P = color;
         return this;
     }
 
@@ -70,58 +70,58 @@ public final class PolylineOptions implements SafeParcelable {
     }
 
     public PolylineOptions geodesic(boolean geodesic) {
-        this.qM = geodesic;
+        this.hD = geodesic;
         return this;
     }
 
     public int getColor() {
-        return this.jc;
+        return this.f121P;
     }
 
     public List<LatLng> getPoints() {
-        return this.qK;
-    }
-
-    int getVersionCode() {
-        return this.iM;
+        return this.hB;
     }
 
     public float getWidth() {
-        return this.qp;
+        return this.hg;
     }
 
     public float getZIndex() {
-        return this.qk;
+        return this.hb;
+    }
+
+    int m1098i() {
+        return this.ab;
     }
 
     public boolean isGeodesic() {
-        return this.qM;
+        return this.hD;
     }
 
     public boolean isVisible() {
-        return this.ql;
+        return this.hc;
     }
 
     public PolylineOptions visible(boolean visible) {
-        this.ql = visible;
+        this.hc = visible;
         return this;
     }
 
     public PolylineOptions width(float width) {
-        this.qp = width;
+        this.hg = width;
         return this;
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0235h.m752a(this, out, flags);
+        if (C0215q.bn()) {
+            C0223h.m581a(this, out, flags);
         } else {
-            PolylineOptionsCreator.m741a(this, out, flags);
+            PolylineOptionsCreator.m570a(this, out, flags);
         }
     }
 
     public PolylineOptions zIndex(float zIndex) {
-        this.qk = zIndex;
+        this.hb = zIndex;
         return this;
     }
 }

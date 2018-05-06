@@ -1,13 +1,16 @@
 package org.telegram.ui;
 
+import android.animation.ObjectAnimator;
+import android.animation.StateListAnimator;
+import android.app.Activity;
 import android.content.Intent;
+import android.database.DataSetObserver;
+import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.support.v7.app.ActionBarActivity;
-import android.text.Html;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -16,10 +19,11 @@ import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
-import org.telegram.messenger.C0419R;
-import org.telegram.messenger.Utilities;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.C0553R;
+import org.telegram.messenger.LocaleController;
 
-public class IntroActivity extends ActionBarActivity {
+public class IntroActivity extends Activity {
     private ViewGroup bottomPages;
     private int[] icons;
     private boolean justCreated = false;
@@ -31,21 +35,23 @@ public class IntroActivity extends ActionBarActivity {
     private ImageView topImage2;
     private ViewPager viewPager;
 
-    class C05222 implements OnClickListener {
-        C05222() {
+    class C10272 implements OnClickListener {
+        C10272() {
         }
 
         public void onClick(View view) {
             if (!IntroActivity.this.startPressed) {
                 IntroActivity.this.startPressed = true;
-                IntroActivity.this.startActivity(new Intent(IntroActivity.this, LoginActivity.class));
+                Intent intent2 = new Intent(IntroActivity.this, LaunchActivity.class);
+                intent2.putExtra("fromIntro", true);
+                IntroActivity.this.startActivity(intent2);
                 IntroActivity.this.finish();
             }
         }
     }
 
-    class C08661 implements OnPageChangeListener {
-        C08661() {
+    class C15941 implements OnPageChangeListener {
+        C15941() {
         }
 
         public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -70,7 +76,7 @@ public class IntroActivity extends ActionBarActivity {
                 fadeinImage.setImageResource(IntroActivity.this.icons[IntroActivity.this.lastPage]);
                 fadeinImage.clearAnimation();
                 fadeoutImage.clearAnimation();
-                Animation outAnimation = AnimationUtils.loadAnimation(IntroActivity.this, C0419R.anim.icon_anim_fade_out);
+                Animation outAnimation = AnimationUtils.loadAnimation(IntroActivity.this, C0553R.anim.icon_anim_fade_out);
                 outAnimation.setAnimationListener(new AnimationListener() {
                     public void onAnimationStart(Animation animation) {
                     }
@@ -82,7 +88,7 @@ public class IntroActivity extends ActionBarActivity {
                     public void onAnimationRepeat(Animation animation) {
                     }
                 });
-                Animation inAnimation = AnimationUtils.loadAnimation(IntroActivity.this, C0419R.anim.icon_anim_fade_in);
+                Animation inAnimation = AnimationUtils.loadAnimation(IntroActivity.this, C0553R.anim.icon_anim_fade_in);
                 inAnimation.setAnimationListener(new AnimationListener() {
                     public void onAnimationStart(Animation animation) {
                         fadeinImage.setVisibility(0);
@@ -109,12 +115,12 @@ public class IntroActivity extends ActionBarActivity {
         }
 
         public Object instantiateItem(ViewGroup container, int position) {
-            View view = View.inflate(container.getContext(), C0419R.layout.intro_view_layout, null);
-            TextView headerTextView = (TextView) view.findViewById(C0419R.id.header_text);
-            TextView messageTextView = (TextView) view.findViewById(C0419R.id.message_text);
+            View view = View.inflate(container.getContext(), C0553R.layout.intro_view_layout, null);
+            TextView headerTextView = (TextView) view.findViewById(C0553R.id.header_text);
+            TextView messageTextView = (TextView) view.findViewById(C0553R.id.message_text);
             container.addView(view, 0);
             headerTextView.setText(IntroActivity.this.getString(IntroActivity.this.titles[position]));
-            messageTextView.setText(Html.fromHtml(IntroActivity.this.getString(IntroActivity.this.messages[position])));
+            messageTextView.setText(AndroidUtilities.replaceTags(IntroActivity.this.getString(IntroActivity.this.messages[position])));
             return view;
         }
 
@@ -139,9 +145,6 @@ public class IntroActivity extends ActionBarActivity {
             return view.equals(object);
         }
 
-        public void finishUpdate(View arg0) {
-        }
-
         public void restoreState(Parcelable arg0, ClassLoader arg1) {
         }
 
@@ -149,41 +152,57 @@ public class IntroActivity extends ActionBarActivity {
             return null;
         }
 
-        public void startUpdate(View arg0) {
+        public void unregisterDataSetObserver(DataSetObserver observer) {
+            if (observer != null) {
+                super.unregisterDataSetObserver(observer);
+            }
         }
     }
 
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(C0553R.style.Theme.TMessages);
         super.onCreate(savedInstanceState);
-        setContentView((int) C0419R.layout.intro_layout);
-        if (Utilities.isRTL) {
-            this.icons = new int[]{C0419R.drawable.intro7, C0419R.drawable.intro6, C0419R.drawable.intro5, C0419R.drawable.intro4, C0419R.drawable.intro3, C0419R.drawable.intro2, C0419R.drawable.intro1};
-            this.titles = new int[]{C0419R.string.Page7Title, C0419R.string.Page6Title, C0419R.string.Page5Title, C0419R.string.Page4Title, C0419R.string.Page3Title, C0419R.string.Page2Title, C0419R.string.Page1Title};
-            this.messages = new int[]{C0419R.string.Page7Message, C0419R.string.Page6Message, C0419R.string.Page5Message, C0419R.string.Page4Message, C0419R.string.Page3Message, C0419R.string.Page2Message, C0419R.string.Page1Message};
+        requestWindowFeature(1);
+        if (AndroidUtilities.isTablet()) {
+            setContentView(C0553R.layout.intro_layout_tablet);
         } else {
-            this.icons = new int[]{C0419R.drawable.intro1, C0419R.drawable.intro2, C0419R.drawable.intro3, C0419R.drawable.intro4, C0419R.drawable.intro5, C0419R.drawable.intro6, C0419R.drawable.intro7};
-            this.titles = new int[]{C0419R.string.Page1Title, C0419R.string.Page2Title, C0419R.string.Page3Title, C0419R.string.Page4Title, C0419R.string.Page5Title, C0419R.string.Page6Title, C0419R.string.Page7Title};
-            this.messages = new int[]{C0419R.string.Page1Message, C0419R.string.Page2Message, C0419R.string.Page3Message, C0419R.string.Page4Message, C0419R.string.Page5Message, C0419R.string.Page6Message, C0419R.string.Page7Message};
+            setRequestedOrientation(1);
+            setContentView(C0553R.layout.intro_layout);
         }
-        this.viewPager = (ViewPager) findViewById(C0419R.id.intro_view_pager);
-        TextView startMessagingButton = (TextView) findViewById(C0419R.id.start_messaging_button);
-        this.topImage1 = (ImageView) findViewById(C0419R.id.icon_image1);
-        this.topImage2 = (ImageView) findViewById(C0419R.id.icon_image2);
-        this.bottomPages = (ViewGroup) findViewById(C0419R.id.bottom_pages);
+        if (LocaleController.isRTL) {
+            this.icons = new int[]{C0553R.drawable.intro7, C0553R.drawable.intro6, C0553R.drawable.intro5, C0553R.drawable.intro4, C0553R.drawable.intro3, C0553R.drawable.intro2, C0553R.drawable.intro1};
+            this.titles = new int[]{C0553R.string.Page7Title, C0553R.string.Page6Title, C0553R.string.Page5Title, C0553R.string.Page4Title, C0553R.string.Page3Title, C0553R.string.Page2Title, C0553R.string.Page1Title};
+            this.messages = new int[]{C0553R.string.Page7Message, C0553R.string.Page6Message, C0553R.string.Page5Message, C0553R.string.Page4Message, C0553R.string.Page3Message, C0553R.string.Page2Message, C0553R.string.Page1Message};
+        } else {
+            this.icons = new int[]{C0553R.drawable.intro1, C0553R.drawable.intro2, C0553R.drawable.intro3, C0553R.drawable.intro4, C0553R.drawable.intro5, C0553R.drawable.intro6, C0553R.drawable.intro7};
+            this.titles = new int[]{C0553R.string.Page1Title, C0553R.string.Page2Title, C0553R.string.Page3Title, C0553R.string.Page4Title, C0553R.string.Page5Title, C0553R.string.Page6Title, C0553R.string.Page7Title};
+            this.messages = new int[]{C0553R.string.Page1Message, C0553R.string.Page2Message, C0553R.string.Page3Message, C0553R.string.Page4Message, C0553R.string.Page5Message, C0553R.string.Page6Message, C0553R.string.Page7Message};
+        }
+        this.viewPager = (ViewPager) findViewById(C0553R.id.intro_view_pager);
+        TextView startMessagingButton = (TextView) findViewById(C0553R.id.start_messaging_button);
+        startMessagingButton.setText(LocaleController.getString("StartMessaging", C0553R.string.StartMessaging).toUpperCase());
+        if (VERSION.SDK_INT >= 21) {
+            StateListAnimator animator = new StateListAnimator();
+            animator.addState(new int[]{16842919}, ObjectAnimator.ofFloat(startMessagingButton, "translationZ", new float[]{(float) AndroidUtilities.dp(2.0f), (float) AndroidUtilities.dp(4.0f)}).setDuration(200));
+            animator.addState(new int[0], ObjectAnimator.ofFloat(startMessagingButton, "translationZ", new float[]{(float) AndroidUtilities.dp(4.0f), (float) AndroidUtilities.dp(2.0f)}).setDuration(200));
+            startMessagingButton.setStateListAnimator(animator);
+        }
+        this.topImage1 = (ImageView) findViewById(C0553R.id.icon_image1);
+        this.topImage2 = (ImageView) findViewById(C0553R.id.icon_image2);
+        this.bottomPages = (ViewGroup) findViewById(C0553R.id.bottom_pages);
         this.topImage2.setVisibility(8);
         this.viewPager.setAdapter(new IntroAdapter());
         this.viewPager.setPageMargin(0);
         this.viewPager.setOffscreenPageLimit(1);
-        this.viewPager.setOnPageChangeListener(new C08661());
-        startMessagingButton.setOnClickListener(new C05222());
+        this.viewPager.addOnPageChangeListener(new C15941());
+        startMessagingButton.setOnClickListener(new C10272());
         this.justCreated = true;
-        getSupportActionBar().hide();
     }
 
     protected void onResume() {
         super.onResume();
         if (this.justCreated) {
-            if (Utilities.isRTL) {
+            if (LocaleController.isRTL) {
                 this.viewPager.setCurrentItem(6);
                 this.lastPage = 6;
             } else {
@@ -192,5 +211,12 @@ public class IntroActivity extends ActionBarActivity {
             }
             this.justCreated = false;
         }
+        AndroidUtilities.checkForCrashes(this);
+        AndroidUtilities.checkForUpdates(this);
+    }
+
+    protected void onPause() {
+        super.onPause();
+        AndroidUtilities.unregisterUpdates();
     }
 }

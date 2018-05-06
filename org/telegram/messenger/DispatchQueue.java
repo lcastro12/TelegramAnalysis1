@@ -3,10 +3,11 @@ package org.telegram.messenger;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import java.util.concurrent.CountDownLatch;
 
 public class DispatchQueue extends Thread {
-    public Handler handler;
-    private final Object handlerSyncObject = new Object();
+    private volatile Handler handler = null;
+    private CountDownLatch syncLatch = new CountDownLatch(1);
 
     public DispatchQueue(String threadName) {
         setName(threadName);
@@ -14,22 +15,24 @@ public class DispatchQueue extends Thread {
     }
 
     private void sendMessage(Message msg, int delay) {
-        if (this.handler == null) {
-            try {
-                synchronized (this.handlerSyncObject) {
-                    this.handlerSyncObject.wait();
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
+        try {
+            this.syncLatch.await();
+            if (delay <= 0) {
+                this.handler.sendMessage(msg);
+            } else {
+                this.handler.sendMessageDelayed(msg, (long) delay);
             }
+        } catch (Throwable e) {
+            FileLog.m611e("tmessages", e);
         }
-        if (this.handler == null) {
-            return;
-        }
-        if (delay <= 0) {
-            this.handler.sendMessage(msg);
-        } else {
-            this.handler.sendMessageDelayed(msg, (long) delay);
+    }
+
+    public void cancelRunnable(Runnable runnable) {
+        try {
+            this.syncLatch.await();
+            this.handler.removeCallbacks(runnable);
+        } catch (Throwable e) {
+            FileLog.m611e("tmessages", e);
         }
     }
 
@@ -37,32 +40,32 @@ public class DispatchQueue extends Thread {
         postRunnable(runnable, 0);
     }
 
-    public void postRunnable(Runnable runnable, int delay) {
-        if (this.handler == null) {
-            try {
-                synchronized (this.handlerSyncObject) {
-                    this.handlerSyncObject.wait();
-                }
-            } catch (Throwable t) {
-                t.printStackTrace();
+    public void postRunnable(Runnable runnable, long delay) {
+        try {
+            this.syncLatch.await();
+            if (delay <= 0) {
+                this.handler.post(runnable);
+            } else {
+                this.handler.postDelayed(runnable, delay);
             }
+        } catch (Throwable e) {
+            FileLog.m611e("tmessages", e);
         }
-        if (this.handler == null) {
-            return;
-        }
-        if (delay <= 0) {
-            this.handler.post(runnable);
-        } else {
-            this.handler.postDelayed(runnable, (long) delay);
+    }
+
+    public void cleanupQueue() {
+        try {
+            this.syncLatch.await();
+            this.handler.removeCallbacksAndMessages(null);
+        } catch (Throwable e) {
+            FileLog.m611e("tmessages", e);
         }
     }
 
     public void run() {
         Looper.prepare();
         this.handler = new Handler();
-        synchronized (this.handlerSyncObject) {
-            this.handlerSyncObject.notify();
-        }
+        this.syncLatch.countDown();
         Looper.loop();
     }
 }

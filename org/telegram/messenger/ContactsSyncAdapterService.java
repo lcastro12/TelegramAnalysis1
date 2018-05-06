@@ -25,8 +25,8 @@ public class ContactsSyncAdapterService extends Service {
         public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
             try {
                 ContactsSyncAdapterService.performSync(this.mContext, account, extras, authority, provider, syncResult);
-            } catch (Exception e) {
-                FileLog.m799e("tmessages", e);
+            } catch (Throwable e) {
+                FileLog.m611e("tmessages", e);
             }
         }
     }
@@ -43,6 +43,6 @@ public class ContactsSyncAdapterService extends Service {
     }
 
     private static void performSync(Context context, Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) throws OperationCanceledException {
-        FileLog.m798d("telegram", "performSync: " + account.toString());
+        FileLog.m608d("telegram", "performSync: " + account.toString());
     }
 }

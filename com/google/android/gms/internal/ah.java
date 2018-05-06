@@ -1,138 +1,190 @@
 package com.google.android.gms.internal;
 
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
+import android.os.Parcel;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.internal.ae.C1308a;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
-public final class ah {
-    public static final ai eA = new C06742();
-    public static final ai eB = new C06753();
-    public static final ai eC = new C06764();
-    public static final ai eD = new C06775();
-    public static final ai eE = new C06786();
-    public static final ai eF = new aj();
-    public static final ai eG = new C06797();
-    public static final ai eH = new ak();
-    public static final ai ez = new C06731();
+public class ah implements SafeParcelable {
+    public static final ai CREATOR = new ai();
+    private final int ab;
+    private final HashMap<String, HashMap<String, C1308a<?, ?>>> cD;
+    private final ArrayList<C1309a> cE;
+    private final String cF;
 
-    static class C06731 implements ai {
-        C06731() {
+    public static class C1309a implements SafeParcelable {
+        public static final aj CREATOR = new aj();
+        final ArrayList<C1310b> cG;
+        final String className;
+        final int versionCode;
+
+        C1309a(int i, String str, ArrayList<C1310b> arrayList) {
+            this.versionCode = i;
+            this.className = str;
+            this.cG = arrayList;
         }
 
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            String str = (String) map.get("urls");
-            if (str == null) {
-                cn.m299q("URLs missing in canOpenURLs GMSG.");
-                return;
+        C1309a(String str, HashMap<String, C1308a<?, ?>> hashMap) {
+            this.versionCode = 1;
+            this.className = str;
+            this.cG = C1309a.m686a(hashMap);
+        }
+
+        private static ArrayList<C1310b> m686a(HashMap<String, C1308a<?, ?>> hashMap) {
+            if (hashMap == null) {
+                return null;
             }
-            String[] split = str.split(",");
-            Map hashMap = new HashMap();
-            PackageManager packageManager = cqVar.getContext().getPackageManager();
-            for (String str2 : split) {
-                String[] split2 = str2.split(";", 2);
-                hashMap.put(str2, Boolean.valueOf(packageManager.resolveActivity(new Intent(split2.length > 1 ? split2[1].trim() : "android.intent.action.VIEW", Uri.parse(split2[0].trim())), 65536) != null));
+            ArrayList<C1310b> arrayList = new ArrayList();
+            for (String str : hashMap.keySet()) {
+                arrayList.add(new C1310b(str, (C1308a) hashMap.get(str)));
             }
-            cqVar.m306a("openableURLs", hashMap);
+            return arrayList;
+        }
+
+        HashMap<String, C1308a<?, ?>> ak() {
+            HashMap<String, C1308a<?, ?>> hashMap = new HashMap();
+            int size = this.cG.size();
+            for (int i = 0; i < size; i++) {
+                C1310b c1310b = (C1310b) this.cG.get(i);
+                hashMap.put(c1310b.cH, c1310b.cI);
+            }
+            return hashMap;
+        }
+
+        public int describeContents() {
+            aj ajVar = CREATOR;
+            return 0;
+        }
+
+        public void writeToParcel(Parcel out, int flags) {
+            aj ajVar = CREATOR;
+            aj.m200a(this, out, flags);
         }
     }
 
-    static class C06742 implements ai {
-        C06742() {
+    public static class C1310b implements SafeParcelable {
+        public static final ag CREATOR = new ag();
+        final String cH;
+        final C1308a<?, ?> cI;
+        final int versionCode;
+
+        C1310b(int i, String str, C1308a<?, ?> c1308a) {
+            this.versionCode = i;
+            this.cH = str;
+            this.cI = c1308a;
         }
 
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            String str = (String) map.get("u");
-            if (str == null) {
-                cn.m299q("URL missing from click GMSG.");
-                return;
-            }
-            Uri a;
-            Uri parse = Uri.parse(str);
-            try {
-                C0193h ax = cqVar.ax();
-                if (ax != null && ax.m665a(parse)) {
-                    a = ax.m663a(parse, cqVar.getContext());
-                    new cl(cqVar.getContext(), cqVar.ay().hP, a.toString()).start();
-                }
-            } catch (C0194i e) {
-                cn.m299q("Unable to append parameter to URL: " + str);
-            }
-            a = parse;
-            new cl(cqVar.getContext(), cqVar.ay().hP, a.toString()).start();
+        C1310b(String str, C1308a<?, ?> c1308a) {
+            this.versionCode = 1;
+            this.cH = str;
+            this.cI = c1308a;
+        }
+
+        public int describeContents() {
+            ag agVar = CREATOR;
+            return 0;
+        }
+
+        public void writeToParcel(Parcel out, int flags) {
+            ag agVar = CREATOR;
+            ag.m194a(this, out, flags);
         }
     }
 
-    static class C06753 implements ai {
-        C06753() {
-        }
+    ah(int i, ArrayList<C1309a> arrayList, String str) {
+        this.ab = i;
+        this.cE = null;
+        this.cD = m687b((ArrayList) arrayList);
+        this.cF = (String) C0192s.m521d(str);
+        ag();
+    }
 
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            bf au = cqVar.au();
-            if (au == null) {
-                cn.m299q("A GMSG tried to close something that wasn't an overlay.");
-            } else {
-                au.close();
+    public ah(Class<? extends ae> cls) {
+        this.ab = 1;
+        this.cE = null;
+        this.cD = new HashMap();
+        this.cF = cls.getCanonicalName();
+    }
+
+    private static HashMap<String, HashMap<String, C1308a<?, ?>>> m687b(ArrayList<C1309a> arrayList) {
+        HashMap<String, HashMap<String, C1308a<?, ?>>> hashMap = new HashMap();
+        int size = arrayList.size();
+        for (int i = 0; i < size; i++) {
+            C1309a c1309a = (C1309a) arrayList.get(i);
+            hashMap.put(c1309a.className, c1309a.ak());
+        }
+        return hashMap;
+    }
+
+    public void m688a(Class<? extends ae> cls, HashMap<String, C1308a<?, ?>> hashMap) {
+        this.cD.put(cls.getCanonicalName(), hashMap);
+    }
+
+    public void ag() {
+        for (String str : this.cD.keySet()) {
+            HashMap hashMap = (HashMap) this.cD.get(str);
+            for (String str2 : hashMap.keySet()) {
+                ((C1308a) hashMap.get(str2)).m683a(this);
             }
         }
     }
 
-    static class C06764 implements ai {
-        C06764() {
-        }
-
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            bf au = cqVar.au();
-            if (au == null) {
-                cn.m299q("A GMSG tried to use a custom close button on something that wasn't an overlay.");
-            } else {
-                au.m1346d("1".equals(map.get("custom_close")));
+    public void ah() {
+        for (String str : this.cD.keySet()) {
+            HashMap hashMap = (HashMap) this.cD.get(str);
+            HashMap hashMap2 = new HashMap();
+            for (String str2 : hashMap.keySet()) {
+                hashMap2.put(str2, ((C1308a) hashMap.get(str2)).m679W());
             }
+            this.cD.put(str, hashMap2);
         }
     }
 
-    static class C06775 implements ai {
-        C06775() {
+    ArrayList<C1309a> ai() {
+        ArrayList<C1309a> arrayList = new ArrayList();
+        for (String str : this.cD.keySet()) {
+            arrayList.add(new C1309a(str, (HashMap) this.cD.get(str)));
         }
-
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            String str = (String) map.get("u");
-            if (str == null) {
-                cn.m299q("URL missing from httpTrack GMSG.");
-            } else {
-                new cl(cqVar.getContext(), cqVar.ay().hP, str).start();
-            }
-        }
+        return arrayList;
     }
 
-    static class C06786 implements ai {
-        C06786() {
-        }
-
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            cn.m297o("Received log message: " + ((String) map.get("string")));
-        }
+    public String aj() {
+        return this.cF;
     }
 
-    static class C06797 implements ai {
-        C06797() {
-        }
+    public boolean m689b(Class<? extends ae> cls) {
+        return this.cD.containsKey(cls.getCanonicalName());
+    }
 
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            String str = (String) map.get("ty");
-            String str2 = (String) map.get("td");
-            try {
-                int parseInt = Integer.parseInt((String) map.get("tx"));
-                int parseInt2 = Integer.parseInt(str);
-                int parseInt3 = Integer.parseInt(str2);
-                C0193h ax = cqVar.ax();
-                if (ax != null) {
-                    ax.m666g().mo854a(parseInt, parseInt2, parseInt3);
-                }
-            } catch (NumberFormatException e) {
-                cn.m299q("Could not parse touch parameters from gmsg.");
+    public int describeContents() {
+        ai aiVar = CREATOR;
+        return 0;
+    }
+
+    int m690i() {
+        return this.ab;
+    }
+
+    public HashMap<String, C1308a<?, ?>> m691q(String str) {
+        return (HashMap) this.cD.get(str);
+    }
+
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String str : this.cD.keySet()) {
+            stringBuilder.append(str).append(":\n");
+            HashMap hashMap = (HashMap) this.cD.get(str);
+            for (String str2 : hashMap.keySet()) {
+                stringBuilder.append("  ").append(str2).append(": ");
+                stringBuilder.append(hashMap.get(str2));
             }
         }
+        return stringBuilder.toString();
+    }
+
+    public void writeToParcel(Parcel out, int flags) {
+        ai aiVar = CREATOR;
+        ai.m197a(this, out, flags);
     }
 }

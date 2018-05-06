@@ -21,8 +21,6 @@ public interface LeaderboardVariant {
 
     long getPlayerRank();
 
-    String getPlayerScoreTag();
-
     long getRawPlayerScore();
 
     int getTimeSpan();

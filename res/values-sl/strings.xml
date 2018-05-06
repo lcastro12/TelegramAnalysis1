@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="abc_action_bar_home_description">Krmarjenje domov</string>
-    <string name="abc_action_bar_up_description">Krmarjenje navzgor</string>
-    <string name="abc_action_menu_overflow_description">Več možnosti</string>
-    <string name="abc_action_mode_done">Končano</string>
-    <string name="abc_activity_chooser_view_see_all">Pokaži vse</string>
-    <string name="abc_activitychooserview_choose_application">Izbira aplikacije</string>
-    <string name="abc_searchview_description_clear">Izbris poizvedbe</string>
-    <string name="abc_searchview_description_query">Iskalna poizvedba</string>
-    <string name="abc_searchview_description_search">Iskanje</string>
-    <string name="abc_searchview_description_submit">Pošiljanje poizvedbe</string>
-    <string name="abc_searchview_description_voice">Glasovno iskanje</string>
-    <string name="abc_shareactionprovider_share_with">Deljenje z</string>
-    <string name="abc_shareactionprovider_share_with_application">Deljenje z:</string>
     <string name="auth_client_needs_enabling_title">Za delovanje aplikacije morate omogočiti Storitve Google Play.</string>
     <string name="auth_client_needs_installation_title">Za delovanje aplikacije morate namestiti Storitve Google Play.</string>
     <string name="auth_client_needs_update_title">Za delovanje aplikacije morate posodobiti Storitve Google Play.</string>
@@ -31,7 +18,6 @@
     <string name="common_google_play_services_network_error_text">Za povezavo s storitvami Google Play potrebujete internetno povezavo.</string>
     <string name="common_google_play_services_network_error_title">Omrežna napaka</string>
     <string name="common_google_play_services_unknown_issue">Neznana težava s storitvami Google Play.</string>
-    <string name="common_google_play_services_unsupported_date_text">Videti je, da je datum v napravi napačen. Preverite ga.</string>
     <string name="common_google_play_services_unsupported_text">Vaša naprava na podpira storitev Google Play, ki jih potrebujejo nekatere od vaših aplikacij. Za pomoč se obrnite na izdelovalca.</string>
     <string name="common_google_play_services_unsupported_title">Storitve Google Play</string>
     <string name="common_google_play_services_update_button">Posodobi</string>

@@ -9,11 +9,11 @@ public final class AccountPicker {
     private AccountPicker() {
     }
 
-    public static Intent m22a(Account account, ArrayList<Account> arrayList, String[] strArr, boolean z, String str, String str2, String[] strArr2, Bundle bundle, boolean z2) {
-        return m23a(account, arrayList, strArr, z, str, str2, strArr2, bundle, z2, 0);
+    public static Intent m15a(Account account, ArrayList<Account> arrayList, String[] strArr, boolean z, String str, String str2, String[] strArr2, Bundle bundle, boolean z2) {
+        return m16a(account, arrayList, strArr, z, str, str2, strArr2, bundle, z2, 0);
     }
 
-    public static Intent m23a(Account account, ArrayList<Account> arrayList, String[] strArr, boolean z, String str, String str2, String[] strArr2, Bundle bundle, boolean z2, int i) {
+    public static Intent m16a(Account account, ArrayList<Account> arrayList, String[] strArr, boolean z, String str, String str2, String[] strArr2, Bundle bundle, boolean z2, int i) {
         Intent intent = new Intent();
         intent.setAction("com.google.android.gms.common.account.CHOOSE_ACCOUNT");
         intent.putExtra("allowableAccounts", arrayList);
@@ -30,6 +30,6 @@ public final class AccountPicker {
     }
 
     public static Intent newChooseAccountIntent(Account selectedAccount, ArrayList<Account> allowableAccounts, String[] allowableAccountTypes, boolean alwaysPromptForAccount, String descriptionOverrideText, String addAccountAuthTokenType, String[] addAccountRequiredFeatures, Bundle addAccountOptions) {
-        return m22a(selectedAccount, allowableAccounts, allowableAccountTypes, alwaysPromptForAccount, descriptionOverrideText, addAccountAuthTokenType, addAccountRequiredFeatures, addAccountOptions, false);
+        return m15a(selectedAccount, allowableAccounts, allowableAccountTypes, alwaysPromptForAccount, descriptionOverrideText, addAccountAuthTokenType, addAccountRequiredFeatures, addAccountOptions, false);
     }
 }

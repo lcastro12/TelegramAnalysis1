@@ -2,11 +2,11 @@ package com.google.android.gms.maps.model;
 
 import android.os.Parcel;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.maps.internal.C0215q;
 
 public final class LatLng implements SafeParcelable {
     public static final LatLngCreator CREATOR = new LatLngCreator();
-    private final int iM;
+    private final int ab;
     public final double latitude;
     public final double longitude;
 
@@ -15,7 +15,7 @@ public final class LatLng implements SafeParcelable {
     }
 
     LatLng(int versionCode, double latitude, double longitude) {
-        this.iM = versionCode;
+        this.ab = versionCode;
         if (-180.0d > longitude || longitude >= 180.0d) {
             this.longitude = ((((longitude - 180.0d) % 360.0d) + 360.0d) % 360.0d) - 180.0d;
         } else {
@@ -39,10 +39,6 @@ public final class LatLng implements SafeParcelable {
         return Double.doubleToLongBits(this.latitude) == Double.doubleToLongBits(latLng.latitude) && Double.doubleToLongBits(this.longitude) == Double.doubleToLongBits(latLng.longitude);
     }
 
-    int getVersionCode() {
-        return this.iM;
-    }
-
     public int hashCode() {
         long doubleToLongBits = Double.doubleToLongBits(this.latitude);
         int i = ((int) (doubleToLongBits ^ (doubleToLongBits >>> 32))) + 31;
@@ -50,15 +46,19 @@ public final class LatLng implements SafeParcelable {
         return (i * 31) + ((int) (doubleToLongBits2 ^ (doubleToLongBits2 >>> 32)));
     }
 
+    int m1088i() {
+        return this.ab;
+    }
+
     public String toString() {
         return "lat/lng: (" + this.latitude + "," + this.longitude + ")";
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0232e.m749a(this, out, flags);
+        if (C0215q.bn()) {
+            C0220e.m578a(this, out, flags);
         } else {
-            LatLngCreator.m738a(this, out, flags);
+            LatLngCreator.m567a(this, out, flags);
         }
     }
 }

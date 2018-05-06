@@ -8,12 +8,12 @@ import net.hockeyapp.android.views.ExpiryInfoView;
 public class ExpiryInfoActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTitle(getStringResource(13));
+        setTitle(getStringResource(Strings.EXPIRY_INFO_TITLE_ID));
         setContentView(getLayoutView());
     }
 
     protected View getLayoutView() {
-        return new ExpiryInfoView(this, getStringResource(14));
+        return new ExpiryInfoView(this, getStringResource(Strings.EXPIRY_INFO_TEXT_ID));
     }
 
     protected String getStringResource(int resourceID) {

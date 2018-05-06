@@ -1,24 +1,24 @@
 package com.google.android.gms.plus.model.people;
 
-import com.google.android.gms.common.data.C0644c;
-import com.google.android.gms.common.data.C0646d;
+import com.google.android.gms.common.data.C1285c;
+import com.google.android.gms.common.data.C1287d;
 import com.google.android.gms.common.data.DataBuffer;
-import com.google.android.gms.internal.fv;
-import com.google.android.gms.internal.gg;
+import com.google.android.gms.internal.cc;
+import com.google.android.gms.internal.cn;
 
 public final class PersonBuffer extends DataBuffer<Person> {
-    private final C0644c<fv> tt;
+    private final C1285c<cc> kp;
 
-    public PersonBuffer(C0646d dataHolder) {
+    public PersonBuffer(C1287d dataHolder) {
         super(dataHolder);
-        if (dataHolder.aM() == null || !dataHolder.aM().getBoolean("com.google.android.gms.plus.IsSafeParcelable", false)) {
-            this.tt = null;
+        if (dataHolder.m639l() == null || !dataHolder.m639l().getBoolean("com.google.android.gms.plus.IsSafeParcelable", false)) {
+            this.kp = null;
         } else {
-            this.tt = new C0644c(dataHolder, fv.CREATOR);
+            this.kp = new C1285c(dataHolder, cc.CREATOR);
         }
     }
 
     public Person get(int position) {
-        return this.tt != null ? (Person) this.tt.m802p(position) : new gg(this.jf, position);
+        return this.kp != null ? (Person) this.kp.m620d(position) : new cn(this.S, position);
     }
 }

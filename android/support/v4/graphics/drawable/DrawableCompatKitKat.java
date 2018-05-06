@@ -13,4 +13,11 @@ class DrawableCompatKitKat {
     public static boolean isAutoMirrored(Drawable drawable) {
         return drawable.isAutoMirrored();
     }
+
+    public static Drawable wrapForTinting(Drawable drawable) {
+        if (drawable instanceof DrawableWrapperKitKat) {
+            return drawable;
+        }
+        return new DrawableWrapperKitKat(drawable);
+    }
 }

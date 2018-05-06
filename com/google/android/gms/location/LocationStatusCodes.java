@@ -10,7 +10,7 @@ public final class LocationStatusCodes {
     private LocationStatusCodes() {
     }
 
-    public static int m706Z(int i) {
+    public static int m535O(int i) {
         return (i < 0 || i > 1) ? (GEOFENCE_NOT_AVAILABLE > i || i > GEOFENCE_TOO_MANY_PENDING_INTENTS) ? 1 : i : i;
     }
 }

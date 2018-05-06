@@ -76,6 +76,10 @@ public class ConnectivityManagerCompat {
     }
 
     public static NetworkInfo getNetworkInfoFromBroadcast(ConnectivityManager cm, Intent intent) {
-        return cm.getNetworkInfo(((NetworkInfo) intent.getParcelableExtra("networkInfo")).getType());
+        NetworkInfo info = (NetworkInfo) intent.getParcelableExtra("networkInfo");
+        if (info != null) {
+            return cm.getNetworkInfo(info.getType());
+        }
+        return null;
     }
 }

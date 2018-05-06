@@ -1,7 +1,6 @@
 package net.hockeyapp.android;
 
 import android.os.Process;
-import android.support.v4.view.MotionEventCompat;
 import android.util.Log;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -34,14 +33,18 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
         try {
             String filename = UUID.randomUUID().toString();
             String path = Constants.FILES_PATH + "/" + filename + ".stacktrace";
-            Log.d(Constants.TAG, "Writing unhandled exception to: " + path);
+            Log.d("HockeyApp", "Writing unhandled exception to: " + path);
             BufferedWriter write = new BufferedWriter(new FileWriter(path));
             write.write("Package: " + Constants.APP_PACKAGE + "\n");
-            write.write("Version: " + Constants.APP_VERSION + "\n");
+            write.write("Version Code: " + Constants.APP_VERSION + "\n");
+            write.write("Version Name: " + Constants.APP_VERSION_NAME + "\n");
             if (listener == null || listener.includeDeviceData()) {
                 write.write("Android: " + Constants.ANDROID_VERSION + "\n");
                 write.write("Manufacturer: " + Constants.PHONE_MANUFACTURER + "\n");
                 write.write("Model: " + Constants.PHONE_MODEL + "\n");
+            }
+            if (Constants.CRASH_IDENTIFIER != null && (listener == null || listener.includeDeviceIdentifier())) {
+                write.write("CrashReporter Key: " + Constants.CRASH_IDENTIFIER + "\n");
             }
             write.write("Date: " + now + "\n");
             write.write("\n");
@@ -54,7 +57,7 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
                 writeValueToFile(listener.getDescription(), filename + ".description");
             }
         } catch (Exception another) {
-            Log.e(Constants.TAG, "Error saving exception stacktrace!\n", another);
+            Log.e("HockeyApp", "Error saving exception stacktrace!\n", another);
         }
     }
 
@@ -86,9 +89,9 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
     }
 
     private static String limitedString(String string) {
-        if (string == null || string.length() <= MotionEventCompat.ACTION_MASK) {
+        if (string == null || string.length() <= 255) {
             return string;
         }
-        return string.substring(0, MotionEventCompat.ACTION_MASK);
+        return string.substring(0, 255);
     }
 }

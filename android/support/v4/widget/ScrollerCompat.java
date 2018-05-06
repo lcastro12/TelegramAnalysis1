@@ -6,7 +6,9 @@ import android.view.animation.Interpolator;
 import android.widget.Scroller;
 
 public class ScrollerCompat {
-    static final ScrollerCompatImpl IMPL;
+    static final int CHASE_FRAME_TIME = 16;
+    private static final String TAG = "ScrollerCompat";
+    ScrollerCompatImpl mImpl;
     Object mScroller;
 
     interface ScrollerCompatImpl {
@@ -37,6 +39,8 @@ public class ScrollerCompat {
         void notifyHorizontalEdgeReached(Object obj, int i, int i2, int i3);
 
         void notifyVerticalEdgeReached(Object obj, int i, int i2, int i3);
+
+        boolean springBack(Object obj, int i, int i2, int i3, int i4, int i5, int i6);
 
         void startScroll(Object obj, int i, int i2, int i3, int i4);
 
@@ -108,6 +112,10 @@ public class ScrollerCompat {
         public int getFinalY(Object scroller) {
             return ((Scroller) scroller).getFinalY();
         }
+
+        public boolean springBack(Object scroller, int startX, int startY, int minX, int maxX, int minY, int maxY) {
+            return false;
+        }
     }
 
     static class ScrollerCompatImplGingerbread implements ScrollerCompatImpl {
@@ -177,6 +185,10 @@ public class ScrollerCompat {
         public int getFinalY(Object scroller) {
             return ScrollerCompatGingerbread.getFinalY(scroller);
         }
+
+        public boolean springBack(Object scroller, int startX, int startY, int minX, int maxX, int minY, int maxY) {
+            return ScrollerCompatGingerbread.springBack(scroller, startX, startY, minX, maxX, minY, maxY);
+        }
     }
 
     static class ScrollerCompatImplIcs extends ScrollerCompatImplGingerbread {
@@ -185,17 +197,6 @@ public class ScrollerCompat {
 
         public float getCurrVelocity(Object scroller) {
             return ScrollerCompatIcs.getCurrVelocity(scroller);
-        }
-    }
-
-    static {
-        int version = VERSION.SDK_INT;
-        if (version >= 14) {
-            IMPL = new ScrollerCompatImplIcs();
-        } else if (version >= 9) {
-            IMPL = new ScrollerCompatImplGingerbread();
-        } else {
-            IMPL = new ScrollerCompatImplBase();
         }
     }
 
@@ -208,66 +209,81 @@ public class ScrollerCompat {
     }
 
     ScrollerCompat(Context context, Interpolator interpolator) {
-        this.mScroller = IMPL.createScroller(context, interpolator);
+        this(VERSION.SDK_INT, context, interpolator);
+    }
+
+    private ScrollerCompat(int apiVersion, Context context, Interpolator interpolator) {
+        if (apiVersion >= 14) {
+            this.mImpl = new ScrollerCompatImplIcs();
+        } else if (apiVersion >= 9) {
+            this.mImpl = new ScrollerCompatImplGingerbread();
+        } else {
+            this.mImpl = new ScrollerCompatImplBase();
+        }
+        this.mScroller = this.mImpl.createScroller(context, interpolator);
     }
 
     public boolean isFinished() {
-        return IMPL.isFinished(this.mScroller);
+        return this.mImpl.isFinished(this.mScroller);
     }
 
     public int getCurrX() {
-        return IMPL.getCurrX(this.mScroller);
+        return this.mImpl.getCurrX(this.mScroller);
     }
 
     public int getCurrY() {
-        return IMPL.getCurrY(this.mScroller);
+        return this.mImpl.getCurrY(this.mScroller);
     }
 
     public int getFinalX() {
-        return IMPL.getFinalX(this.mScroller);
+        return this.mImpl.getFinalX(this.mScroller);
     }
 
     public int getFinalY() {
-        return IMPL.getFinalY(this.mScroller);
+        return this.mImpl.getFinalY(this.mScroller);
     }
 
     public float getCurrVelocity() {
-        return IMPL.getCurrVelocity(this.mScroller);
+        return this.mImpl.getCurrVelocity(this.mScroller);
     }
 
     public boolean computeScrollOffset() {
-        return IMPL.computeScrollOffset(this.mScroller);
+        return this.mImpl.computeScrollOffset(this.mScroller);
     }
 
     public void startScroll(int startX, int startY, int dx, int dy) {
-        IMPL.startScroll(this.mScroller, startX, startY, dx, dy);
+        this.mImpl.startScroll(this.mScroller, startX, startY, dx, dy);
     }
 
     public void startScroll(int startX, int startY, int dx, int dy, int duration) {
-        IMPL.startScroll(this.mScroller, startX, startY, dx, dy, duration);
+        this.mImpl.startScroll(this.mScroller, startX, startY, dx, dy, duration);
     }
 
     public void fling(int startX, int startY, int velocityX, int velocityY, int minX, int maxX, int minY, int maxY) {
-        IMPL.fling(this.mScroller, startX, startY, velocityX, velocityY, minX, maxX, minY, maxY);
+        this.mImpl.fling(this.mScroller, startX, startY, velocityX, velocityY, minX, maxX, minY, maxY);
     }
 
     public void fling(int startX, int startY, int velocityX, int velocityY, int minX, int maxX, int minY, int maxY, int overX, int overY) {
-        IMPL.fling(this.mScroller, startX, startY, velocityX, velocityY, minX, maxX, minY, maxY, overX, overY);
+        this.mImpl.fling(this.mScroller, startX, startY, velocityX, velocityY, minX, maxX, minY, maxY, overX, overY);
+    }
+
+    public boolean springBack(int startX, int startY, int minX, int maxX, int minY, int maxY) {
+        return this.mImpl.springBack(this.mScroller, startX, startY, minX, maxX, minY, maxY);
     }
 
     public void abortAnimation() {
-        IMPL.abortAnimation(this.mScroller);
+        this.mImpl.abortAnimation(this.mScroller);
     }
 
     public void notifyHorizontalEdgeReached(int startX, int finalX, int overX) {
-        IMPL.notifyHorizontalEdgeReached(this.mScroller, startX, finalX, overX);
+        this.mImpl.notifyHorizontalEdgeReached(this.mScroller, startX, finalX, overX);
     }
 
     public void notifyVerticalEdgeReached(int startY, int finalY, int overY) {
-        IMPL.notifyVerticalEdgeReached(this.mScroller, startY, finalY, overY);
+        this.mImpl.notifyVerticalEdgeReached(this.mScroller, startY, finalY, overY);
     }
 
     public boolean isOverScrolled() {
-        return IMPL.isOverScrolled(this.mScroller);
+        return this.mImpl.isOverScrolled(this.mScroller);
     }
 }

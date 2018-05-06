@@ -24,10 +24,10 @@ public class TrafficStatsCompat {
     }
 
     static class BaseTrafficStatsCompatImpl implements TrafficStatsCompatImpl {
-        private ThreadLocal<SocketTags> mThreadSocketTags = new C00251();
+        private ThreadLocal<SocketTags> mThreadSocketTags = new C00691();
 
-        class C00251 extends ThreadLocal<SocketTags> {
-            C00251() {
+        class C00691 extends ThreadLocal<SocketTags> {
+            C00691() {
             }
 
             protected SocketTags initialValue() {

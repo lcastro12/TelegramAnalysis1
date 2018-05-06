@@ -4,41 +4,41 @@ import android.database.CharArrayBuffer;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.internal.dd;
-import com.google.android.gms.internal.dl;
-import com.google.android.gms.internal.eg;
-import com.google.android.gms.internal.en;
+import com.google.android.gms.internal.C0191r;
+import com.google.android.gms.internal.C1351j;
+import com.google.android.gms.internal.ao;
+import com.google.android.gms.internal.av;
 
-public final class GameEntity extends en implements Game {
-    public static final Creator<GameEntity> CREATOR = new C0656a();
-    private final int iM;
-    private final String mk;
-    private final String ml;
-    private final String mm;
-    private final String mn;
-    private final String mo;
-    private final String mp;
-    private final Uri mq;
-    private final Uri mr;
-    private final Uri ms;
-    private final boolean mt;
-    private final boolean mu;
-    private final String mv;
-    private final int mw;
-    private final int mx;
-    private final int my;
+public final class GameEntity extends av implements Game {
+    public static final Creator<GameEntity> CREATOR = new C1297a();
+    private final int ab;
+    private final String cl;
+    private final String df;
+    private final String dg;
+    private final String dh;
+    private final String di;
+    private final String dj;
+    private final Uri dk;
+    private final Uri dl;
+    private final Uri dm;
+    private final boolean dn;
+    private final boolean f163do;
+    private final String dp;
+    private final int dq;
+    private final int dr;
+    private final int ds;
 
-    static final class C0656a extends C0117a {
-        C0656a() {
+    static final class C1297a extends C0151a {
+        C1297a() {
         }
 
         public /* synthetic */ Object createFromParcel(Parcel x0) {
-            return mo710t(x0);
+            return mo1043n(x0);
         }
 
-        public GameEntity mo710t(Parcel parcel) {
-            if (en.m1439c(dd.aW()) || dd.m942y(GameEntity.class.getCanonicalName())) {
-                return super.mo710t(parcel);
+        public GameEntity mo1043n(Parcel parcel) {
+            if (av.m1217c(C1351j.m970v()) || C1351j.m968h(GameEntity.class.getCanonicalName())) {
+                return super.mo1043n(parcel);
             }
             String readString = parcel.readString();
             String readString2 = parcel.readString();
@@ -56,48 +56,48 @@ public final class GameEntity extends en implements Game {
     }
 
     GameEntity(int versionCode, String applicationId, String displayName, String primaryCategory, String secondaryCategory, String description, String developerName, Uri iconImageUri, Uri hiResImageUri, Uri featuredImageUri, boolean playEnabledGame, boolean instanceInstalled, String instancePackageName, int gameplayAclStatus, int achievementTotalCount, int leaderboardCount) {
-        this.iM = versionCode;
-        this.mk = applicationId;
-        this.ml = displayName;
-        this.mm = primaryCategory;
-        this.mn = secondaryCategory;
-        this.mo = description;
-        this.mp = developerName;
-        this.mq = iconImageUri;
-        this.mr = hiResImageUri;
-        this.ms = featuredImageUri;
-        this.mt = playEnabledGame;
-        this.mu = instanceInstalled;
-        this.mv = instancePackageName;
-        this.mw = gameplayAclStatus;
-        this.mx = achievementTotalCount;
-        this.my = leaderboardCount;
+        this.ab = versionCode;
+        this.df = applicationId;
+        this.cl = displayName;
+        this.dg = primaryCategory;
+        this.dh = secondaryCategory;
+        this.di = description;
+        this.dj = developerName;
+        this.dk = iconImageUri;
+        this.dl = hiResImageUri;
+        this.dm = featuredImageUri;
+        this.dn = playEnabledGame;
+        this.f163do = instanceInstalled;
+        this.dp = instancePackageName;
+        this.dq = gameplayAclStatus;
+        this.dr = achievementTotalCount;
+        this.ds = leaderboardCount;
     }
 
     public GameEntity(Game game) {
-        this.iM = 1;
-        this.mk = game.getApplicationId();
-        this.mm = game.getPrimaryCategory();
-        this.mn = game.getSecondaryCategory();
-        this.mo = game.getDescription();
-        this.mp = game.getDeveloperName();
-        this.ml = game.getDisplayName();
-        this.mq = game.getIconImageUri();
-        this.mr = game.getHiResImageUri();
-        this.ms = game.getFeaturedImageUri();
-        this.mt = game.isPlayEnabledGame();
-        this.mu = game.isInstanceInstalled();
-        this.mv = game.getInstancePackageName();
-        this.mw = game.getGameplayAclStatus();
-        this.mx = game.getAchievementTotalCount();
-        this.my = game.getLeaderboardCount();
+        this.ab = 1;
+        this.df = game.getApplicationId();
+        this.dg = game.getPrimaryCategory();
+        this.dh = game.getSecondaryCategory();
+        this.di = game.getDescription();
+        this.dj = game.getDeveloperName();
+        this.cl = game.getDisplayName();
+        this.dk = game.getIconImageUri();
+        this.dl = game.getHiResImageUri();
+        this.dm = game.getFeaturedImageUri();
+        this.dn = game.isPlayEnabledGame();
+        this.f163do = game.isInstanceInstalled();
+        this.dp = game.getInstancePackageName();
+        this.dq = game.getGameplayAclStatus();
+        this.dr = game.getAchievementTotalCount();
+        this.ds = game.getLeaderboardCount();
     }
 
-    static int m1575a(Game game) {
-        return dl.hashCode(game.getApplicationId(), game.getDisplayName(), game.getPrimaryCategory(), game.getSecondaryCategory(), game.getDescription(), game.getDeveloperName(), game.getIconImageUri(), game.getHiResImageUri(), game.getFeaturedImageUri(), Boolean.valueOf(game.isPlayEnabledGame()), Boolean.valueOf(game.isInstanceInstalled()), game.getInstancePackageName(), Integer.valueOf(game.getGameplayAclStatus()), Integer.valueOf(game.getAchievementTotalCount()), Integer.valueOf(game.getLeaderboardCount()));
+    static int m1358a(Game game) {
+        return C0191r.hashCode(game.getApplicationId(), game.getDisplayName(), game.getPrimaryCategory(), game.getSecondaryCategory(), game.getDescription(), game.getDeveloperName(), game.getIconImageUri(), game.getHiResImageUri(), game.getFeaturedImageUri(), Boolean.valueOf(game.isPlayEnabledGame()), Boolean.valueOf(game.isInstanceInstalled()), game.getInstancePackageName(), Integer.valueOf(game.getGameplayAclStatus()), Integer.valueOf(game.getAchievementTotalCount()), Integer.valueOf(game.getLeaderboardCount()));
     }
 
-    static boolean m1576a(Game game, Object obj) {
+    static boolean m1359a(Game game, Object obj) {
         if (!(obj instanceof Game)) {
             return false;
         }
@@ -105,11 +105,11 @@ public final class GameEntity extends en implements Game {
             return true;
         }
         Game game2 = (Game) obj;
-        return dl.equal(game2.getApplicationId(), game.getApplicationId()) && dl.equal(game2.getDisplayName(), game.getDisplayName()) && dl.equal(game2.getPrimaryCategory(), game.getPrimaryCategory()) && dl.equal(game2.getSecondaryCategory(), game.getSecondaryCategory()) && dl.equal(game2.getDescription(), game.getDescription()) && dl.equal(game2.getDeveloperName(), game.getDeveloperName()) && dl.equal(game2.getIconImageUri(), game.getIconImageUri()) && dl.equal(game2.getHiResImageUri(), game.getHiResImageUri()) && dl.equal(game2.getFeaturedImageUri(), game.getFeaturedImageUri()) && dl.equal(Boolean.valueOf(game2.isPlayEnabledGame()), Boolean.valueOf(game.isPlayEnabledGame())) && dl.equal(Boolean.valueOf(game2.isInstanceInstalled()), Boolean.valueOf(game.isInstanceInstalled())) && dl.equal(game2.getInstancePackageName(), game.getInstancePackageName()) && dl.equal(Integer.valueOf(game2.getGameplayAclStatus()), Integer.valueOf(game.getGameplayAclStatus())) && dl.equal(Integer.valueOf(game2.getAchievementTotalCount()), Integer.valueOf(game.getAchievementTotalCount())) && dl.equal(Integer.valueOf(game2.getLeaderboardCount()), Integer.valueOf(game.getLeaderboardCount()));
+        return C0191r.m513a(game2.getApplicationId(), game.getApplicationId()) && C0191r.m513a(game2.getDisplayName(), game.getDisplayName()) && C0191r.m513a(game2.getPrimaryCategory(), game.getPrimaryCategory()) && C0191r.m513a(game2.getSecondaryCategory(), game.getSecondaryCategory()) && C0191r.m513a(game2.getDescription(), game.getDescription()) && C0191r.m513a(game2.getDeveloperName(), game.getDeveloperName()) && C0191r.m513a(game2.getIconImageUri(), game.getIconImageUri()) && C0191r.m513a(game2.getHiResImageUri(), game.getHiResImageUri()) && C0191r.m513a(game2.getFeaturedImageUri(), game.getFeaturedImageUri()) && C0191r.m513a(Boolean.valueOf(game2.isPlayEnabledGame()), Boolean.valueOf(game.isPlayEnabledGame())) && C0191r.m513a(Boolean.valueOf(game2.isInstanceInstalled()), Boolean.valueOf(game.isInstanceInstalled())) && C0191r.m513a(game2.getInstancePackageName(), game.getInstancePackageName()) && C0191r.m513a(Integer.valueOf(game2.getGameplayAclStatus()), Integer.valueOf(game.getGameplayAclStatus())) && C0191r.m513a(Integer.valueOf(game2.getAchievementTotalCount()), Integer.valueOf(game.getAchievementTotalCount())) && C0191r.m513a(Integer.valueOf(game2.getLeaderboardCount()), Integer.valueOf(game.getLeaderboardCount()));
     }
 
-    static String m1577b(Game game) {
-        return dl.m387d(game).m386a("ApplicationId", game.getApplicationId()).m386a("DisplayName", game.getDisplayName()).m386a("PrimaryCategory", game.getPrimaryCategory()).m386a("SecondaryCategory", game.getSecondaryCategory()).m386a("Description", game.getDescription()).m386a("DeveloperName", game.getDeveloperName()).m386a("IconImageUri", game.getIconImageUri()).m386a("HiResImageUri", game.getHiResImageUri()).m386a("FeaturedImageUri", game.getFeaturedImageUri()).m386a("PlayEnabledGame", Boolean.valueOf(game.isPlayEnabledGame())).m386a("InstanceInstalled", Boolean.valueOf(game.isInstanceInstalled())).m386a("InstancePackageName", game.getInstancePackageName()).m386a("GameplayAclStatus", Integer.valueOf(game.getGameplayAclStatus())).m386a("AchievementTotalCount", Integer.valueOf(game.getAchievementTotalCount())).m386a("LeaderboardCount", Integer.valueOf(game.getLeaderboardCount())).toString();
+    static String m1360b(Game game) {
+        return C0191r.m514c(game).m512a("ApplicationId", game.getApplicationId()).m512a("DisplayName", game.getDisplayName()).m512a("PrimaryCategory", game.getPrimaryCategory()).m512a("SecondaryCategory", game.getSecondaryCategory()).m512a("Description", game.getDescription()).m512a("DeveloperName", game.getDeveloperName()).m512a("IconImageUri", game.getIconImageUri()).m512a("HiResImageUri", game.getHiResImageUri()).m512a("FeaturedImageUri", game.getFeaturedImageUri()).m512a("PlayEnabledGame", Boolean.valueOf(game.isPlayEnabledGame())).m512a("InstanceInstalled", Boolean.valueOf(game.isInstanceInstalled())).m512a("InstancePackageName", game.getInstancePackageName()).m512a("GameplayAclStatus", Integer.valueOf(game.getGameplayAclStatus())).m512a("AchievementTotalCount", Integer.valueOf(game.getAchievementTotalCount())).m512a("LeaderboardCount", Integer.valueOf(game.getLeaderboardCount())).toString();
     }
 
     public int describeContents() {
@@ -117,7 +117,7 @@ public final class GameEntity extends en implements Game {
     }
 
     public boolean equals(Object obj) {
-        return m1576a(this, obj);
+        return m1359a(this, obj);
     }
 
     public Game freeze() {
@@ -125,75 +125,75 @@ public final class GameEntity extends en implements Game {
     }
 
     public int getAchievementTotalCount() {
-        return this.mx;
+        return this.dr;
     }
 
     public String getApplicationId() {
-        return this.mk;
+        return this.df;
     }
 
     public String getDescription() {
-        return this.mo;
+        return this.di;
     }
 
     public void getDescription(CharArrayBuffer dataOut) {
-        eg.m447b(this.mo, dataOut);
+        ao.m215b(this.di, dataOut);
     }
 
     public String getDeveloperName() {
-        return this.mp;
+        return this.dj;
     }
 
     public void getDeveloperName(CharArrayBuffer dataOut) {
-        eg.m447b(this.mp, dataOut);
+        ao.m215b(this.dj, dataOut);
     }
 
     public String getDisplayName() {
-        return this.ml;
+        return this.cl;
     }
 
     public void getDisplayName(CharArrayBuffer dataOut) {
-        eg.m447b(this.ml, dataOut);
+        ao.m215b(this.cl, dataOut);
     }
 
     public Uri getFeaturedImageUri() {
-        return this.ms;
+        return this.dm;
     }
 
     public int getGameplayAclStatus() {
-        return this.mw;
+        return this.dq;
     }
 
     public Uri getHiResImageUri() {
-        return this.mr;
+        return this.dl;
     }
 
     public Uri getIconImageUri() {
-        return this.mq;
+        return this.dk;
     }
 
     public String getInstancePackageName() {
-        return this.mv;
+        return this.dp;
     }
 
     public int getLeaderboardCount() {
-        return this.my;
+        return this.ds;
     }
 
     public String getPrimaryCategory() {
-        return this.mm;
+        return this.dg;
     }
 
     public String getSecondaryCategory() {
-        return this.mn;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
+        return this.dh;
     }
 
     public int hashCode() {
-        return m1575a(this);
+        return m1358a(this);
+    }
+
+    public int m1363i() {
+        return this.ab;
     }
 
     public boolean isDataValid() {
@@ -201,44 +201,44 @@ public final class GameEntity extends en implements Game {
     }
 
     public boolean isInstanceInstalled() {
-        return this.mu;
+        return this.f163do;
     }
 
     public boolean isPlayEnabledGame() {
-        return this.mt;
+        return this.dn;
     }
 
     public String toString() {
-        return m1577b((Game) this);
+        return m1360b((Game) this);
     }
 
     public void writeToParcel(Parcel dest, int flags) {
         int i = 1;
         String str = null;
-        if (aX()) {
-            dest.writeString(this.mk);
-            dest.writeString(this.ml);
-            dest.writeString(this.mm);
-            dest.writeString(this.mn);
-            dest.writeString(this.mo);
-            dest.writeString(this.mp);
-            dest.writeString(this.mq == null ? null : this.mq.toString());
-            dest.writeString(this.mr == null ? null : this.mr.toString());
-            if (this.ms != null) {
-                str = this.ms.toString();
+        if (m971w()) {
+            dest.writeString(this.df);
+            dest.writeString(this.cl);
+            dest.writeString(this.dg);
+            dest.writeString(this.dh);
+            dest.writeString(this.di);
+            dest.writeString(this.dj);
+            dest.writeString(this.dk == null ? null : this.dk.toString());
+            dest.writeString(this.dl == null ? null : this.dl.toString());
+            if (this.dm != null) {
+                str = this.dm.toString();
             }
             dest.writeString(str);
-            dest.writeInt(this.mt ? 1 : 0);
-            if (!this.mu) {
+            dest.writeInt(this.dn ? 1 : 0);
+            if (!this.f163do) {
                 i = 0;
             }
             dest.writeInt(i);
-            dest.writeString(this.mv);
-            dest.writeInt(this.mw);
-            dest.writeInt(this.mx);
-            dest.writeInt(this.my);
+            dest.writeString(this.dp);
+            dest.writeInt(this.dq);
+            dest.writeInt(this.dr);
+            dest.writeInt(this.ds);
             return;
         }
-        C0117a.m146a(this, dest, flags);
+        C0151a.m144a(this, dest, flags);
     }
 }

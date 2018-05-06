@@ -6,6 +6,9 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.DialogInterface.OnDismissListener;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.annotation.StyleRes;
 import android.view.LayoutInflater;
 import android.view.View;
 
@@ -30,7 +33,7 @@ public class DialogFragment extends Fragment implements OnCancelListener, OnDism
     int mTheme = 0;
     boolean mViewDestroyed;
 
-    public void setStyle(int style, int theme) {
+    public void setStyle(int style, @StyleRes int theme) {
         this.mStyle = style;
         if (this.mStyle == 2 || this.mStyle == 3) {
             this.mTheme = 16973913;
@@ -93,6 +96,7 @@ public class DialogFragment extends Fragment implements OnCancelListener, OnDism
         return this.mDialog;
     }
 
+    @StyleRes
     public int getTheme() {
         return this.mTheme;
     }
@@ -130,7 +134,7 @@ public class DialogFragment extends Fragment implements OnCancelListener, OnDism
         }
     }
 
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.mShowsDialog = this.mContainerId == 0;
         if (savedInstanceState != null) {
@@ -147,21 +151,28 @@ public class DialogFragment extends Fragment implements OnCancelListener, OnDism
             return super.getLayoutInflater(savedInstanceState);
         }
         this.mDialog = onCreateDialog(savedInstanceState);
-        switch (this.mStyle) {
+        if (this.mDialog == null) {
+            return (LayoutInflater) this.mHost.getContext().getSystemService("layout_inflater");
+        }
+        setupDialog(this.mDialog, this.mStyle);
+        return (LayoutInflater) this.mDialog.getContext().getSystemService("layout_inflater");
+    }
+
+    public void setupDialog(Dialog dialog, int style) {
+        switch (style) {
             case 1:
             case 2:
                 break;
             case 3:
-                this.mDialog.getWindow().addFlags(24);
+                dialog.getWindow().addFlags(24);
                 break;
+            default:
+                return;
         }
-        this.mDialog.requestWindowFeature(1);
-        if (this.mDialog != null) {
-            return (LayoutInflater) this.mDialog.getContext().getSystemService("layout_inflater");
-        }
-        return (LayoutInflater) this.mActivity.getSystemService("layout_inflater");
+        dialog.requestWindowFeature(1);
     }
 
+    @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         return new Dialog(getActivity(), getTheme());
     }

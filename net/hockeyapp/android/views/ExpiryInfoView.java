@@ -8,11 +8,10 @@ import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
 import android.widget.TextView;
 import net.hockeyapp.android.utils.ViewHelper;
-import org.telegram.messenger.BuildConfig;
 
 public class ExpiryInfoView extends RelativeLayout {
     public ExpiryInfoView(Context context) {
-        this(context, BuildConfig.FLAVOR);
+        this(context, "");
     }
 
     public ExpiryInfoView(Context context, String text) {

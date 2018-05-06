@@ -4,63 +4,63 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Parcel;
 import android.util.AttributeSet;
-import com.google.android.gms.C0090R;
+import com.google.android.gms.C0126R;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.internal.dl;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.internal.C0191r;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.maps.internal.C0215q;
 
 public final class CameraPosition implements SafeParcelable {
     public static final CameraPositionCreator CREATOR = new CameraPositionCreator();
+    private final int ab;
     public final float bearing;
-    private final int iM;
     public final LatLng target;
     public final float tilt;
     public final float zoom;
 
     public static final class Builder {
-        private LatLng qa;
-        private float qb;
-        private float qc;
-        private float qd;
+        private LatLng gR;
+        private float gS;
+        private float gT;
+        private float gU;
 
         public Builder(CameraPosition previous) {
-            this.qa = previous.target;
-            this.qb = previous.zoom;
-            this.qc = previous.tilt;
-            this.qd = previous.bearing;
+            this.gR = previous.target;
+            this.gS = previous.zoom;
+            this.gT = previous.tilt;
+            this.gU = previous.bearing;
         }
 
         public Builder bearing(float bearing) {
-            this.qd = bearing;
+            this.gU = bearing;
             return this;
         }
 
         public CameraPosition build() {
-            return new CameraPosition(this.qa, this.qb, this.qc, this.qd);
+            return new CameraPosition(this.gR, this.gS, this.gT, this.gU);
         }
 
         public Builder target(LatLng location) {
-            this.qa = location;
+            this.gR = location;
             return this;
         }
 
         public Builder tilt(float tilt) {
-            this.qc = tilt;
+            this.gT = tilt;
             return this;
         }
 
         public Builder zoom(float zoom) {
-            this.qb = zoom;
+            this.gS = zoom;
             return this;
         }
     }
 
     CameraPosition(int versionCode, LatLng target, float zoom, float tilt, float bearing) {
-        dm.m388a((Object) target, (Object) "null camera target");
+        C0192s.m518b((Object) target, (Object) "null camera target");
         boolean z = 0.0f <= tilt && tilt <= 90.0f;
-        dm.m391b(z, "Tilt needs to be between 0 and 90 inclusive");
-        this.iM = versionCode;
+        C0192s.m519b(z, (Object) "Tilt needs to be between 0 and 90 inclusive");
+        this.ab = versionCode;
         this.target = target;
         this.zoom = zoom;
         this.tilt = tilt + 0.0f;
@@ -86,7 +86,7 @@ public final class CameraPosition implements SafeParcelable {
         if (attrs == null) {
             return null;
         }
-        TypedArray obtainAttributes = context.getResources().obtainAttributes(attrs, C0090R.styleable.MapAttrs);
+        TypedArray obtainAttributes = context.getResources().obtainAttributes(attrs, C0126R.styleable.MapAttrs);
         LatLng latLng = new LatLng((double) (obtainAttributes.hasValue(2) ? obtainAttributes.getFloat(2, 0.0f) : 0.0f), (double) (obtainAttributes.hasValue(3) ? obtainAttributes.getFloat(3, 0.0f) : 0.0f));
         Builder builder = builder();
         builder.target(latLng);
@@ -121,23 +121,23 @@ public final class CameraPosition implements SafeParcelable {
         return this.target.equals(cameraPosition.target) && Float.floatToIntBits(this.zoom) == Float.floatToIntBits(cameraPosition.zoom) && Float.floatToIntBits(this.tilt) == Float.floatToIntBits(cameraPosition.tilt) && Float.floatToIntBits(this.bearing) == Float.floatToIntBits(cameraPosition.bearing);
     }
 
-    int getVersionCode() {
-        return this.iM;
+    public int hashCode() {
+        return C0191r.hashCode(this.target, Float.valueOf(this.zoom), Float.valueOf(this.tilt), Float.valueOf(this.bearing));
     }
 
-    public int hashCode() {
-        return dl.hashCode(this.target, Float.valueOf(this.zoom), Float.valueOf(this.tilt), Float.valueOf(this.bearing));
+    int m1084i() {
+        return this.ab;
     }
 
     public String toString() {
-        return dl.m387d(this).m386a("target", this.target).m386a("zoom", Float.valueOf(this.zoom)).m386a("tilt", Float.valueOf(this.tilt)).m386a("bearing", Float.valueOf(this.bearing)).toString();
+        return C0191r.m514c(this).m512a("target", this.target).m512a("zoom", Float.valueOf(this.zoom)).m512a("tilt", Float.valueOf(this.tilt)).m512a("bearing", Float.valueOf(this.bearing)).toString();
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0228a.m745a(this, out, flags);
+        if (C0215q.bn()) {
+            C0216a.m574a(this, out, flags);
         } else {
-            CameraPositionCreator.m733a(this, out, flags);
+            CameraPositionCreator.m562a(this, out, flags);
         }
     }
 }

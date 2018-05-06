@@ -1,10 +1,14 @@
 package net.hockeyapp.android;
 
 import android.app.Activity;
+import android.app.AlertDialog.Builder;
 import android.app.DialogFragment;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.os.Build.VERSION;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -15,11 +19,12 @@ import android.widget.TextView;
 import com.google.android.gms.plus.PlusShare;
 import net.hockeyapp.android.listeners.DownloadFileListener;
 import net.hockeyapp.android.tasks.DownloadFileTask;
+import net.hockeyapp.android.tasks.GetFileSizeTask;
+import net.hockeyapp.android.utils.AsyncTaskUtils;
 import net.hockeyapp.android.utils.VersionHelper;
 import net.hockeyapp.android.views.UpdateView;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.telegram.messenger.BuildConfig;
 
 public class UpdateFragment extends DialogFragment implements OnClickListener, UpdateInfoListener {
     private DownloadFileTask downloadTask;
@@ -49,9 +54,26 @@ public class UpdateFragment extends DialogFragment implements OnClickListener, U
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = getLayoutView();
-        this.versionHelper = new VersionHelper(this.versionInfo.toString(), this);
-        ((TextView) view.findViewById(UpdateView.NAME_LABEL_ID)).setText(getAppName());
-        ((TextView) view.findViewById(4099)).setText("Version " + this.versionHelper.getVersionString() + "\n" + this.versionHelper.getFileInfoString());
+        this.versionHelper = new VersionHelper(getActivity(), this.versionInfo.toString(), this);
+        ((TextView) view.findViewById(4098)).setText(getAppName());
+        final TextView versionLabel = (TextView) view.findViewById(4099);
+        String versionString = "Version " + this.versionHelper.getVersionString();
+        final String fileDate = this.versionHelper.getFileDateString();
+        String appSizeString = "Unknown size";
+        if (this.versionHelper.getFileSizeBytes() >= 0) {
+            appSizeString = String.format("%.2f", new Object[]{Float.valueOf(((float) appSize) / 1048576.0f)}) + " MB";
+        } else {
+            final String str = versionString;
+            AsyncTaskUtils.execute(new GetFileSizeTask(getActivity(), this.urlString, new DownloadFileListener() {
+                public void downloadSuccessful(DownloadFileTask task) {
+                    if (task instanceof GetFileSizeTask) {
+                        long appSize = ((GetFileSizeTask) task).getSize();
+                        versionLabel.setText(str + "\n" + fileDate + " - " + (String.format("%.2f", new Object[]{Float.valueOf(((float) appSize) / 1048576.0f)}) + " MB"));
+                    }
+                }
+            }));
+        }
+        versionLabel.setText(versionString + "\n" + fileDate + " - " + appSizeString);
         ((Button) view.findViewById(UpdateView.UPDATE_BUTTON_ID)).setOnClickListener(this);
         WebView webView = (WebView) view.findViewById(UpdateView.WEB_VIEW_ID);
         webView.clearCache(true);
@@ -61,8 +83,37 @@ public class UpdateFragment extends DialogFragment implements OnClickListener, U
     }
 
     public void onClick(View view) {
-        startDownloadTask(getActivity());
-        dismiss();
+        prepareDownload();
+    }
+
+    public void prepareDownload() {
+        if (VERSION.SDK_INT < 23 || getActivity().checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") == 0) {
+            startDownloadTask(getActivity());
+            dismiss();
+            return;
+        }
+        requestPermissions(new String[]{"android.permission.WRITE_EXTERNAL_STORAGE"}, 1);
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (permissions.length != 0 && grantResults.length != 0 && requestCode == 1) {
+            if (grantResults[0] == 0) {
+                startDownloadTask(getActivity());
+                return;
+            }
+            Log.w("HockeyApp", "User denied write permission, can't continue with updater task.");
+            UpdateManagerListener listener = UpdateManager.getLastListener();
+            if (listener != null) {
+                listener.onUpdatePermissionsNotGranted();
+                return;
+            }
+            final UpdateFragment updateFragment = this;
+            new Builder(getActivity()).setTitle(Strings.get(Strings.PERMISSION_UPDATE_TITLE_ID)).setMessage(Strings.get(Strings.PERMISSION_UPDATE_MESSAGE_ID)).setNegativeButton(Strings.get(Strings.PERMISSION_DIALOG_NEGATIVE_BUTTON_ID), null).setPositiveButton(Strings.get(Strings.PERMISSION_DIALOG_POSITIVE_BUTTON_ID), new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    updateFragment.prepareDownload();
+                }
+            }).create().show();
+        }
     }
 
     private void startDownloadTask(final Activity activity) {
@@ -84,7 +135,7 @@ public class UpdateFragment extends DialogFragment implements OnClickListener, U
                 return null;
             }
         });
-        this.downloadTask.execute(new String[0]);
+        AsyncTaskUtils.execute(this.downloadTask);
     }
 
     public int getCurrentVersionCode() {
@@ -104,7 +155,7 @@ public class UpdateFragment extends DialogFragment implements OnClickListener, U
             PackageManager pm = activity.getPackageManager();
             return pm.getApplicationLabel(pm.getApplicationInfo(activity.getPackageName(), 0)).toString();
         } catch (NameNotFoundException e) {
-            return BuildConfig.FLAVOR;
+            return "";
         }
     }
 

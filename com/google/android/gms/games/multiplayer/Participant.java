@@ -12,9 +12,9 @@ public interface Participant extends Parcelable, Freezable<Participant> {
     public static final int STATUS_JOINED = 2;
     public static final int STATUS_LEFT = 4;
 
-    String ci();
+    String aM();
 
-    int getCapabilities();
+    int aN();
 
     String getDisplayName();
 

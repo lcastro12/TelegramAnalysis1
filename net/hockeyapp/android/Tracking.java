@@ -52,6 +52,6 @@ public class Tracking {
     }
 
     private static SharedPreferences getPreferences(Context context) {
-        return context.getSharedPreferences(Constants.TAG, 0);
+        return context.getSharedPreferences("HockeyApp", 0);
     }
 }

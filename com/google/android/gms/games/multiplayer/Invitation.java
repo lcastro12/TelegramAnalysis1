@@ -5,7 +5,7 @@ import com.google.android.gms.common.data.Freezable;
 import com.google.android.gms.games.Game;
 
 public interface Invitation extends Parcelable, Freezable<Invitation>, Participatable {
-    int ch();
+    int aL();
 
     long getCreationTimestamp();
 

@@ -5,15 +5,15 @@ import com.google.android.gms.maps.internal.IUiSettingsDelegate;
 import com.google.android.gms.maps.model.RuntimeRemoteException;
 
 public final class UiSettings {
-    private final IUiSettingsDelegate pV;
+    private final IUiSettingsDelegate gM;
 
     UiSettings(IUiSettingsDelegate delegate) {
-        this.pV = delegate;
+        this.gM = delegate;
     }
 
     public boolean isCompassEnabled() {
         try {
-            return this.pV.isCompassEnabled();
+            return this.gM.isCompassEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -21,7 +21,7 @@ public final class UiSettings {
 
     public boolean isMyLocationButtonEnabled() {
         try {
-            return this.pV.isMyLocationButtonEnabled();
+            return this.gM.isMyLocationButtonEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -29,7 +29,7 @@ public final class UiSettings {
 
     public boolean isRotateGesturesEnabled() {
         try {
-            return this.pV.isRotateGesturesEnabled();
+            return this.gM.isRotateGesturesEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -37,7 +37,7 @@ public final class UiSettings {
 
     public boolean isScrollGesturesEnabled() {
         try {
-            return this.pV.isScrollGesturesEnabled();
+            return this.gM.isScrollGesturesEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -45,7 +45,7 @@ public final class UiSettings {
 
     public boolean isTiltGesturesEnabled() {
         try {
-            return this.pV.isTiltGesturesEnabled();
+            return this.gM.isTiltGesturesEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -53,7 +53,7 @@ public final class UiSettings {
 
     public boolean isZoomControlsEnabled() {
         try {
-            return this.pV.isZoomControlsEnabled();
+            return this.gM.isZoomControlsEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -61,7 +61,7 @@ public final class UiSettings {
 
     public boolean isZoomGesturesEnabled() {
         try {
-            return this.pV.isZoomGesturesEnabled();
+            return this.gM.isZoomGesturesEnabled();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -69,7 +69,7 @@ public final class UiSettings {
 
     public void setAllGesturesEnabled(boolean enabled) {
         try {
-            this.pV.setAllGesturesEnabled(enabled);
+            this.gM.setAllGesturesEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -77,7 +77,7 @@ public final class UiSettings {
 
     public void setCompassEnabled(boolean enabled) {
         try {
-            this.pV.setCompassEnabled(enabled);
+            this.gM.setCompassEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -85,7 +85,7 @@ public final class UiSettings {
 
     public void setMyLocationButtonEnabled(boolean enabled) {
         try {
-            this.pV.setMyLocationButtonEnabled(enabled);
+            this.gM.setMyLocationButtonEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -93,7 +93,7 @@ public final class UiSettings {
 
     public void setRotateGesturesEnabled(boolean enabled) {
         try {
-            this.pV.setRotateGesturesEnabled(enabled);
+            this.gM.setRotateGesturesEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -101,7 +101,7 @@ public final class UiSettings {
 
     public void setScrollGesturesEnabled(boolean enabled) {
         try {
-            this.pV.setScrollGesturesEnabled(enabled);
+            this.gM.setScrollGesturesEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -109,7 +109,7 @@ public final class UiSettings {
 
     public void setTiltGesturesEnabled(boolean enabled) {
         try {
-            this.pV.setTiltGesturesEnabled(enabled);
+            this.gM.setTiltGesturesEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -117,7 +117,7 @@ public final class UiSettings {
 
     public void setZoomControlsEnabled(boolean enabled) {
         try {
-            this.pV.setZoomControlsEnabled(enabled);
+            this.gM.setZoomControlsEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
@@ -125,7 +125,7 @@ public final class UiSettings {
 
     public void setZoomGesturesEnabled(boolean enabled) {
         try {
-            this.pV.setZoomGesturesEnabled(enabled);
+            this.gM.setZoomGesturesEnabled(enabled);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }

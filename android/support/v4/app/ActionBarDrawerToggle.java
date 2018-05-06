@@ -1,6 +1,7 @@
 package android.support.v4.app;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Rect;
@@ -8,7 +9,10 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Drawable.Callback;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build.VERSION;
-import android.support.v4.view.GravityCompat;
+import android.support.annotation.DrawableRes;
+import android.support.annotation.Nullable;
+import android.support.annotation.StringRes;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.DrawerLayout.DrawerListener;
@@ -16,6 +20,7 @@ import android.view.MenuItem;
 import android.view.View;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 
+@Deprecated
 public class ActionBarDrawerToggle implements DrawerListener {
     private static final int ID_HOME = 16908332;
     private static final ActionBarDrawerToggleImpl IMPL;
@@ -25,12 +30,13 @@ public class ActionBarDrawerToggle implements DrawerListener {
     private final int mCloseDrawerContentDescRes;
     private Drawable mDrawerImage;
     private final int mDrawerImageResource;
-    private boolean mDrawerIndicatorEnabled = true;
+    private boolean mDrawerIndicatorEnabled;
     private final DrawerLayout mDrawerLayout;
+    private boolean mHasCustomUpIndicator;
+    private Drawable mHomeAsUpIndicator;
     private final int mOpenDrawerContentDescRes;
     private Object mSetIndicatorInfo;
     private SlideDrawable mSlider;
-    private Drawable mThemeImage;
 
     private interface ActionBarDrawerToggleImpl {
         Drawable getThemeUpIndicator(Activity activity);
@@ -41,14 +47,16 @@ public class ActionBarDrawerToggle implements DrawerListener {
     }
 
     public interface Delegate {
+        @Nullable
         Drawable getThemeUpIndicator();
 
-        void setActionBarDescription(int i);
+        void setActionBarDescription(@StringRes int i);
 
-        void setActionBarUpIndicator(Drawable drawable, int i);
+        void setActionBarUpIndicator(Drawable drawable, @StringRes int i);
     }
 
     public interface DelegateProvider {
+        @Nullable
         Delegate getDrawerToggleDelegate();
     }
 
@@ -137,15 +145,44 @@ public class ActionBarDrawerToggle implements DrawerListener {
         }
     }
 
+    private static class ActionBarDrawerToggleImplJellybeanMR2 implements ActionBarDrawerToggleImpl {
+        private ActionBarDrawerToggleImplJellybeanMR2() {
+        }
+
+        public Drawable getThemeUpIndicator(Activity activity) {
+            return ActionBarDrawerToggleJellybeanMR2.getThemeUpIndicator(activity);
+        }
+
+        public Object setActionBarUpIndicator(Object info, Activity activity, Drawable themeImage, int contentDescRes) {
+            return ActionBarDrawerToggleJellybeanMR2.setActionBarUpIndicator(info, activity, themeImage, contentDescRes);
+        }
+
+        public Object setActionBarDescription(Object info, Activity activity, int contentDescRes) {
+            return ActionBarDrawerToggleJellybeanMR2.setActionBarDescription(info, activity, contentDescRes);
+        }
+    }
+
     static {
-        if (VERSION.SDK_INT >= 11) {
+        int version = VERSION.SDK_INT;
+        if (version >= 18) {
+            IMPL = new ActionBarDrawerToggleImplJellybeanMR2();
+        } else if (version >= 11) {
             IMPL = new ActionBarDrawerToggleImplHC();
         } else {
             IMPL = new ActionBarDrawerToggleImplBase();
         }
     }
 
-    public ActionBarDrawerToggle(Activity activity, DrawerLayout drawerLayout, int drawerImageRes, int openDrawerContentDescRes, int closeDrawerContentDescRes) {
+    public ActionBarDrawerToggle(Activity activity, DrawerLayout drawerLayout, @DrawableRes int drawerImageRes, @StringRes int openDrawerContentDescRes, @StringRes int closeDrawerContentDescRes) {
+        this(activity, drawerLayout, !assumeMaterial(activity), drawerImageRes, openDrawerContentDescRes, closeDrawerContentDescRes);
+    }
+
+    private static boolean assumeMaterial(Context context) {
+        return context.getApplicationInfo().targetSdkVersion >= 21 && VERSION.SDK_INT >= 21;
+    }
+
+    public ActionBarDrawerToggle(Activity activity, DrawerLayout drawerLayout, boolean animate, @DrawableRes int drawerImageRes, @StringRes int openDrawerContentDescRes, @StringRes int closeDrawerContentDescRes) {
+        this.mDrawerIndicatorEnabled = true;
         this.mActivity = activity;
         if (activity instanceof DelegateProvider) {
             this.mActivityImpl = ((DelegateProvider) activity).getDrawerToggleDelegate();
@@ -156,29 +193,50 @@ public class ActionBarDrawerToggle implements DrawerListener {
         this.mDrawerImageResource = drawerImageRes;
         this.mOpenDrawerContentDescRes = openDrawerContentDescRes;
         this.mCloseDrawerContentDescRes = closeDrawerContentDescRes;
-        this.mThemeImage = getThemeUpIndicator();
-        this.mDrawerImage = activity.getResources().getDrawable(drawerImageRes);
+        this.mHomeAsUpIndicator = getThemeUpIndicator();
+        this.mDrawerImage = ContextCompat.getDrawable(activity, drawerImageRes);
         this.mSlider = new SlideDrawable(this.mDrawerImage);
-        this.mSlider.setOffset(TOGGLE_DRAWABLE_OFFSET);
+        this.mSlider.setOffset(animate ? TOGGLE_DRAWABLE_OFFSET : 0.0f);
     }
 
     public void syncState() {
-        if (this.mDrawerLayout.isDrawerOpen((int) GravityCompat.START)) {
+        if (this.mDrawerLayout.isDrawerOpen(8388611)) {
             this.mSlider.setPosition(1.0f);
         } else {
             this.mSlider.setPosition(0.0f);
         }
         if (this.mDrawerIndicatorEnabled) {
-            setActionBarUpIndicator(this.mSlider, this.mDrawerLayout.isDrawerOpen((int) GravityCompat.START) ? this.mCloseDrawerContentDescRes : this.mOpenDrawerContentDescRes);
+            setActionBarUpIndicator(this.mSlider, this.mDrawerLayout.isDrawerOpen(8388611) ? this.mCloseDrawerContentDescRes : this.mOpenDrawerContentDescRes);
         }
+    }
+
+    public void setHomeAsUpIndicator(Drawable indicator) {
+        if (indicator == null) {
+            this.mHomeAsUpIndicator = getThemeUpIndicator();
+            this.mHasCustomUpIndicator = false;
+        } else {
+            this.mHomeAsUpIndicator = indicator;
+            this.mHasCustomUpIndicator = true;
+        }
+        if (!this.mDrawerIndicatorEnabled) {
+            setActionBarUpIndicator(this.mHomeAsUpIndicator, 0);
+        }
+    }
+
+    public void setHomeAsUpIndicator(int resId) {
+        Drawable indicator = null;
+        if (resId != 0) {
+            indicator = ContextCompat.getDrawable(this.mActivity, resId);
+        }
+        setHomeAsUpIndicator(indicator);
     }
 
     public void setDrawerIndicatorEnabled(boolean enable) {
         if (enable != this.mDrawerIndicatorEnabled) {
             if (enable) {
-                setActionBarUpIndicator(this.mSlider, this.mDrawerLayout.isDrawerOpen((int) GravityCompat.START) ? this.mCloseDrawerContentDescRes : this.mOpenDrawerContentDescRes);
+                setActionBarUpIndicator(this.mSlider, this.mDrawerLayout.isDrawerOpen(8388611) ? this.mCloseDrawerContentDescRes : this.mOpenDrawerContentDescRes);
             } else {
-                setActionBarUpIndicator(this.mThemeImage, 0);
+                setActionBarUpIndicator(this.mHomeAsUpIndicator, 0);
             }
             this.mDrawerIndicatorEnabled = enable;
         }
@@ -189,8 +247,10 @@ public class ActionBarDrawerToggle implements DrawerListener {
     }
 
     public void onConfigurationChanged(Configuration newConfig) {
-        this.mThemeImage = getThemeUpIndicator();
-        this.mDrawerImage = this.mActivity.getResources().getDrawable(this.mDrawerImageResource);
+        if (!this.mHasCustomUpIndicator) {
+            this.mHomeAsUpIndicator = getThemeUpIndicator();
+        }
+        this.mDrawerImage = ContextCompat.getDrawable(this.mActivity, this.mDrawerImageResource);
         syncState();
     }
 
@@ -198,10 +258,10 @@ public class ActionBarDrawerToggle implements DrawerListener {
         if (item == null || item.getItemId() != ID_HOME || !this.mDrawerIndicatorEnabled) {
             return false;
         }
-        if (this.mDrawerLayout.isDrawerVisible((int) GravityCompat.START)) {
-            this.mDrawerLayout.closeDrawer((int) GravityCompat.START);
+        if (this.mDrawerLayout.isDrawerVisible(8388611)) {
+            this.mDrawerLayout.closeDrawer(8388611);
         } else {
-            this.mDrawerLayout.openDrawer((int) GravityCompat.START);
+            this.mDrawerLayout.openDrawer(8388611);
         }
         return true;
     }

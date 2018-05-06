@@ -14,13 +14,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.ResultReceiver;
-import android.support.v4.view.accessibility.AccessibilityEventCompat;
 import android.util.Log;
 import android.widget.ImageView;
-import com.google.android.gms.common.images.C0105a.C0104a;
-import com.google.android.gms.internal.db;
-import com.google.android.gms.internal.dq;
-import com.google.android.gms.internal.ek;
+import com.google.android.gms.common.images.C0139a.C0138a;
+import com.google.android.gms.internal.C0176h;
+import com.google.android.gms.internal.C0195w;
+import com.google.android.gms.internal.as;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,52 +29,52 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class ImageManager {
-    private static final Object jC = new Object();
-    private static HashSet<Uri> jD = new HashSet();
-    private static ImageManager jE;
-    private static ImageManager jF;
-    private final ExecutorService jG = Executors.newFixedThreadPool(4);
-    private final C0648b jH;
-    private final Map<C0105a, ImageReceiver> jI;
-    private final Map<Uri, ImageReceiver> jJ;
+    private static final Object aq = new Object();
+    private static HashSet<Uri> ar = new HashSet();
+    private static ImageManager as;
+    private static ImageManager at;
+    private final ExecutorService au = Executors.newFixedThreadPool(4);
+    private final C1289b av;
+    private final Map<C0139a, ImageReceiver> aw;
+    private final Map<Uri, ImageReceiver> ax;
     private final Context mContext;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     private final class ImageReceiver extends ResultReceiver {
-        private final ArrayList<C0105a> jK;
-        boolean jL = false;
-        final /* synthetic */ ImageManager jM;
+        final /* synthetic */ ImageManager aA;
+        private final ArrayList<C0139a> ay;
+        boolean az = false;
         private final Uri mUri;
 
         ImageReceiver(ImageManager imageManager, Uri uri) {
-            this.jM = imageManager;
+            this.aA = imageManager;
             super(new Handler(Looper.getMainLooper()));
             this.mUri = uri;
-            this.jK = new ArrayList();
+            this.ay = new ArrayList();
         }
 
-        public void aR() {
+        public void m43c(C0139a c0139a) {
+            C0176h.m464a(!this.az, "Cannot add an ImageRequest when mHandlingRequests is true");
+            C0176h.m466f("ImageReceiver.addImageRequest() must be called in the main thread");
+            this.ay.add(c0139a);
+        }
+
+        public void m44d(C0139a c0139a) {
+            C0176h.m464a(!this.az, "Cannot remove an ImageRequest when mHandlingRequests is true");
+            C0176h.m466f("ImageReceiver.removeImageRequest() must be called in the main thread");
+            this.ay.remove(c0139a);
+        }
+
+        public void onReceiveResult(int resultCode, Bundle resultData) {
+            this.aA.au.execute(new C0134c(this.aA, this.mUri, (ParcelFileDescriptor) resultData.getParcelable("com.google.android.gms.extra.fileDescriptor")));
+        }
+
+        public void m45q() {
             Intent intent = new Intent("com.google.android.gms.common.images.LOAD_IMAGE");
             intent.putExtra("com.google.android.gms.extras.uri", this.mUri);
             intent.putExtra("com.google.android.gms.extras.resultReceiver", this);
             intent.putExtra("com.google.android.gms.extras.priority", 3);
-            this.jM.mContext.sendBroadcast(intent);
-        }
-
-        public void m49c(C0105a c0105a) {
-            db.m341a(!this.jL, "Cannot add an ImageRequest when mHandlingRequests is true");
-            db.m344w("ImageReceiver.addImageRequest() must be called in the main thread");
-            this.jK.add(c0105a);
-        }
-
-        public void m50d(C0105a c0105a) {
-            db.m341a(!this.jL, "Cannot remove an ImageRequest when mHandlingRequests is true");
-            db.m344w("ImageReceiver.removeImageRequest() must be called in the main thread");
-            this.jK.remove(c0105a);
-        }
-
-        public void onReceiveResult(int resultCode, Bundle resultData) {
-            this.jM.jG.execute(new C0100c(this.jM, this.mUri, (ParcelFileDescriptor) resultData.getParcelable("com.google.android.gms.extra.fileDescriptor")));
+            this.aA.mContext.sendBroadcast(intent);
         }
     }
 
@@ -83,42 +82,42 @@ public final class ImageManager {
         void onImageLoaded(Uri uri, Drawable drawable);
     }
 
-    private static final class C0099a {
-        static int m51a(ActivityManager activityManager) {
+    private static final class C0133a {
+        static int m46a(ActivityManager activityManager) {
             return activityManager.getLargeMemoryClass();
         }
     }
 
-    private final class C0100c implements Runnable {
-        final /* synthetic */ ImageManager jM;
-        private final ParcelFileDescriptor jN;
+    private final class C0134c implements Runnable {
+        final /* synthetic */ ImageManager aA;
+        private final ParcelFileDescriptor aB;
         private final Uri mUri;
 
-        public C0100c(ImageManager imageManager, Uri uri, ParcelFileDescriptor parcelFileDescriptor) {
-            this.jM = imageManager;
+        public C0134c(ImageManager imageManager, Uri uri, ParcelFileDescriptor parcelFileDescriptor) {
+            this.aA = imageManager;
             this.mUri = uri;
-            this.jN = parcelFileDescriptor;
+            this.aB = parcelFileDescriptor;
         }
 
         public void run() {
-            db.m345x("LoadBitmapFromDiskRunnable can't be executed in the main thread");
+            C0176h.m467g("LoadBitmapFromDiskRunnable can't be executed in the main thread");
             boolean z = false;
             Bitmap bitmap = null;
-            if (this.jN != null) {
+            if (this.aB != null) {
                 try {
-                    bitmap = BitmapFactory.decodeFileDescriptor(this.jN.getFileDescriptor());
+                    bitmap = BitmapFactory.decodeFileDescriptor(this.aB.getFileDescriptor());
                 } catch (Throwable e) {
                     Log.e("ImageManager", "OOM while loading bitmap for uri: " + this.mUri, e);
                     z = true;
                 }
                 try {
-                    this.jN.close();
+                    this.aB.close();
                 } catch (Throwable e2) {
                     Log.e("ImageManager", "closed failed", e2);
                 }
             }
             CountDownLatch countDownLatch = new CountDownLatch(1);
-            this.jM.mHandler.post(new C0103f(this.jM, this.mUri, bitmap, z, countDownLatch));
+            this.aA.mHandler.post(new C0137f(this.aA, this.mUri, bitmap, z, countDownLatch));
             try {
                 countDownLatch.await();
             } catch (InterruptedException e3) {
@@ -127,252 +126,252 @@ public final class ImageManager {
         }
     }
 
-    private final class C0101d implements Runnable {
-        final /* synthetic */ ImageManager jM;
-        private final C0105a jO;
+    private final class C0135d implements Runnable {
+        final /* synthetic */ ImageManager aA;
+        private final C0139a aC;
 
-        public C0101d(ImageManager imageManager, C0105a c0105a) {
-            this.jM = imageManager;
-            this.jO = c0105a;
+        public C0135d(ImageManager imageManager, C0139a c0139a) {
+            this.aA = imageManager;
+            this.aC = c0139a;
         }
 
         public void run() {
-            db.m344w("LoadImageRunnable must be executed on the main thread");
-            this.jM.m59b(this.jO);
-            C0104a c0104a = this.jO.jS;
-            if (c0104a.uri == null) {
-                this.jO.m73b(this.jM.mContext, true);
+            C0176h.m466f("LoadImageRunnable must be executed on the main thread");
+            this.aA.m54b(this.aC);
+            C0138a c0138a = this.aC.aG;
+            if (c0138a.uri == null) {
+                this.aC.m71b(this.aA.mContext, true);
                 return;
             }
-            Bitmap a = this.jM.m55a(c0104a);
+            Bitmap a = this.aA.m50a(c0138a);
             if (a != null) {
-                this.jO.m70a(this.jM.mContext, a, true);
+                this.aC.m68a(this.aA.mContext, a, true);
                 return;
             }
-            this.jO.m74r(this.jM.mContext);
-            ImageReceiver imageReceiver = (ImageReceiver) this.jM.jJ.get(c0104a.uri);
+            this.aC.m72f(this.aA.mContext);
+            ImageReceiver imageReceiver = (ImageReceiver) this.aA.ax.get(c0138a.uri);
             if (imageReceiver == null) {
-                imageReceiver = new ImageReceiver(this.jM, c0104a.uri);
-                this.jM.jJ.put(c0104a.uri, imageReceiver);
+                imageReceiver = new ImageReceiver(this.aA, c0138a.uri);
+                this.aA.ax.put(c0138a.uri, imageReceiver);
             }
-            imageReceiver.m49c(this.jO);
-            if (this.jO.jV != 1) {
-                this.jM.jI.put(this.jO, imageReceiver);
+            imageReceiver.m43c(this.aC);
+            if (this.aC.aJ != 1) {
+                this.aA.aw.put(this.aC, imageReceiver);
             }
-            synchronized (ImageManager.jC) {
-                if (!ImageManager.jD.contains(c0104a.uri)) {
-                    ImageManager.jD.add(c0104a.uri);
-                    imageReceiver.aR();
+            synchronized (ImageManager.aq) {
+                if (!ImageManager.ar.contains(c0138a.uri)) {
+                    ImageManager.ar.add(c0138a.uri);
+                    imageReceiver.m45q();
                 }
             }
         }
     }
 
-    private static final class C0102e implements ComponentCallbacks2 {
-        private final C0648b jH;
+    private static final class C0136e implements ComponentCallbacks2 {
+        private final C1289b av;
 
-        public C0102e(C0648b c0648b) {
-            this.jH = c0648b;
+        public C0136e(C1289b c1289b) {
+            this.av = c1289b;
         }
 
         public void onConfigurationChanged(Configuration newConfig) {
         }
 
         public void onLowMemory() {
-            this.jH.evictAll();
+            this.av.evictAll();
         }
 
         public void onTrimMemory(int level) {
             if (level >= 60) {
-                this.jH.evictAll();
+                this.av.evictAll();
             } else if (level >= 20) {
-                this.jH.trimToSize(this.jH.size() / 2);
+                this.av.trimToSize(this.av.size() / 2);
             }
         }
     }
 
-    private final class C0103f implements Runnable {
-        final /* synthetic */ ImageManager jM;
-        private final Bitmap jP;
-        private final CountDownLatch jQ;
-        private boolean jR;
+    private final class C0137f implements Runnable {
+        final /* synthetic */ ImageManager aA;
+        private final Bitmap aD;
+        private final CountDownLatch aE;
+        private boolean aF;
         private final Uri mUri;
 
-        public C0103f(ImageManager imageManager, Uri uri, Bitmap bitmap, boolean z, CountDownLatch countDownLatch) {
-            this.jM = imageManager;
+        public C0137f(ImageManager imageManager, Uri uri, Bitmap bitmap, boolean z, CountDownLatch countDownLatch) {
+            this.aA = imageManager;
             this.mUri = uri;
-            this.jP = bitmap;
-            this.jR = z;
-            this.jQ = countDownLatch;
+            this.aD = bitmap;
+            this.aF = z;
+            this.aE = countDownLatch;
         }
 
-        private void m52a(ImageReceiver imageReceiver, boolean z) {
-            imageReceiver.jL = true;
-            ArrayList a = imageReceiver.jK;
+        private void m47a(ImageReceiver imageReceiver, boolean z) {
+            imageReceiver.az = true;
+            ArrayList a = imageReceiver.ay;
             int size = a.size();
             for (int i = 0; i < size; i++) {
-                C0105a c0105a = (C0105a) a.get(i);
+                C0139a c0139a = (C0139a) a.get(i);
                 if (z) {
-                    c0105a.m70a(this.jM.mContext, this.jP, false);
+                    c0139a.m68a(this.aA.mContext, this.aD, false);
                 } else {
-                    c0105a.m73b(this.jM.mContext, false);
+                    c0139a.m71b(this.aA.mContext, false);
                 }
-                if (c0105a.jV != 1) {
-                    this.jM.jI.remove(c0105a);
+                if (c0139a.aJ != 1) {
+                    this.aA.aw.remove(c0139a);
                 }
             }
-            imageReceiver.jL = false;
+            imageReceiver.az = false;
         }
 
         public void run() {
-            db.m344w("OnBitmapLoadedRunnable must be executed in the main thread");
-            boolean z = this.jP != null;
-            if (this.jM.jH != null) {
-                if (this.jR) {
-                    this.jM.jH.evictAll();
+            C0176h.m466f("OnBitmapLoadedRunnable must be executed in the main thread");
+            boolean z = this.aD != null;
+            if (this.aA.av != null) {
+                if (this.aF) {
+                    this.aA.av.evictAll();
                     System.gc();
-                    this.jR = false;
-                    this.jM.mHandler.post(this);
+                    this.aF = false;
+                    this.aA.mHandler.post(this);
                     return;
                 } else if (z) {
-                    this.jM.jH.put(new C0104a(this.mUri), this.jP);
+                    this.aA.av.put(new C0138a(this.mUri), this.aD);
                 }
             }
-            ImageReceiver imageReceiver = (ImageReceiver) this.jM.jJ.remove(this.mUri);
+            ImageReceiver imageReceiver = (ImageReceiver) this.aA.ax.remove(this.mUri);
             if (imageReceiver != null) {
-                m52a(imageReceiver, z);
+                m47a(imageReceiver, z);
             }
-            this.jQ.countDown();
-            synchronized (ImageManager.jC) {
-                ImageManager.jD.remove(this.mUri);
+            this.aE.countDown();
+            synchronized (ImageManager.aq) {
+                ImageManager.ar.remove(this.mUri);
             }
         }
     }
 
-    private static final class C0648b extends dq<C0104a, Bitmap> {
-        public C0648b(Context context) {
-            super(C0648b.m820q(context));
+    private static final class C1289b extends C0195w<C0138a, Bitmap> {
+        public C1289b(Context context) {
+            super(C1289b.m644e(context));
         }
 
-        private static int m820q(Context context) {
+        private static int m644e(Context context) {
             ActivityManager activityManager = (ActivityManager) context.getSystemService("activity");
-            int memoryClass = (((context.getApplicationInfo().flags & AccessibilityEventCompat.TYPE_TOUCH_INTERACTION_START) != 0 ? 1 : null) == null || !ek.bJ()) ? activityManager.getMemoryClass() : C0099a.m51a(activityManager);
-            return (int) (((float) (memoryClass * AccessibilityEventCompat.TYPE_TOUCH_INTERACTION_START)) * 0.33f);
+            int memoryClass = (((context.getApplicationInfo().flags & 1048576) != 0 ? 1 : null) == null || !as.an()) ? activityManager.getMemoryClass() : C0133a.m46a(activityManager);
+            return (int) (((float) (memoryClass * 1048576)) * 0.33f);
         }
 
-        protected int m821a(C0104a c0104a, Bitmap bitmap) {
+        protected int m645a(C0138a c0138a, Bitmap bitmap) {
             return bitmap.getHeight() * bitmap.getRowBytes();
         }
 
-        protected void m822a(boolean z, C0104a c0104a, Bitmap bitmap, Bitmap bitmap2) {
-            super.entryRemoved(z, c0104a, bitmap, bitmap2);
+        protected void m646a(boolean z, C0138a c0138a, Bitmap bitmap, Bitmap bitmap2) {
+            super.entryRemoved(z, c0138a, bitmap, bitmap2);
         }
 
         protected /* synthetic */ void entryRemoved(boolean x0, Object x1, Object x2, Object x3) {
-            m822a(x0, (C0104a) x1, (Bitmap) x2, (Bitmap) x3);
+            m646a(x0, (C0138a) x1, (Bitmap) x2, (Bitmap) x3);
         }
 
         protected /* synthetic */ int sizeOf(Object x0, Object x1) {
-            return m821a((C0104a) x0, (Bitmap) x1);
+            return m645a((C0138a) x0, (Bitmap) x1);
         }
     }
 
     private ImageManager(Context context, boolean withMemoryCache) {
         this.mContext = context.getApplicationContext();
         if (withMemoryCache) {
-            this.jH = new C0648b(this.mContext);
-            if (ek.bM()) {
-                aO();
+            this.av = new C1289b(this.mContext);
+            if (as.aq()) {
+                m59n();
             }
         } else {
-            this.jH = null;
+            this.av = null;
         }
-        this.jI = new HashMap();
-        this.jJ = new HashMap();
+        this.aw = new HashMap();
+        this.ax = new HashMap();
     }
 
-    private Bitmap m55a(C0104a c0104a) {
-        return this.jH == null ? null : (Bitmap) this.jH.get(c0104a);
+    private Bitmap m50a(C0138a c0138a) {
+        return this.av == null ? null : (Bitmap) this.av.get(c0138a);
     }
 
-    public static ImageManager m56a(Context context, boolean z) {
+    public static ImageManager m51a(Context context, boolean z) {
         if (z) {
-            if (jF == null) {
-                jF = new ImageManager(context, true);
+            if (at == null) {
+                at = new ImageManager(context, true);
             }
-            return jF;
+            return at;
         }
-        if (jE == null) {
-            jE = new ImageManager(context, false);
+        if (as == null) {
+            as = new ImageManager(context, false);
         }
-        return jE;
+        return as;
     }
 
-    private void aO() {
-        this.mContext.registerComponentCallbacks(new C0102e(this.jH));
-    }
-
-    private boolean m59b(C0105a c0105a) {
-        db.m344w("ImageManager.cleanupHashMaps() must be called in the main thread");
-        if (c0105a.jV == 1) {
+    private boolean m54b(C0139a c0139a) {
+        C0176h.m466f("ImageManager.cleanupHashMaps() must be called in the main thread");
+        if (c0139a.aJ == 1) {
             return true;
         }
-        ImageReceiver imageReceiver = (ImageReceiver) this.jI.get(c0105a);
+        ImageReceiver imageReceiver = (ImageReceiver) this.aw.get(c0139a);
         if (imageReceiver == null) {
             return true;
         }
-        if (imageReceiver.jL) {
+        if (imageReceiver.az) {
             return false;
         }
-        this.jI.remove(c0105a);
-        imageReceiver.m50d(c0105a);
+        this.aw.remove(c0139a);
+        imageReceiver.m44d(c0139a);
         return true;
     }
 
     public static ImageManager create(Context context) {
-        return m56a(context, false);
+        return m51a(context, false);
     }
 
-    public void m64a(C0105a c0105a) {
-        db.m344w("ImageManager.loadImage() must be called in the main thread");
-        boolean b = m59b(c0105a);
-        Runnable c0101d = new C0101d(this, c0105a);
+    private void m59n() {
+        this.mContext.registerComponentCallbacks(new C0136e(this.av));
+    }
+
+    public void m62a(C0139a c0139a) {
+        C0176h.m466f("ImageManager.loadImage() must be called in the main thread");
+        boolean b = m54b(c0139a);
+        Runnable c0135d = new C0135d(this, c0139a);
         if (b) {
-            c0101d.run();
+            c0135d.run();
         } else {
-            this.mHandler.post(c0101d);
+            this.mHandler.post(c0135d);
         }
     }
 
     public void loadImage(ImageView imageView, int resId) {
-        C0105a c0105a = new C0105a(resId);
-        c0105a.m71a(imageView);
-        m64a(c0105a);
+        C0139a c0139a = new C0139a(resId);
+        c0139a.m69a(imageView);
+        m62a(c0139a);
     }
 
     public void loadImage(ImageView imageView, Uri uri) {
-        C0105a c0105a = new C0105a(uri);
-        c0105a.m71a(imageView);
-        m64a(c0105a);
+        C0139a c0139a = new C0139a(uri);
+        c0139a.m69a(imageView);
+        m62a(c0139a);
     }
 
     public void loadImage(ImageView imageView, Uri uri, int defaultResId) {
-        C0105a c0105a = new C0105a(uri);
-        c0105a.m75v(defaultResId);
-        c0105a.m71a(imageView);
-        m64a(c0105a);
+        C0139a c0139a = new C0139a(uri);
+        c0139a.m73j(defaultResId);
+        c0139a.m69a(imageView);
+        m62a(c0139a);
     }
 
     public void loadImage(OnImageLoadedListener listener, Uri uri) {
-        C0105a c0105a = new C0105a(uri);
-        c0105a.m72a(listener);
-        m64a(c0105a);
+        C0139a c0139a = new C0139a(uri);
+        c0139a.m70a(listener);
+        m62a(c0139a);
     }
 
     public void loadImage(OnImageLoadedListener listener, Uri uri, int defaultResId) {
-        C0105a c0105a = new C0105a(uri);
-        c0105a.m75v(defaultResId);
-        c0105a.m72a(listener);
-        m64a(c0105a);
+        C0139a c0139a = new C0139a(uri);
+        c0139a.m73j(defaultResId);
+        c0139a.m70a(listener);
+        m62a(c0139a);
     }
 }

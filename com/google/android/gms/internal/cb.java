@@ -1,80 +1,77 @@
 package com.google.android.gms.internal;
 
-import com.google.android.gms.plus.PlusShare;
-import java.util.Map;
+import android.os.Parcel;
+import com.google.android.gms.common.data.C0130b;
+import com.google.android.gms.common.data.C1287d;
+import com.google.android.gms.plus.model.moments.ItemScope;
+import com.google.android.gms.plus.model.moments.Moment;
 
-public final class cb {
-    private final Object eJ = new Object();
-    private cq fG;
-    private String gT;
-    public final ai gU = new C07051(this);
-    public final ai gV = new C07062(this);
-    private int gw = -2;
+public final class cb extends C0130b implements Moment {
+    private bz jD;
 
-    class C07051 implements ai {
-        final /* synthetic */ cb gW;
+    public cb(C1287d c1287d, int i) {
+        super(c1287d, i);
+    }
 
-        C07051(cb cbVar) {
-            this.gW = cbVar;
-        }
-
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            synchronized (this.gW.eJ) {
-                String str = (String) map.get("errors");
-                cn.m299q("Invalid " + ((String) map.get("type")) + " request error: " + str);
-                this.gW.gw = 1;
-                this.gW.eJ.notify();
+    private bz cb() {
+        synchronized (this) {
+            if (this.jD == null) {
+                byte[] byteArray = getByteArray("momentImpl");
+                Parcel obtain = Parcel.obtain();
+                obtain.unmarshall(byteArray, 0, byteArray.length);
+                obtain.setDataPosition(0);
+                this.jD = bz.CREATOR.m420x(obtain);
+                obtain.recycle();
             }
         }
+        return this.jD;
     }
 
-    class C07062 implements ai {
-        final /* synthetic */ cb gW;
-
-        C07062(cb cbVar) {
-            this.gW = cbVar;
-        }
-
-        public void mo770a(cq cqVar, Map<String, String> map) {
-            synchronized (this.gW.eJ) {
-                String str = (String) map.get(PlusShare.KEY_CALL_TO_ACTION_URL);
-                if (str == null) {
-                    cn.m299q("URL missing in loadAdUrl GMSG.");
-                    return;
-                }
-                this.gW.gT = str;
-                this.gW.eJ.notify();
-            }
-        }
+    public bz ca() {
+        return cb();
     }
 
-    public String aj() {
-        String str;
-        synchronized (this.eJ) {
-            while (this.gT == null && this.gw == -2) {
-                try {
-                    this.eJ.wait();
-                } catch (InterruptedException e) {
-                    cn.m299q("Ad request service was interrupted.");
-                    str = null;
-                }
-            }
-            str = this.gT;
-        }
-        return str;
+    public /* synthetic */ Object freeze() {
+        return ca();
     }
 
-    public void m241b(cq cqVar) {
-        synchronized (this.eJ) {
-            this.fG = cqVar;
-        }
+    public String getId() {
+        return cb().getId();
     }
 
-    public int getErrorCode() {
-        int i;
-        synchronized (this.eJ) {
-            i = this.gw;
-        }
-        return i;
+    public ItemScope getResult() {
+        return cb().getResult();
+    }
+
+    public String getStartDate() {
+        return cb().getStartDate();
+    }
+
+    public ItemScope getTarget() {
+        return cb().getTarget();
+    }
+
+    public String getType() {
+        return cb().getType();
+    }
+
+    public boolean hasId() {
+        return cb().hasId();
+    }
+
+    public boolean hasResult() {
+        return cb().hasId();
+    }
+
+    public boolean hasStartDate() {
+        return cb().hasStartDate();
+    }
+
+    public boolean hasTarget() {
+        return cb().hasTarget();
+    }
+
+    public boolean hasType() {
+        return cb().hasType();
     }
 }

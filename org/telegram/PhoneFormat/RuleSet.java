@@ -10,7 +10,7 @@ public class RuleSet {
     public boolean hasRuleWithIntlPrefix;
     public boolean hasRuleWithTrunkPrefix;
     public int matchLen;
-    public ArrayList<PhoneRule> rules;
+    public ArrayList<PhoneRule> rules = new ArrayList();
 
     String format(String str, String intlPrefix, String trunkPrefix, boolean prefixRequired) {
         if (str.length() < this.matchLen) {

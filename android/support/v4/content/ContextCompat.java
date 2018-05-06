@@ -2,9 +2,14 @@ package android.support.v4.content;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Process;
+import android.support.annotation.NonNull;
+import android.util.Log;
 import java.io.File;
 
 public class ContextCompat {
@@ -13,6 +18,7 @@ public class ContextCompat {
     private static final String DIR_DATA = "data";
     private static final String DIR_FILES = "files";
     private static final String DIR_OBB = "obb";
+    private static final String TAG = "ContextCompat";
 
     public static boolean startActivities(Context context, Intent[] intents) {
         return startActivities(context, intents, null);
@@ -92,5 +98,57 @@ public class ContextCompat {
             cur2 = cur;
         }
         return cur2;
+    }
+
+    public static final Drawable getDrawable(Context context, int id) {
+        if (VERSION.SDK_INT >= 21) {
+            return ContextCompatApi21.getDrawable(context, id);
+        }
+        return context.getResources().getDrawable(id);
+    }
+
+    public static final ColorStateList getColorStateList(Context context, int id) {
+        if (VERSION.SDK_INT >= 23) {
+            return ContextCompatApi23.getColorStateList(context, id);
+        }
+        return context.getResources().getColorStateList(id);
+    }
+
+    public static final int getColor(Context context, int id) {
+        if (VERSION.SDK_INT >= 23) {
+            return ContextCompatApi23.getColor(context, id);
+        }
+        return context.getResources().getColor(id);
+    }
+
+    public static int checkSelfPermission(@NonNull Context context, @NonNull String permission) {
+        if (permission != null) {
+            return context.checkPermission(permission, Process.myPid(), Process.myUid());
+        }
+        throw new IllegalArgumentException("permission is null");
+    }
+
+    public final File getNoBackupFilesDir(Context context) {
+        if (VERSION.SDK_INT >= 21) {
+            return ContextCompatApi21.getNoBackupFilesDir(context);
+        }
+        return createFilesDir(new File(context.getApplicationInfo().dataDir, "no_backup"));
+    }
+
+    public final File getCodeCacheDir(Context context) {
+        if (VERSION.SDK_INT >= 21) {
+            return ContextCompatApi21.getCodeCacheDir(context);
+        }
+        return createFilesDir(new File(context.getApplicationInfo().dataDir, "code_cache"));
+    }
+
+    private static synchronized File createFilesDir(File file) {
+        synchronized (ContextCompat.class) {
+            if (!(file.exists() || file.mkdirs() || file.exists())) {
+                Log.w(TAG, "Unable to create files subdir " + file.getPath());
+                file = null;
+            }
+        }
+        return file;
     }
 }

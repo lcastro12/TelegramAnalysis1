@@ -6,36 +6,36 @@ import android.os.Parcel;
 import android.os.Parcelable.Creator;
 import com.google.android.gms.games.Player;
 import com.google.android.gms.games.PlayerEntity;
-import com.google.android.gms.internal.dd;
-import com.google.android.gms.internal.dl;
-import com.google.android.gms.internal.eg;
-import com.google.android.gms.internal.en;
+import com.google.android.gms.internal.C0191r;
+import com.google.android.gms.internal.C1351j;
+import com.google.android.gms.internal.ao;
+import com.google.android.gms.internal.av;
 
-public final class ParticipantEntity extends en implements Participant {
-    public static final Creator<ParticipantEntity> CREATOR = new C0662a();
-    private final int iM;
-    private final String ml;
-    private final Uri mq;
-    private final Uri mr;
-    private final int nU;
-    private final String nV;
-    private final boolean nW;
-    private final PlayerEntity nX;
-    private final int nY;
-    private final String nd;
+public final class ParticipantEntity extends av implements Participant {
+    public static final Creator<ParticipantEntity> CREATOR = new C1303a();
+    private final int ab;
+    private final String cl;
+    private final String dX;
+    private final Uri dk;
+    private final Uri dl;
+    private final int eN;
+    private final String eO;
+    private final boolean eP;
+    private final PlayerEntity eQ;
+    private final int eR;
 
-    static final class C0662a extends C0121c {
-        C0662a() {
+    static final class C1303a extends C0155c {
+        C1303a() {
         }
 
         public /* synthetic */ Object createFromParcel(Parcel x0) {
-            return mo748w(x0);
+            return mo1080q(x0);
         }
 
-        public ParticipantEntity mo748w(Parcel parcel) {
+        public ParticipantEntity mo1080q(Parcel parcel) {
             int i = 0;
-            if (en.m1439c(dd.aW()) || dd.m942y(ParticipantEntity.class.getCanonicalName())) {
-                return super.mo748w(parcel);
+            if (av.m1217c(C1351j.m970v()) || C1351j.m968h(ParticipantEntity.class.getCanonicalName())) {
+                return super.mo1080q(parcel);
             }
             String readString = parcel.readString();
             String readString2 = parcel.readString();
@@ -54,37 +54,37 @@ public final class ParticipantEntity extends en implements Participant {
     }
 
     ParticipantEntity(int versionCode, String participantId, String displayName, Uri iconImageUri, Uri hiResImageUri, int status, String clientAddress, boolean connectedToRoom, PlayerEntity player, int capabilities) {
-        this.iM = versionCode;
-        this.nd = participantId;
-        this.ml = displayName;
-        this.mq = iconImageUri;
-        this.mr = hiResImageUri;
-        this.nU = status;
-        this.nV = clientAddress;
-        this.nW = connectedToRoom;
-        this.nX = player;
-        this.nY = capabilities;
+        this.ab = versionCode;
+        this.dX = participantId;
+        this.cl = displayName;
+        this.dk = iconImageUri;
+        this.dl = hiResImageUri;
+        this.eN = status;
+        this.eO = clientAddress;
+        this.eP = connectedToRoom;
+        this.eQ = player;
+        this.eR = capabilities;
     }
 
     public ParticipantEntity(Participant participant) {
-        this.iM = 1;
-        this.nd = participant.getParticipantId();
-        this.ml = participant.getDisplayName();
-        this.mq = participant.getIconImageUri();
-        this.mr = participant.getHiResImageUri();
-        this.nU = participant.getStatus();
-        this.nV = participant.ci();
-        this.nW = participant.isConnectedToRoom();
+        this.ab = 1;
+        this.dX = participant.getParticipantId();
+        this.cl = participant.getDisplayName();
+        this.dk = participant.getIconImageUri();
+        this.dl = participant.getHiResImageUri();
+        this.eN = participant.getStatus();
+        this.eO = participant.aM();
+        this.eP = participant.isConnectedToRoom();
         Player player = participant.getPlayer();
-        this.nX = player == null ? null : new PlayerEntity(player);
-        this.nY = participant.getCapabilities();
+        this.eQ = player == null ? null : new PlayerEntity(player);
+        this.eR = participant.aN();
     }
 
-    static int m1590a(Participant participant) {
-        return dl.hashCode(participant.getPlayer(), Integer.valueOf(participant.getStatus()), participant.ci(), Boolean.valueOf(participant.isConnectedToRoom()), participant.getDisplayName(), participant.getIconImageUri(), participant.getHiResImageUri(), Integer.valueOf(participant.getCapabilities()));
+    static int m1376a(Participant participant) {
+        return C0191r.hashCode(participant.getPlayer(), Integer.valueOf(participant.getStatus()), participant.aM(), Boolean.valueOf(participant.isConnectedToRoom()), participant.getDisplayName(), participant.getIconImageUri(), participant.getHiResImageUri(), Integer.valueOf(participant.aN()));
     }
 
-    static boolean m1591a(Participant participant, Object obj) {
+    static boolean m1377a(Participant participant, Object obj) {
         if (!(obj instanceof Participant)) {
             return false;
         }
@@ -92,15 +92,19 @@ public final class ParticipantEntity extends en implements Participant {
             return true;
         }
         Participant participant2 = (Participant) obj;
-        return dl.equal(participant2.getPlayer(), participant.getPlayer()) && dl.equal(Integer.valueOf(participant2.getStatus()), Integer.valueOf(participant.getStatus())) && dl.equal(participant2.ci(), participant.ci()) && dl.equal(Boolean.valueOf(participant2.isConnectedToRoom()), Boolean.valueOf(participant.isConnectedToRoom())) && dl.equal(participant2.getDisplayName(), participant.getDisplayName()) && dl.equal(participant2.getIconImageUri(), participant.getIconImageUri()) && dl.equal(participant2.getHiResImageUri(), participant.getHiResImageUri()) && dl.equal(Integer.valueOf(participant2.getCapabilities()), Integer.valueOf(participant.getCapabilities()));
+        return C0191r.m513a(participant2.getPlayer(), participant.getPlayer()) && C0191r.m513a(Integer.valueOf(participant2.getStatus()), Integer.valueOf(participant.getStatus())) && C0191r.m513a(participant2.aM(), participant.aM()) && C0191r.m513a(Boolean.valueOf(participant2.isConnectedToRoom()), Boolean.valueOf(participant.isConnectedToRoom())) && C0191r.m513a(participant2.getDisplayName(), participant.getDisplayName()) && C0191r.m513a(participant2.getIconImageUri(), participant.getIconImageUri()) && C0191r.m513a(participant2.getHiResImageUri(), participant.getHiResImageUri()) && C0191r.m513a(Integer.valueOf(participant2.aN()), Integer.valueOf(participant.aN()));
     }
 
-    static String m1592b(Participant participant) {
-        return dl.m387d(participant).m386a("Player", participant.getPlayer()).m386a("Status", Integer.valueOf(participant.getStatus())).m386a("ClientAddress", participant.ci()).m386a("ConnectedToRoom", Boolean.valueOf(participant.isConnectedToRoom())).m386a("DisplayName", participant.getDisplayName()).m386a("IconImage", participant.getIconImageUri()).m386a("HiResImage", participant.getHiResImageUri()).m386a("Capabilities", Integer.valueOf(participant.getCapabilities())).toString();
+    static String m1378b(Participant participant) {
+        return C0191r.m514c(participant).m512a("Player", participant.getPlayer()).m512a("Status", Integer.valueOf(participant.getStatus())).m512a("ClientAddress", participant.aM()).m512a("ConnectedToRoom", Boolean.valueOf(participant.isConnectedToRoom())).m512a("DisplayName", participant.getDisplayName()).m512a("IconImage", participant.getIconImageUri()).m512a("HiResImage", participant.getHiResImageUri()).m512a("Capabilities", Integer.valueOf(participant.aN())).toString();
     }
 
-    public String ci() {
-        return this.nV;
+    public String aM() {
+        return this.eO;
+    }
+
+    public int aN() {
+        return this.eR;
     }
 
     public int describeContents() {
@@ -108,59 +112,55 @@ public final class ParticipantEntity extends en implements Participant {
     }
 
     public boolean equals(Object obj) {
-        return m1591a(this, obj);
+        return m1377a(this, obj);
     }
 
     public Participant freeze() {
         return this;
     }
 
-    public int getCapabilities() {
-        return this.nY;
-    }
-
     public String getDisplayName() {
-        return this.nX == null ? this.ml : this.nX.getDisplayName();
+        return this.eQ == null ? this.cl : this.eQ.getDisplayName();
     }
 
     public void getDisplayName(CharArrayBuffer dataOut) {
-        if (this.nX == null) {
-            eg.m447b(this.ml, dataOut);
+        if (this.eQ == null) {
+            ao.m215b(this.cl, dataOut);
         } else {
-            this.nX.getDisplayName(dataOut);
+            this.eQ.getDisplayName(dataOut);
         }
     }
 
     public Uri getHiResImageUri() {
-        return this.nX == null ? this.mr : this.nX.getHiResImageUri();
+        return this.eQ == null ? this.dl : this.eQ.getHiResImageUri();
     }
 
     public Uri getIconImageUri() {
-        return this.nX == null ? this.mq : this.nX.getIconImageUri();
+        return this.eQ == null ? this.dk : this.eQ.getIconImageUri();
     }
 
     public String getParticipantId() {
-        return this.nd;
+        return this.dX;
     }
 
     public Player getPlayer() {
-        return this.nX;
+        return this.eQ;
     }
 
     public int getStatus() {
-        return this.nU;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
+        return this.eN;
     }
 
     public int hashCode() {
-        return m1590a(this);
+        return m1376a(this);
+    }
+
+    public int m1381i() {
+        return this.ab;
     }
 
     public boolean isConnectedToRoom() {
-        return this.nW;
+        return this.eP;
     }
 
     public boolean isDataValid() {
@@ -168,33 +168,33 @@ public final class ParticipantEntity extends en implements Participant {
     }
 
     public String toString() {
-        return m1592b((Participant) this);
+        return m1378b((Participant) this);
     }
 
     public void writeToParcel(Parcel dest, int flags) {
         String str = null;
         int i = 0;
-        if (aX()) {
-            dest.writeString(this.nd);
-            dest.writeString(this.ml);
-            dest.writeString(this.mq == null ? null : this.mq.toString());
-            if (this.mr != null) {
-                str = this.mr.toString();
+        if (m971w()) {
+            dest.writeString(this.dX);
+            dest.writeString(this.cl);
+            dest.writeString(this.dk == null ? null : this.dk.toString());
+            if (this.dl != null) {
+                str = this.dl.toString();
             }
             dest.writeString(str);
-            dest.writeInt(this.nU);
-            dest.writeString(this.nV);
-            dest.writeInt(this.nW ? 1 : 0);
-            if (this.nX != null) {
+            dest.writeInt(this.eN);
+            dest.writeString(this.eO);
+            dest.writeInt(this.eP ? 1 : 0);
+            if (this.eQ != null) {
                 i = 1;
             }
             dest.writeInt(i);
-            if (this.nX != null) {
-                this.nX.writeToParcel(dest, flags);
+            if (this.eQ != null) {
+                this.eQ.writeToParcel(dest, flags);
                 return;
             }
             return;
         }
-        C0121c.m157a(this, dest, flags);
+        C0155c.m155a(this, dest, flags);
     }
 }

@@ -16,26 +16,28 @@ import android.view.View;
 import android.view.ViewTreeObserver.OnWindowAttachListener;
 import android.view.ViewTreeObserver.OnWindowFocusChangeListener;
 
-class TransportMediatorJellybeanMR2 implements OnGetPlaybackPositionListener, OnPlaybackPositionUpdateListener {
-    OnAudioFocusChangeListener mAudioFocusChangeListener = new C00234();
+class TransportMediatorJellybeanMR2 {
+    OnAudioFocusChangeListener mAudioFocusChangeListener = new C00564();
     boolean mAudioFocused;
     final AudioManager mAudioManager;
     final Context mContext;
     boolean mFocused;
+    final OnGetPlaybackPositionListener mGetPlaybackPositionListener = new C00575();
     final Intent mIntent;
-    final BroadcastReceiver mMediaButtonReceiver = new C00223();
+    final BroadcastReceiver mMediaButtonReceiver = new C00553();
     PendingIntent mPendingIntent;
     int mPlayState = 0;
+    final OnPlaybackPositionUpdateListener mPlaybackPositionUpdateListener = new C00586();
     final String mReceiverAction;
     final IntentFilter mReceiverFilter;
     RemoteControlClient mRemoteControl;
     final View mTargetView;
     final TransportMediatorCallback mTransportCallback;
-    final OnWindowAttachListener mWindowAttachListener = new C00201();
-    final OnWindowFocusChangeListener mWindowFocusListener = new C00212();
+    final OnWindowAttachListener mWindowAttachListener = new C00531();
+    final OnWindowFocusChangeListener mWindowFocusListener = new C00542();
 
-    class C00201 implements OnWindowAttachListener {
-        C00201() {
+    class C00531 implements OnWindowAttachListener {
+        C00531() {
         }
 
         public void onWindowAttached() {
@@ -47,8 +49,8 @@ class TransportMediatorJellybeanMR2 implements OnGetPlaybackPositionListener, On
         }
     }
 
-    class C00212 implements OnWindowFocusChangeListener {
-        C00212() {
+    class C00542 implements OnWindowFocusChangeListener {
+        C00542() {
         }
 
         public void onWindowFocusChanged(boolean hasFocus) {
@@ -60,8 +62,8 @@ class TransportMediatorJellybeanMR2 implements OnGetPlaybackPositionListener, On
         }
     }
 
-    class C00223 extends BroadcastReceiver {
-        C00223() {
+    class C00553 extends BroadcastReceiver {
+        C00553() {
         }
 
         public void onReceive(Context context, Intent intent) {
@@ -73,12 +75,30 @@ class TransportMediatorJellybeanMR2 implements OnGetPlaybackPositionListener, On
         }
     }
 
-    class C00234 implements OnAudioFocusChangeListener {
-        C00234() {
+    class C00564 implements OnAudioFocusChangeListener {
+        C00564() {
         }
 
         public void onAudioFocusChange(int focusChange) {
             TransportMediatorJellybeanMR2.this.mTransportCallback.handleAudioFocusChange(focusChange);
+        }
+    }
+
+    class C00575 implements OnGetPlaybackPositionListener {
+        C00575() {
+        }
+
+        public long onGetPlaybackPosition() {
+            return TransportMediatorJellybeanMR2.this.mTransportCallback.getPlaybackPosition();
+        }
+    }
+
+    class C00586 implements OnPlaybackPositionUpdateListener {
+        C00586() {
+        }
+
+        public void onPlaybackPositionUpdate(long newPositionMs) {
+            TransportMediatorJellybeanMR2.this.mTransportCallback.playbackPositionUpdate(newPositionMs);
         }
     }
 
@@ -110,8 +130,8 @@ class TransportMediatorJellybeanMR2 implements OnGetPlaybackPositionListener, On
         this.mContext.registerReceiver(this.mMediaButtonReceiver, this.mReceiverFilter);
         this.mPendingIntent = PendingIntent.getBroadcast(this.mContext, 0, this.mIntent, 268435456);
         this.mRemoteControl = new RemoteControlClient(this.mPendingIntent);
-        this.mRemoteControl.setOnGetPlaybackPositionListener(this);
-        this.mRemoteControl.setPlaybackPositionUpdateListener(this);
+        this.mRemoteControl.setOnGetPlaybackPositionListener(this.mGetPlaybackPositionListener);
+        this.mRemoteControl.setPlaybackPositionUpdateListener(this.mPlaybackPositionUpdateListener);
     }
 
     void gainFocus() {
@@ -140,14 +160,6 @@ class TransportMediatorJellybeanMR2 implements OnGetPlaybackPositionListener, On
         if (this.mFocused) {
             takeAudioFocus();
         }
-    }
-
-    public long onGetPlaybackPosition() {
-        return this.mTransportCallback.getPlaybackPosition();
-    }
-
-    public void onPlaybackPositionUpdate(long newPositionMs) {
-        this.mTransportCallback.playbackPositionUpdate(newPositionMs);
     }
 
     public void refreshState(boolean playing, long position, int transportControls) {

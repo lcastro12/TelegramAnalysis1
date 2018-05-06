@@ -7,9 +7,9 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.FrameLayout;
-import com.google.android.gms.internal.dm;
-import com.google.android.gms.internal.dp;
-import com.google.android.gms.internal.fm;
+import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.internal.C0194v;
+import com.google.android.gms.internal.bu;
 
 public final class PlusOneButton extends FrameLayout {
     public static final int ANNOTATION_BUBBLE = 1;
@@ -20,39 +20,39 @@ public final class PlusOneButton extends FrameLayout {
     public static final int SIZE_SMALL = 0;
     public static final int SIZE_STANDARD = 3;
     public static final int SIZE_TALL = 2;
-    private String hN;
-    private int mSize;
-    private View re;
-    private int rf;
-    private int rg;
-    private OnPlusOneClickListener rh;
+    private int f42O;
+    private View ic;
+    private int id;
+    private String ie;
+    private int f43if;
+    private OnPlusOneClickListener ig;
 
     public interface OnPlusOneClickListener {
         void onPlusOneClick(Intent intent);
     }
 
     protected class DefaultOnPlusOneClickListener implements OnClickListener, OnPlusOneClickListener {
-        private final OnPlusOneClickListener ri;
-        final /* synthetic */ PlusOneButton rj;
+        private final OnPlusOneClickListener ih;
+        final /* synthetic */ PlusOneButton ii;
 
         public DefaultOnPlusOneClickListener(PlusOneButton plusOneButton, OnPlusOneClickListener proxy) {
-            this.rj = plusOneButton;
-            this.ri = proxy;
+            this.ii = plusOneButton;
+            this.ih = proxy;
         }
 
         public void onClick(View view) {
-            Intent intent = (Intent) this.rj.re.getTag();
-            if (this.ri != null) {
-                this.ri.onPlusOneClick(intent);
+            Intent intent = (Intent) this.ii.ic.getTag();
+            if (this.ih != null) {
+                this.ih.onPlusOneClick(intent);
             } else {
                 onPlusOneClick(intent);
             }
         }
 
         public void onPlusOneClick(Intent intent) {
-            Context context = this.rj.getContext();
+            Context context = this.ii.getContext();
             if ((context instanceof Activity) && intent != null) {
-                ((Activity) context).startActivityForResult(intent, this.rj.rg);
+                ((Activity) context).startActivityForResult(intent, this.ii.f43if);
             }
         }
     }
@@ -63,16 +63,25 @@ public final class PlusOneButton extends FrameLayout {
 
     public PlusOneButton(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.mSize = getSize(context, attrs);
-        this.rf = getAnnotation(context, attrs);
-        this.rg = -1;
-        m772p(getContext());
+        this.f42O = getSize(context, attrs);
+        this.id = getAnnotation(context, attrs);
+        this.f43if = -1;
+        m601d(getContext());
         if (!isInEditMode()) {
         }
     }
 
+    private void m601d(Context context) {
+        if (this.ic != null) {
+            removeView(this.ic);
+        }
+        this.ic = bu.m409a(context, this.f42O, this.id, this.ie, this.f43if);
+        setOnPlusOneClickListener(this.ig);
+        addView(this.ic);
+    }
+
     protected static int getAnnotation(Context context, AttributeSet attrs) {
-        String a = dp.m402a("http://schemas.android.com/apk/lib/com.google.android.gms.plus", "annotation", context, attrs, true, false, "PlusOneButton");
+        String a = C0194v.m527a("http://schemas.android.com/apk/lib/com.google.android.gms.plus", "annotation", context, attrs, true, false, "PlusOneButton");
         if ("INLINE".equalsIgnoreCase(a)) {
             return 2;
         }
@@ -80,7 +89,7 @@ public final class PlusOneButton extends FrameLayout {
     }
 
     protected static int getSize(Context context, AttributeSet attrs) {
-        String a = dp.m402a("http://schemas.android.com/apk/lib/com.google.android.gms.plus", "size", context, attrs, true, false, "PlusOneButton");
+        String a = C0194v.m527a("http://schemas.android.com/apk/lib/com.google.android.gms.plus", "size", context, attrs, true, false, "PlusOneButton");
         if ("SMALL".equalsIgnoreCase(a)) {
             return 0;
         }
@@ -90,51 +99,42 @@ public final class PlusOneButton extends FrameLayout {
         return "TALL".equalsIgnoreCase(a) ? 2 : 3;
     }
 
-    private void m772p(Context context) {
-        if (this.re != null) {
-            removeView(this.re);
-        }
-        this.re = fm.m609a(context, this.mSize, this.rf, this.hN, this.rg);
-        setOnPlusOneClickListener(this.rh);
-        addView(this.re);
-    }
-
     public void initialize(String url, int activityRequestCode) {
-        dm.m389a(getContext() instanceof Activity, (Object) "To use this method, the PlusOneButton must be placed in an Activity. Use initialize(PlusClient, String, OnPlusOneClickListener).");
-        this.hN = url;
-        this.rg = activityRequestCode;
-        m772p(getContext());
+        C0192s.m516a(getContext() instanceof Activity, "To use this method, the PlusOneButton must be placed in an Activity. Use initialize(PlusClient, String, OnPlusOneClickListener).");
+        this.ie = url;
+        this.f43if = activityRequestCode;
+        m601d(getContext());
     }
 
     public void initialize(String url, OnPlusOneClickListener plusOneClickListener) {
-        this.hN = url;
-        this.rg = 0;
-        m772p(getContext());
+        this.ie = url;
+        this.f43if = 0;
+        m601d(getContext());
         setOnPlusOneClickListener(plusOneClickListener);
     }
 
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        this.re.layout(0, 0, right - left, bottom - top);
+        this.ic.layout(0, 0, right - left, bottom - top);
     }
 
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        View view = this.re;
+        View view = this.ic;
         measureChild(view, widthMeasureSpec, heightMeasureSpec);
         setMeasuredDimension(view.getMeasuredWidth(), view.getMeasuredHeight());
     }
 
     public void setAnnotation(int annotation) {
-        this.rf = annotation;
-        m772p(getContext());
+        this.id = annotation;
+        m601d(getContext());
     }
 
     public void setOnPlusOneClickListener(OnPlusOneClickListener listener) {
-        this.rh = listener;
-        this.re.setOnClickListener(new DefaultOnPlusOneClickListener(this, listener));
+        this.ig = listener;
+        this.ic.setOnClickListener(new DefaultOnPlusOneClickListener(this, listener));
     }
 
     public void setSize(int size) {
-        this.mSize = size;
-        m772p(getContext());
+        this.f42O = size;
+        m601d(getContext());
     }
 }

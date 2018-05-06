@@ -75,4 +75,9 @@ public abstract class ActionProvider {
         }
         this.mVisibilityListener = listener;
     }
+
+    public void reset() {
+        this.mVisibilityListener = null;
+        this.mSubUiVisibilityListener = null;
+    }
 }

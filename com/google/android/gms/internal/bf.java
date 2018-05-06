@@ -1,312 +1,434 @@
 package com.google.android.gms.internal;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.os.Build.VERSION;
-import android.os.Bundle;
-import android.support.v4.view.ViewCompat;
-import android.support.v4.view.accessibility.AccessibilityEventCompat;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewGroup.LayoutParams;
-import android.view.ViewParent;
-import android.view.Window;
-import android.webkit.WebChromeClient.CustomViewCallback;
-import android.widget.FrameLayout;
-import android.widget.RelativeLayout;
-import com.google.android.gms.ads.AdActivity;
-import com.google.android.gms.internal.bn.C0700a;
-import com.google.android.gms.internal.cr.C0162a;
+import android.app.PendingIntent;
+import android.location.Location;
+import android.os.Binder;
+import android.os.IBinder;
+import android.os.IInterface;
+import android.os.Parcel;
+import android.os.RemoteException;
+import com.google.android.gms.internal.be.C1324a;
+import com.google.android.gms.location.C0197a;
+import com.google.android.gms.location.C0197a.C1365a;
+import com.google.android.gms.location.LocationRequest;
+import java.util.List;
 
-public final class bf extends C0700a {
-    private final Activity fD;
-    private bh fE;
-    private bj fF;
-    private cq fG;
-    private C0143b fH;
-    private bk fI;
-    private FrameLayout fJ;
-    private CustomViewCallback fK;
-    private boolean fL = false;
-    private boolean fM = false;
-    private RelativeLayout fN;
+public interface bf extends IInterface {
 
-    private static final class C0142a extends Exception {
-        public C0142a(String str) {
-            super(str);
-        }
-    }
+    public static abstract class C1326a extends Binder implements bf {
 
-    private static final class C0143b {
-        public final LayoutParams fP;
-        public final ViewGroup fQ;
-        public final int index;
+        private static class C1325a implements bf {
+            private IBinder f80a;
 
-        public C0143b(cq cqVar) throws C0142a {
-            this.fP = cqVar.getLayoutParams();
-            ViewParent parent = cqVar.getParent();
-            if (parent instanceof ViewGroup) {
-                this.fQ = (ViewGroup) parent;
-                this.index = this.fQ.indexOfChild(cqVar);
-                this.fQ.removeView(cqVar);
-                cqVar.m307i(true);
-                return;
+            C1325a(IBinder iBinder) {
+                this.f80a = iBinder;
             }
-            throw new C0142a("Could not get the parent of the WebView for an overlay.");
-        }
-    }
 
-    class C06981 implements C0162a {
-        final /* synthetic */ bf fO;
-
-        C06981(bf bfVar) {
-            this.fO = bfVar;
-        }
-
-        public void mo798a(cq cqVar) {
-            cqVar.at();
-        }
-    }
-
-    public bf(Activity activity) {
-        this.fD = activity;
-    }
-
-    private void m1335T() {
-        if (this.fD.isFinishing() && !this.fM) {
-            this.fM = true;
-            if (this.fD.isFinishing()) {
-                if (this.fG != null) {
-                    this.fG.as();
-                    this.fN.removeView(this.fG);
-                    if (this.fH != null) {
-                        this.fG.m307i(false);
-                        this.fH.fQ.addView(this.fG, this.fH.index, this.fH.fP);
+            public void mo1227a(long j, boolean z, PendingIntent pendingIntent) throws RemoteException {
+                int i = 1;
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    obtain.writeLong(j);
+                    if (!z) {
+                        i = 0;
                     }
-                }
-                if (this.fE != null && this.fE.fT != null) {
-                    this.fE.fT.mo1776B();
-                }
-            }
-        }
-    }
-
-    private static RelativeLayout.LayoutParams m1336a(int i, int i2, int i3, int i4) {
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(i3, i4);
-        layoutParams.setMargins(i, i2, 0, 0);
-        layoutParams.addRule(10);
-        layoutParams.addRule(9);
-        return layoutParams;
-    }
-
-    public static void m1337a(Context context, bh bhVar) {
-        Intent intent = new Intent();
-        intent.setClassName(context, AdActivity.CLASS_NAME);
-        intent.putExtra("com.google.android.gms.ads.internal.overlay.useClientJar", bhVar.eg.hS);
-        bh.m894a(intent, bhVar);
-        intent.addFlags(AccessibilityEventCompat.TYPE_GESTURE_DETECTION_END);
-        context.startActivity(intent);
-    }
-
-    private void m1338e(boolean z) throws C0142a {
-        this.fD.requestWindowFeature(1);
-        Window window = this.fD.getWindow();
-        window.setFlags(1024, 1024);
-        setRequestedOrientation(this.fE.orientation);
-        if (VERSION.SDK_INT >= 11) {
-            cn.m295m("Enabling hardware acceleration on the AdActivity window.");
-            cj.m279a(window);
-        }
-        this.fN = new RelativeLayout(this.fD);
-        this.fN.setBackgroundColor(ViewCompat.MEASURED_STATE_MASK);
-        this.fD.setContentView(this.fN);
-        boolean aD = this.fE.fU.aw().aD();
-        if (z) {
-            this.fG = cq.m303a(this.fD, this.fE.fU.av(), true, aD, null, this.fE.eg);
-            this.fG.aw().m315a(null, null, this.fE.fV, this.fE.fZ, true);
-            this.fG.aw().m314a(new C06981(this));
-            if (this.fE.fz != null) {
-                this.fG.loadUrl(this.fE.fz);
-            } else if (this.fE.fY != null) {
-                this.fG.loadDataWithBaseURL(this.fE.fW, this.fE.fY, "text/html", "UTF-8", null);
-            } else {
-                throw new C0142a("No URL or HTML to display in ad overlay.");
-            }
-        }
-        this.fG = this.fE.fU;
-        this.fG.setContext(this.fD);
-        this.fG.m305a(this);
-        this.fN.addView(this.fG, -1, -1);
-        if (!z) {
-            this.fG.at();
-        }
-        m1345c(aD);
-    }
-
-    public bj m1339Q() {
-        return this.fF;
-    }
-
-    public void m1340R() {
-        if (this.fE != null) {
-            setRequestedOrientation(this.fE.orientation);
-        }
-        if (this.fJ != null) {
-            this.fD.setContentView(this.fN);
-            this.fJ.removeAllViews();
-            this.fJ = null;
-        }
-        if (this.fK != null) {
-            this.fK.onCustomViewHidden();
-            this.fK = null;
-        }
-    }
-
-    public void m1341S() {
-        this.fN.removeView(this.fI);
-        m1345c(true);
-    }
-
-    public void m1342a(View view, CustomViewCallback customViewCallback) {
-        this.fJ = new FrameLayout(this.fD);
-        this.fJ.setBackgroundColor(ViewCompat.MEASURED_STATE_MASK);
-        this.fJ.addView(view, -1, -1);
-        this.fD.setContentView(this.fJ);
-        this.fK = customViewCallback;
-    }
-
-    public void m1343b(int i, int i2, int i3, int i4) {
-        if (this.fF != null) {
-            this.fF.setLayoutParams(m1336a(i, i2, i3, i4));
-        }
-    }
-
-    public void m1344c(int i, int i2, int i3, int i4) {
-        if (this.fF == null) {
-            this.fF = new bj(this.fD, this.fG);
-            this.fN.addView(this.fF, 0, m1336a(i, i2, i3, i4));
-            this.fG.aw().m320j(false);
-        }
-    }
-
-    public void m1345c(boolean z) {
-        this.fI = new bk(this.fD, z ? 50 : 32);
-        LayoutParams layoutParams = new RelativeLayout.LayoutParams(-2, -2);
-        layoutParams.addRule(10);
-        layoutParams.addRule(z ? 11 : 9);
-        this.fI.m217d(this.fE.fX);
-        this.fN.addView(this.fI, layoutParams);
-    }
-
-    public void close() {
-        this.fD.finish();
-    }
-
-    public void m1346d(boolean z) {
-        if (this.fI != null) {
-            this.fI.m217d(z);
-        }
-    }
-
-    public void onCreate(Bundle savedInstanceState) {
-        boolean z = false;
-        if (savedInstanceState != null) {
-            z = savedInstanceState.getBoolean("com.google.android.gms.ads.internal.overlay.hasResumed", false);
-        }
-        this.fL = z;
-        try {
-            this.fE = bh.m893a(this.fD.getIntent());
-            if (this.fE == null) {
-                throw new C0142a("Could not get info for ad overlay.");
-            }
-            if (savedInstanceState == null) {
-                if (this.fE.fT != null) {
-                    this.fE.fT.mo1777C();
-                }
-                if (!(this.fE.ga == 1 || this.fE.fS == null)) {
-                    this.fE.fS.mo1785y();
-                }
-            }
-            switch (this.fE.ga) {
-                case 1:
-                    m1338e(false);
-                    return;
-                case 2:
-                    this.fH = new C0143b(this.fE.fU);
-                    m1338e(false);
-                    return;
-                case 3:
-                    m1338e(true);
-                    return;
-                case 4:
-                    if (this.fL) {
-                        this.fD.finish();
-                        return;
-                    } else if (!bc.m199a(this.fD, this.fE.fR, this.fE.fZ)) {
-                        this.fD.finish();
-                        return;
+                    obtain.writeInt(i);
+                    if (pendingIntent != null) {
+                        obtain.writeInt(1);
+                        pendingIntent.writeToParcel(obtain, 0);
                     } else {
-                        return;
+                        obtain.writeInt(0);
                     }
+                    this.f80a.transact(5, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1228a(PendingIntent pendingIntent) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (pendingIntent != null) {
+                        obtain.writeInt(1);
+                        pendingIntent.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    this.f80a.transact(11, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1229a(PendingIntent pendingIntent, be beVar, String str) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (pendingIntent != null) {
+                        obtain.writeInt(1);
+                        pendingIntent.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    obtain.writeStrongBinder(beVar != null ? beVar.asBinder() : null);
+                    obtain.writeString(str);
+                    this.f80a.transact(2, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1230a(be beVar, String str) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    obtain.writeStrongBinder(beVar != null ? beVar.asBinder() : null);
+                    obtain.writeString(str);
+                    this.f80a.transact(4, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1231a(LocationRequest locationRequest, PendingIntent pendingIntent) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (locationRequest != null) {
+                        obtain.writeInt(1);
+                        locationRequest.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    if (pendingIntent != null) {
+                        obtain.writeInt(1);
+                        pendingIntent.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    this.f80a.transact(9, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1232a(LocationRequest locationRequest, C0197a c0197a) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (locationRequest != null) {
+                        obtain.writeInt(1);
+                        locationRequest.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    obtain.writeStrongBinder(c0197a != null ? c0197a.asBinder() : null);
+                    this.f80a.transact(8, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1233a(C0197a c0197a) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    obtain.writeStrongBinder(c0197a != null ? c0197a.asBinder() : null);
+                    this.f80a.transact(10, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1234a(List<bi> list, PendingIntent pendingIntent, be beVar, String str) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    obtain.writeTypedList(list);
+                    if (pendingIntent != null) {
+                        obtain.writeInt(1);
+                        pendingIntent.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    obtain.writeStrongBinder(beVar != null ? beVar.asBinder() : null);
+                    obtain.writeString(str);
+                    this.f80a.transact(1, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void mo1235a(String[] strArr, be beVar, String str) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    obtain.writeStringArray(strArr);
+                    obtain.writeStrongBinder(beVar != null ? beVar.asBinder() : null);
+                    obtain.writeString(str);
+                    this.f80a.transact(3, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public Location aQ() throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    this.f80a.transact(7, obtain, obtain2, 0);
+                    obtain2.readException();
+                    Location location = obtain2.readInt() != 0 ? (Location) Location.CREATOR.createFromParcel(obtain2) : null;
+                    obtain2.recycle();
+                    obtain.recycle();
+                    return location;
+                } catch (Throwable th) {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public IBinder asBinder() {
+                return this.f80a;
+            }
+
+            public void removeActivityUpdates(PendingIntent callbackIntent) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (callbackIntent != null) {
+                        obtain.writeInt(1);
+                        callbackIntent.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    this.f80a.transact(6, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void setMockLocation(Location location) throws RemoteException {
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (location != null) {
+                        obtain.writeInt(1);
+                        location.writeToParcel(obtain, 0);
+                    } else {
+                        obtain.writeInt(0);
+                    }
+                    this.f80a.transact(13, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+
+            public void setMockMode(boolean isMockMode) throws RemoteException {
+                int i = 0;
+                Parcel obtain = Parcel.obtain();
+                Parcel obtain2 = Parcel.obtain();
+                try {
+                    obtain.writeInterfaceToken("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (isMockMode) {
+                        i = 1;
+                    }
+                    obtain.writeInt(i);
+                    this.f80a.transact(12, obtain, obtain2, 0);
+                    obtain2.readException();
+                } finally {
+                    obtain2.recycle();
+                    obtain.recycle();
+                }
+            }
+        }
+
+        public static bf m861r(IBinder iBinder) {
+            if (iBinder == null) {
+                return null;
+            }
+            IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+            return (queryLocalInterface == null || !(queryLocalInterface instanceof bf)) ? new C1325a(iBinder) : (bf) queryLocalInterface;
+        }
+
+        public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+            boolean z = false;
+            Location location = null;
+            PendingIntent pendingIntent;
+            switch (code) {
+                case 1:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    List createTypedArrayList = data.createTypedArrayList(bi.CREATOR);
+                    if (data.readInt() != 0) {
+                        pendingIntent = (PendingIntent) PendingIntent.CREATOR.createFromParcel(data);
+                    }
+                    mo1234a(createTypedArrayList, pendingIntent, C1324a.m851q(data.readStrongBinder()), data.readString());
+                    reply.writeNoException();
+                    return true;
+                case 2:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (data.readInt() != 0) {
+                        pendingIntent = (PendingIntent) PendingIntent.CREATOR.createFromParcel(data);
+                    }
+                    mo1229a(pendingIntent, C1324a.m851q(data.readStrongBinder()), data.readString());
+                    reply.writeNoException();
+                    return true;
+                case 3:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    mo1235a(data.createStringArray(), C1324a.m851q(data.readStrongBinder()), data.readString());
+                    reply.writeNoException();
+                    return true;
+                case 4:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    mo1230a(C1324a.m851q(data.readStrongBinder()), data.readString());
+                    reply.writeNoException();
+                    return true;
+                case 5:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    long readLong = data.readLong();
+                    if (data.readInt() != 0) {
+                        z = true;
+                    }
+                    if (data.readInt() != 0) {
+                        pendingIntent = (PendingIntent) PendingIntent.CREATOR.createFromParcel(data);
+                    }
+                    mo1227a(readLong, z, pendingIntent);
+                    reply.writeNoException();
+                    return true;
+                case 6:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (data.readInt() != 0) {
+                        pendingIntent = (PendingIntent) PendingIntent.CREATOR.createFromParcel(data);
+                    }
+                    removeActivityUpdates(pendingIntent);
+                    reply.writeNoException();
+                    return true;
+                case 7:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    location = aQ();
+                    reply.writeNoException();
+                    if (location != null) {
+                        reply.writeInt(1);
+                        location.writeToParcel(reply, 1);
+                        return true;
+                    }
+                    reply.writeInt(0);
+                    return true;
+                case 8:
+                    LocationRequest createFromParcel;
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (data.readInt() != 0) {
+                        createFromParcel = LocationRequest.CREATOR.createFromParcel(data);
+                    }
+                    mo1232a(createFromParcel, C1365a.m1044p(data.readStrongBinder()));
+                    reply.writeNoException();
+                    return true;
+                case 9:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    LocationRequest createFromParcel2 = data.readInt() != 0 ? LocationRequest.CREATOR.createFromParcel(data) : null;
+                    if (data.readInt() != 0) {
+                        pendingIntent = (PendingIntent) PendingIntent.CREATOR.createFromParcel(data);
+                    }
+                    mo1231a(createFromParcel2, pendingIntent);
+                    reply.writeNoException();
+                    return true;
+                case 10:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    mo1233a(C1365a.m1044p(data.readStrongBinder()));
+                    reply.writeNoException();
+                    return true;
+                case 11:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (data.readInt() != 0) {
+                        pendingIntent = (PendingIntent) PendingIntent.CREATOR.createFromParcel(data);
+                    }
+                    mo1228a(pendingIntent);
+                    reply.writeNoException();
+                    return true;
+                case 12:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (data.readInt() != 0) {
+                        z = true;
+                    }
+                    setMockMode(z);
+                    reply.writeNoException();
+                    return true;
+                case 13:
+                    data.enforceInterface("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    if (data.readInt() != 0) {
+                        location = (Location) Location.CREATOR.createFromParcel(data);
+                    }
+                    setMockLocation(location);
+                    reply.writeNoException();
+                    return true;
+                case 1598968902:
+                    reply.writeString("com.google.android.gms.location.internal.IGoogleLocationManagerService");
+                    return true;
                 default:
-                    throw new C0142a("Could not determine ad overlay type.");
-            }
-        } catch (C0142a e) {
-            cn.m299q(e.getMessage());
-            this.fD.finish();
-        }
-    }
-
-    public void onDestroy() {
-        if (this.fF != null) {
-            this.fF.destroy();
-        }
-        if (this.fG != null) {
-            this.fN.removeView(this.fG);
-        }
-        m1335T();
-    }
-
-    public void onPause() {
-        if (this.fF != null) {
-            this.fF.pause();
-        }
-        m1340R();
-        if (this.fG != null && (!this.fD.isFinishing() || this.fH == null)) {
-            ci.m264a(this.fG);
-        }
-        m1335T();
-    }
-
-    public void onRestart() {
-    }
-
-    public void onResume() {
-        if (this.fE != null && this.fE.ga == 4) {
-            if (this.fL) {
-                this.fD.finish();
-            } else {
-                this.fL = true;
+                    return super.onTransact(code, data, reply, flags);
             }
         }
-        if (this.fG != null) {
-            ci.m269b(this.fG);
-        }
     }
 
-    public void onSaveInstanceState(Bundle outBundle) {
-        outBundle.putBoolean("com.google.android.gms.ads.internal.overlay.hasResumed", this.fL);
-    }
+    void mo1227a(long j, boolean z, PendingIntent pendingIntent) throws RemoteException;
 
-    public void onStart() {
-    }
+    void mo1228a(PendingIntent pendingIntent) throws RemoteException;
 
-    public void onStop() {
-        m1335T();
-    }
+    void mo1229a(PendingIntent pendingIntent, be beVar, String str) throws RemoteException;
 
-    public void setRequestedOrientation(int requestedOrientation) {
-        this.fD.setRequestedOrientation(requestedOrientation);
-    }
+    void mo1230a(be beVar, String str) throws RemoteException;
+
+    void mo1231a(LocationRequest locationRequest, PendingIntent pendingIntent) throws RemoteException;
+
+    void mo1232a(LocationRequest locationRequest, C0197a c0197a) throws RemoteException;
+
+    void mo1233a(C0197a c0197a) throws RemoteException;
+
+    void mo1234a(List<bi> list, PendingIntent pendingIntent, be beVar, String str) throws RemoteException;
+
+    void mo1235a(String[] strArr, be beVar, String str) throws RemoteException;
+
+    Location aQ() throws RemoteException;
+
+    void removeActivityUpdates(PendingIntent pendingIntent) throws RemoteException;
+
+    void setMockLocation(Location location) throws RemoteException;
+
+    void setMockMode(boolean z) throws RemoteException;
 }

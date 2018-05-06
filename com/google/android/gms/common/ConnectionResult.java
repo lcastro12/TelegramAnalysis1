@@ -3,10 +3,10 @@ package com.google.android.gms.common;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.IntentSender.SendIntentException;
-import com.google.android.gms.internal.dl;
+import com.google.android.gms.internal.C0191r;
 
 public final class ConnectionResult {
-    public static final int DATE_INVALID = 12;
+    public static final ConnectionResult f9B = new ConnectionResult(0, null);
     public static final int DEVELOPER_ERROR = 10;
     public static final int INTERNAL_ERROR = 8;
     public static final int INVALID_ACCOUNT = 5;
@@ -19,17 +19,16 @@ public final class ConnectionResult {
     public static final int SERVICE_VERSION_UPDATE_REQUIRED = 2;
     public static final int SIGN_IN_REQUIRED = 4;
     public static final int SUCCESS = 0;
-    public static final ConnectionResult iP = new ConnectionResult(0, null);
-    private final int iC;
     private final PendingIntent mPendingIntent;
+    private final int f10p;
 
     public ConnectionResult(int statusCode, PendingIntent pendingIntent) {
-        this.iC = statusCode;
+        this.f10p = statusCode;
         this.mPendingIntent = pendingIntent;
     }
 
-    private String aH() {
-        switch (this.iC) {
+    private String m17f() {
+        switch (this.f10p) {
             case 0:
                 return "SUCCESS";
             case 1:
@@ -55,12 +54,12 @@ public final class ConnectionResult {
             case 11:
                 return "LICENSE_CHECK_FAILED";
             default:
-                return "unknown status code " + this.iC;
+                return "unknown status code " + this.f10p;
         }
     }
 
     public int getErrorCode() {
-        return this.iC;
+        return this.f10p;
     }
 
     public PendingIntent getResolution() {
@@ -68,11 +67,11 @@ public final class ConnectionResult {
     }
 
     public boolean hasResolution() {
-        return (this.iC == 0 || this.mPendingIntent == null) ? false : true;
+        return (this.f10p == 0 || this.mPendingIntent == null) ? false : true;
     }
 
     public boolean isSuccess() {
-        return this.iC == 0;
+        return this.f10p == 0;
     }
 
     public void startResolutionForResult(Activity activity, int requestCode) throws SendIntentException {
@@ -82,6 +81,6 @@ public final class ConnectionResult {
     }
 
     public String toString() {
-        return dl.m387d(this).m386a("statusCode", aH()).m386a("resolution", this.mPendingIntent).toString();
+        return C0191r.m514c(this).m512a("statusCode", m17f()).m512a("resolution", this.mPendingIntent).toString();
     }
 }

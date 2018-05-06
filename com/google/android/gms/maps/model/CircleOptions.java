@@ -3,50 +3,50 @@ package com.google.android.gms.maps.model;
 import android.os.Parcel;
 import android.support.v4.view.ViewCompat;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0227r;
+import com.google.android.gms.maps.internal.C0215q;
 
 public final class CircleOptions implements SafeParcelable {
     public static final CircleOptionsCreator CREATOR = new CircleOptionsCreator();
-    private final int iM;
-    private LatLng qf;
-    private double qg;
-    private float qh;
-    private int qi;
-    private int qj;
-    private float qk;
-    private boolean ql;
+    private final int ab;
+    private LatLng gW;
+    private double gX;
+    private float gY;
+    private int gZ;
+    private int ha;
+    private float hb;
+    private boolean hc;
 
     public CircleOptions() {
-        this.qf = null;
-        this.qg = 0.0d;
-        this.qh = 10.0f;
-        this.qi = ViewCompat.MEASURED_STATE_MASK;
-        this.qj = 0;
-        this.qk = 0.0f;
-        this.ql = true;
-        this.iM = 1;
+        this.gW = null;
+        this.gX = 0.0d;
+        this.gY = 10.0f;
+        this.gZ = ViewCompat.MEASURED_STATE_MASK;
+        this.ha = 0;
+        this.hb = 0.0f;
+        this.hc = true;
+        this.ab = 1;
     }
 
     CircleOptions(int versionCode, LatLng center, double radius, float strokeWidth, int strokeColor, int fillColor, float zIndex, boolean visible) {
-        this.qf = null;
-        this.qg = 0.0d;
-        this.qh = 10.0f;
-        this.qi = ViewCompat.MEASURED_STATE_MASK;
-        this.qj = 0;
-        this.qk = 0.0f;
-        this.ql = true;
-        this.iM = versionCode;
-        this.qf = center;
-        this.qg = radius;
-        this.qh = strokeWidth;
-        this.qi = strokeColor;
-        this.qj = fillColor;
-        this.qk = zIndex;
-        this.ql = visible;
+        this.gW = null;
+        this.gX = 0.0d;
+        this.gY = 10.0f;
+        this.gZ = ViewCompat.MEASURED_STATE_MASK;
+        this.ha = 0;
+        this.hb = 0.0f;
+        this.hc = true;
+        this.ab = versionCode;
+        this.gW = center;
+        this.gX = radius;
+        this.gY = strokeWidth;
+        this.gZ = strokeColor;
+        this.ha = fillColor;
+        this.hb = zIndex;
+        this.hc = visible;
     }
 
     public CircleOptions center(LatLng center) {
-        this.qf = center;
+        this.gW = center;
         return this;
     }
 
@@ -55,72 +55,72 @@ public final class CircleOptions implements SafeParcelable {
     }
 
     public CircleOptions fillColor(int color) {
-        this.qj = color;
+        this.ha = color;
         return this;
     }
 
     public LatLng getCenter() {
-        return this.qf;
+        return this.gW;
     }
 
     public int getFillColor() {
-        return this.qj;
+        return this.ha;
     }
 
     public double getRadius() {
-        return this.qg;
+        return this.gX;
     }
 
     public int getStrokeColor() {
-        return this.qi;
+        return this.gZ;
     }
 
     public float getStrokeWidth() {
-        return this.qh;
-    }
-
-    int getVersionCode() {
-        return this.iM;
+        return this.gY;
     }
 
     public float getZIndex() {
-        return this.qk;
+        return this.hb;
+    }
+
+    int m1085i() {
+        return this.ab;
     }
 
     public boolean isVisible() {
-        return this.ql;
+        return this.hc;
     }
 
     public CircleOptions radius(double radius) {
-        this.qg = radius;
+        this.gX = radius;
         return this;
     }
 
     public CircleOptions strokeColor(int color) {
-        this.qi = color;
+        this.gZ = color;
         return this;
     }
 
     public CircleOptions strokeWidth(float width) {
-        this.qh = width;
+        this.gY = width;
         return this;
     }
 
     public CircleOptions visible(boolean visible) {
-        this.ql = visible;
+        this.hc = visible;
         return this;
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        if (C0227r.cK()) {
-            C0229b.m746a(this, out, flags);
+        if (C0215q.bn()) {
+            C0217b.m575a(this, out, flags);
         } else {
-            CircleOptionsCreator.m734a(this, out, flags);
+            CircleOptionsCreator.m563a(this, out, flags);
         }
     }
 
     public CircleOptions zIndex(float zIndex) {
-        this.qk = zIndex;
+        this.hb = zIndex;
         return this;
     }
 }

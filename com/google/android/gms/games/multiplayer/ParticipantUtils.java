@@ -1,16 +1,11 @@
 package com.google.android.gms.games.multiplayer;
 
 import com.google.android.gms.games.Player;
-import com.google.android.gms.internal.dm;
+import com.google.android.gms.internal.C0192s;
 import java.util.ArrayList;
 
 public final class ParticipantUtils {
     private ParticipantUtils() {
-    }
-
-    public static boolean m153Q(String str) {
-        dm.m388a((Object) str, (Object) "Participant ID must not be null");
-        return str.startsWith("p_");
     }
 
     public static String getParticipantId(ArrayList<Participant> participants, String playerId) {
@@ -23,5 +18,10 @@ public final class ParticipantUtils {
             }
         }
         return null;
+    }
+
+    public static boolean m151z(String str) {
+        C0192s.m518b((Object) str, (Object) "Participant ID must not be null");
+        return str.startsWith("p_");
     }
 }

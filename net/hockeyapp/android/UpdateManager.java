@@ -1,34 +1,65 @@
 package net.hockeyapp.android;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Fragment;
+import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.AsyncTask.Status;
-import android.os.Build.VERSION;
+import android.text.TextUtils;
 import java.lang.ref.WeakReference;
 import java.util.Date;
 import net.hockeyapp.android.tasks.CheckUpdateTask;
+import net.hockeyapp.android.tasks.CheckUpdateTaskWithUI;
+import net.hockeyapp.android.utils.AsyncTaskUtils;
+import net.hockeyapp.android.utils.Util;
 
 public class UpdateManager {
     private static UpdateManagerListener lastListener = null;
     private static CheckUpdateTask updateTask = null;
 
     public static void register(Activity activity, String appIdentifier) {
-        register(activity, appIdentifier, null);
+        register(activity, appIdentifier, true);
+    }
+
+    public static void register(Activity activity, String appIdentifier, boolean isDialogRequired) {
+        register(activity, appIdentifier, null, isDialogRequired);
     }
 
     public static void register(Activity activity, String appIdentifier, UpdateManagerListener listener) {
-        register(activity, Constants.BASE_URL, appIdentifier, listener);
+        register(activity, Constants.BASE_URL, appIdentifier, listener, true);
+    }
+
+    public static void register(Activity activity, String appIdentifier, UpdateManagerListener listener, boolean isDialogRequired) {
+        register(activity, Constants.BASE_URL, appIdentifier, listener, isDialogRequired);
     }
 
     public static void register(Activity activity, String urlString, String appIdentifier, UpdateManagerListener listener) {
+        register(activity, urlString, appIdentifier, listener, true);
+    }
+
+    public static void register(Activity activity, String urlString, String appIdentifier, UpdateManagerListener listener, boolean isDialogRequired) {
+        appIdentifier = Util.sanitizeAppIdentifier(appIdentifier);
         lastListener = listener;
         WeakReference<Activity> weakActivity = new WeakReference(activity);
-        if ((!fragmentsSupported().booleanValue() || !dialogShown(weakActivity)) && !checkExpiryDate(weakActivity, listener) && !installedFromMarket(weakActivity)) {
-            startUpdateTask(weakActivity, urlString, appIdentifier, listener);
+        if ((!Util.fragmentsSupported().booleanValue() || !dialogShown(weakActivity)) && !checkExpiryDate(weakActivity, listener)) {
+            if ((listener != null && listener.canUpdateInMarket()) || !installedFromMarket(weakActivity)) {
+                startUpdateTask(weakActivity, urlString, appIdentifier, listener, isDialogRequired);
+            }
+        }
+    }
+
+    public static void registerForBackground(Context appContext, String appIdentifier, UpdateManagerListener listener) {
+        registerForBackground(appContext, Constants.BASE_URL, appIdentifier, listener);
+    }
+
+    public static void registerForBackground(Context appContext, String urlString, String appIdentifier, UpdateManagerListener listener) {
+        appIdentifier = Util.sanitizeAppIdentifier(appIdentifier);
+        lastListener = listener;
+        WeakReference<Context> weakContext = new WeakReference(appContext);
+        if (!checkExpiryDateForBackground(listener)) {
+            if ((listener != null && listener.canUpdateInMarket()) || !installedFromMarket(weakContext)) {
+                startUpdateTaskForBackground(weakContext, urlString, appIdentifier, listener);
+            }
         }
     }
 
@@ -42,36 +73,32 @@ public class UpdateManager {
     }
 
     private static boolean checkExpiryDate(WeakReference<Activity> weakActivity, UpdateManagerListener listener) {
-        boolean result = false;
         boolean handle = false;
-        if (listener != null) {
-            Date expiryDate = listener.getExpiryDate();
-            result = expiryDate != null && new Date().compareTo(expiryDate) > 0;
-            if (result) {
-                handle = listener.onBuildExpired();
-            }
+        boolean hasExpired = checkExpiryDateForBackground(listener);
+        if (hasExpired) {
+            handle = listener.onBuildExpired();
         }
-        if (result && handle) {
+        if (hasExpired && handle) {
             startExpiryInfoIntent(weakActivity);
         }
-        return result;
+        return hasExpired;
     }
 
-    private static boolean installedFromMarket(WeakReference<Activity> weakActivity) {
-        Activity activity = (Activity) weakActivity.get();
-        if (activity == null) {
+    private static boolean checkExpiryDateForBackground(UpdateManagerListener listener) {
+        if (listener == null) {
+            return false;
+        }
+        Date expiryDate = listener.getExpiryDate();
+        return expiryDate != null && new Date().compareTo(expiryDate) > 0;
+    }
+
+    private static boolean installedFromMarket(WeakReference<? extends Context> weakContext) {
+        Context context = (Context) weakContext.get();
+        if (context == null) {
             return false;
         }
         try {
-            String installer = activity.getPackageManager().getInstallerPackageName(activity.getPackageName());
-            if (VERSION.SDK_INT < 9) {
-                boolean result = installer != null && installer.length() > 0;
-                return result;
-            } else if (installer == null || installer.isEmpty()) {
-                return false;
-            } else {
-                return true;
-            }
+            return !TextUtils.isEmpty(context.getPackageManager().getInstallerPackageName(context.getPackageName()));
         } catch (Throwable th) {
             return false;
         }
@@ -89,13 +116,22 @@ public class UpdateManager {
         }
     }
 
-    private static void startUpdateTask(WeakReference<Activity> weakActivity, String urlString, String appIdentifier, UpdateManagerListener listener) {
+    private static void startUpdateTask(WeakReference<Activity> weakActivity, String urlString, String appIdentifier, UpdateManagerListener listener, boolean isDialogRequired) {
         if (updateTask == null || updateTask.getStatus() == Status.FINISHED) {
-            updateTask = new CheckUpdateTask(weakActivity, urlString, appIdentifier, listener);
-            updateTask.execute(new String[0]);
+            updateTask = new CheckUpdateTaskWithUI(weakActivity, urlString, appIdentifier, listener, isDialogRequired);
+            AsyncTaskUtils.execute(updateTask);
             return;
         }
         updateTask.attach(weakActivity);
+    }
+
+    private static void startUpdateTaskForBackground(WeakReference<Context> weakContext, String urlString, String appIdentifier, UpdateManagerListener listener) {
+        if (updateTask == null || updateTask.getStatus() == Status.FINISHED) {
+            updateTask = new CheckUpdateTask(weakContext, urlString, appIdentifier, listener);
+            AsyncTaskUtils.execute(updateTask);
+            return;
+        }
+        updateTask.attach(weakContext);
     }
 
     @TargetApi(11)
@@ -108,36 +144,6 @@ public class UpdateManager {
             return false;
         }
         return true;
-    }
-
-    @SuppressLint({"NewApi"})
-    public static Boolean fragmentsSupported() {
-        try {
-            boolean z;
-            if (VERSION.SDK_INT < 11 || Fragment.class == null) {
-                z = false;
-            } else {
-                z = true;
-            }
-            return Boolean.valueOf(z);
-        } catch (NoClassDefFoundError e) {
-            return Boolean.valueOf(false);
-        }
-    }
-
-    public static Boolean runsOnTablet(WeakReference<Activity> weakActivity) {
-        boolean z = false;
-        if (weakActivity != null) {
-            Activity activity = (Activity) weakActivity.get();
-            if (activity != null) {
-                Configuration configuration = activity.getResources().getConfiguration();
-                if ((configuration.screenLayout & 15) == 3 || (configuration.screenLayout & 15) == 4) {
-                    z = true;
-                }
-                return Boolean.valueOf(z);
-            }
-        }
-        return Boolean.valueOf(false);
     }
 
     public static UpdateManagerListener getLastListener() {

@@ -2,53 +2,53 @@ package com.google.android.gms.location;
 
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.common.internal.safeparcel.C0107a;
-import com.google.android.gms.common.internal.safeparcel.C0107a.C0106a;
-import com.google.android.gms.common.internal.safeparcel.C0108b;
+import com.google.android.gms.common.internal.safeparcel.C0141a;
+import com.google.android.gms.common.internal.safeparcel.C0141a.C0140a;
+import com.google.android.gms.common.internal.safeparcel.C0142b;
 import java.util.List;
 
 public class ActivityRecognitionResultCreator implements Creator<ActivityRecognitionResult> {
     public static final int CONTENT_DESCRIPTION = 0;
 
-    static void m703a(ActivityRecognitionResult activityRecognitionResult, Parcel parcel, int i) {
-        int k = C0108b.m133k(parcel);
-        C0108b.m130b(parcel, 1, activityRecognitionResult.ov, false);
-        C0108b.m131c(parcel, LocationStatusCodes.GEOFENCE_NOT_AVAILABLE, activityRecognitionResult.getVersionCode());
-        C0108b.m116a(parcel, 2, activityRecognitionResult.ow);
-        C0108b.m116a(parcel, 3, activityRecognitionResult.ox);
-        C0108b.m112C(parcel, k);
+    static void m532a(ActivityRecognitionResult activityRecognitionResult, Parcel parcel, int i) {
+        int d = C0142b.m131d(parcel);
+        C0142b.m128b(parcel, 1, activityRecognitionResult.fp, false);
+        C0142b.m129c(parcel, LocationStatusCodes.GEOFENCE_NOT_AVAILABLE, activityRecognitionResult.m1036i());
+        C0142b.m114a(parcel, 2, activityRecognitionResult.fq);
+        C0142b.m114a(parcel, 3, activityRecognitionResult.fr);
+        C0142b.m110C(parcel, d);
     }
 
     public ActivityRecognitionResult createFromParcel(Parcel parcel) {
         long j = 0;
-        int j2 = C0107a.m92j(parcel);
+        int c = C0141a.m81c(parcel);
         int i = 0;
         List list = null;
-        long j3 = 0;
-        while (parcel.dataPosition() < j2) {
-            int i2 = C0107a.m90i(parcel);
-            switch (C0107a.m107y(i2)) {
+        long j2 = 0;
+        while (parcel.dataPosition() < c) {
+            int b = C0141a.m78b(parcel);
+            switch (C0141a.m93m(b)) {
                 case 1:
-                    list = C0107a.m82c(parcel, i2, DetectedActivity.CREATOR);
+                    list = C0141a.m82c(parcel, b, DetectedActivity.CREATOR);
                     break;
                 case 2:
-                    j3 = C0107a.m87g(parcel, i2);
+                    j2 = C0141a.m87g(parcel, b);
                     break;
                 case 3:
-                    j = C0107a.m87g(parcel, i2);
+                    j = C0141a.m87g(parcel, b);
                     break;
                 case LocationStatusCodes.GEOFENCE_NOT_AVAILABLE /*1000*/:
-                    i = C0107a.m86f(parcel, i2);
+                    i = C0141a.m86f(parcel, b);
                     break;
                 default:
-                    C0107a.m80b(parcel, i2);
+                    C0141a.m79b(parcel, b);
                     break;
             }
         }
-        if (parcel.dataPosition() == j2) {
-            return new ActivityRecognitionResult(i, list, j3, j);
+        if (parcel.dataPosition() == c) {
+            return new ActivityRecognitionResult(i, list, j2, j);
         }
-        throw new C0106a("Overread allowed size end=" + j2, parcel);
+        throw new C0140a("Overread allowed size end=" + c, parcel);
     }
 
     public ActivityRecognitionResult[] newArray(int size) {

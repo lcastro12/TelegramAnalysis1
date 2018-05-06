@@ -3,23 +3,23 @@ package com.google.android.gms.location;
 import android.content.Intent;
 import android.os.Parcel;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.internal.dm;
+import com.google.android.gms.internal.C0192s;
 import java.util.Collections;
 import java.util.List;
 
 public class ActivityRecognitionResult implements SafeParcelable {
     public static final ActivityRecognitionResultCreator CREATOR = new ActivityRecognitionResultCreator();
     public static final String EXTRA_ACTIVITY_RESULT = "com.google.android.location.internal.EXTRA_ACTIVITY_RESULT";
-    private final int iM;
-    List<DetectedActivity> ov;
-    long ow;
-    long ox;
+    private final int ab;
+    List<DetectedActivity> fp;
+    long fq;
+    long fr;
 
     public ActivityRecognitionResult(int versionCode, List<DetectedActivity> probableActivities, long timeMillis, long elapsedRealtimeMillis) {
-        this.iM = 1;
-        this.ov = probableActivities;
-        this.ow = timeMillis;
-        this.ox = elapsedRealtimeMillis;
+        this.ab = 1;
+        this.fp = probableActivities;
+        this.fq = timeMillis;
+        this.fr = elapsedRealtimeMillis;
     }
 
     public ActivityRecognitionResult(DetectedActivity mostProbableActivity, long time, long elapsedRealtimeMillis) {
@@ -28,11 +28,11 @@ public class ActivityRecognitionResult implements SafeParcelable {
 
     public ActivityRecognitionResult(List<DetectedActivity> probableActivities, long time, long elapsedRealtimeMillis) {
         boolean z = probableActivities != null && probableActivities.size() > 0;
-        dm.m391b(z, "Must have at least 1 detected activity");
-        this.iM = 1;
-        this.ov = probableActivities;
-        this.ow = time;
-        this.ox = elapsedRealtimeMillis;
+        C0192s.m519b(z, (Object) "Must have at least 1 detected activity");
+        this.ab = 1;
+        this.fp = probableActivities;
+        this.fq = time;
+        this.fr = elapsedRealtimeMillis;
     }
 
     public static ActivityRecognitionResult extractResult(Intent intent) {
@@ -48,7 +48,7 @@ public class ActivityRecognitionResult implements SafeParcelable {
     }
 
     public int getActivityConfidence(int activityType) {
-        for (DetectedActivity detectedActivity : this.ov) {
+        for (DetectedActivity detectedActivity : this.fp) {
             if (detectedActivity.getType() == activityType) {
                 return detectedActivity.getConfidence();
             }
@@ -57,30 +57,30 @@ public class ActivityRecognitionResult implements SafeParcelable {
     }
 
     public long getElapsedRealtimeMillis() {
-        return this.ox;
+        return this.fr;
     }
 
     public DetectedActivity getMostProbableActivity() {
-        return (DetectedActivity) this.ov.get(0);
+        return (DetectedActivity) this.fp.get(0);
     }
 
     public List<DetectedActivity> getProbableActivities() {
-        return this.ov;
+        return this.fp;
     }
 
     public long getTime() {
-        return this.ow;
+        return this.fq;
     }
 
-    public int getVersionCode() {
-        return this.iM;
+    public int m1036i() {
+        return this.ab;
     }
 
     public String toString() {
-        return "ActivityRecognitionResult [probableActivities=" + this.ov + ", timeMillis=" + this.ow + ", elapsedRealtimeMillis=" + this.ox + "]";
+        return "ActivityRecognitionResult [probableActivities=" + this.fp + ", timeMillis=" + this.fq + ", elapsedRealtimeMillis=" + this.fr + "]";
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        ActivityRecognitionResultCreator.m703a(this, out, flags);
+        ActivityRecognitionResultCreator.m532a(this, out, flags);
     }
 }

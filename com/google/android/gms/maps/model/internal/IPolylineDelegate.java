@@ -10,17 +10,17 @@ import java.util.List;
 
 public interface IPolylineDelegate extends IInterface {
 
-    public static abstract class C0825a extends Binder implements IPolylineDelegate {
+    public static abstract class C1415a extends Binder implements IPolylineDelegate {
 
-        private static class C0824a implements IPolylineDelegate {
-            private IBinder dG;
+        private static class C1414a implements IPolylineDelegate {
+            private IBinder f122a;
 
-            C0824a(IBinder iBinder) {
-                this.dG = iBinder;
+            C1414a(IBinder iBinder) {
+                this.f122a = iBinder;
             }
 
             public IBinder asBinder() {
-                return this.dG;
+                return this.f122a;
             }
 
             public boolean equalsRemote(IPolylineDelegate other) throws RemoteException {
@@ -30,7 +30,7 @@ public interface IPolylineDelegate extends IInterface {
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
                     obtain.writeStrongBinder(other != null ? other.asBinder() : null);
-                    this.dG.transact(15, obtain, obtain2, 0);
+                    this.f122a.transact(15, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -49,7 +49,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(8, obtain, obtain2, 0);
+                    this.f122a.transact(8, obtain, obtain2, 0);
                     obtain2.readException();
                     int readInt = obtain2.readInt();
                     return readInt;
@@ -64,7 +64,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(2, obtain, obtain2, 0);
+                    this.f122a.transact(2, obtain, obtain2, 0);
                     obtain2.readException();
                     String readString = obtain2.readString();
                     return readString;
@@ -79,7 +79,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(4, obtain, obtain2, 0);
+                    this.f122a.transact(4, obtain, obtain2, 0);
                     obtain2.readException();
                     List<LatLng> createTypedArrayList = obtain2.createTypedArrayList(LatLng.CREATOR);
                     return createTypedArrayList;
@@ -94,7 +94,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(6, obtain, obtain2, 0);
+                    this.f122a.transact(6, obtain, obtain2, 0);
                     obtain2.readException();
                     float readFloat = obtain2.readFloat();
                     return readFloat;
@@ -109,7 +109,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(10, obtain, obtain2, 0);
+                    this.f122a.transact(10, obtain, obtain2, 0);
                     obtain2.readException();
                     float readFloat = obtain2.readFloat();
                     return readFloat;
@@ -124,7 +124,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(16, obtain, obtain2, 0);
+                    this.f122a.transact(16, obtain, obtain2, 0);
                     obtain2.readException();
                     int readInt = obtain2.readInt();
                     return readInt;
@@ -140,7 +140,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(14, obtain, obtain2, 0);
+                    this.f122a.transact(14, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -160,7 +160,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(12, obtain, obtain2, 0);
+                    this.f122a.transact(12, obtain, obtain2, 0);
                     obtain2.readException();
                     if (obtain2.readInt() != 0) {
                         z = true;
@@ -179,7 +179,7 @@ public interface IPolylineDelegate extends IInterface {
                 Parcel obtain2 = Parcel.obtain();
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    this.dG.transact(1, obtain, obtain2, 0);
+                    this.f122a.transact(1, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -193,7 +193,7 @@ public interface IPolylineDelegate extends IInterface {
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
                     obtain.writeInt(color);
-                    this.dG.transact(7, obtain, obtain2, 0);
+                    this.f122a.transact(7, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -211,7 +211,7 @@ public interface IPolylineDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(13, obtain, obtain2, 0);
+                    this.f122a.transact(13, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -225,7 +225,7 @@ public interface IPolylineDelegate extends IInterface {
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
                     obtain.writeTypedList(points);
-                    this.dG.transact(3, obtain, obtain2, 0);
+                    this.f122a.transact(3, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -243,7 +243,7 @@ public interface IPolylineDelegate extends IInterface {
                         i = 1;
                     }
                     obtain.writeInt(i);
-                    this.dG.transact(11, obtain, obtain2, 0);
+                    this.f122a.transact(11, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -257,7 +257,7 @@ public interface IPolylineDelegate extends IInterface {
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
                     obtain.writeFloat(width);
-                    this.dG.transact(5, obtain, obtain2, 0);
+                    this.f122a.transact(5, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -271,7 +271,7 @@ public interface IPolylineDelegate extends IInterface {
                 try {
                     obtain.writeInterfaceToken("com.google.android.gms.maps.model.internal.IPolylineDelegate");
                     obtain.writeFloat(zIndex);
-                    this.dG.transact(9, obtain, obtain2, 0);
+                    this.f122a.transact(9, obtain, obtain2, 0);
                     obtain2.readException();
                 } finally {
                     obtain2.recycle();
@@ -280,12 +280,12 @@ public interface IPolylineDelegate extends IInterface {
             }
         }
 
-        public static IPolylineDelegate ah(IBinder iBinder) {
+        public static IPolylineDelegate m1105S(IBinder iBinder) {
             if (iBinder == null) {
                 return null;
             }
             IInterface queryLocalInterface = iBinder.queryLocalInterface("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-            return (queryLocalInterface == null || !(queryLocalInterface instanceof IPolylineDelegate)) ? new C0824a(iBinder) : (IPolylineDelegate) queryLocalInterface;
+            return (queryLocalInterface == null || !(queryLocalInterface instanceof IPolylineDelegate)) ? new C1414a(iBinder) : (IPolylineDelegate) queryLocalInterface;
         }
 
         public boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
@@ -385,7 +385,7 @@ public interface IPolylineDelegate extends IInterface {
                     return true;
                 case 15:
                     data.enforceInterface("com.google.android.gms.maps.model.internal.IPolylineDelegate");
-                    isVisible = equalsRemote(C0825a.ah(data.readStrongBinder()));
+                    isVisible = equalsRemote(C1415a.m1105S(data.readStrongBinder()));
                     reply.writeNoException();
                     if (isVisible) {
                         i = 1;

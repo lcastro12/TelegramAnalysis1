@@ -1,44 +1,71 @@
 package com.google.android.gms.internal;
 
-import java.util.Collections;
-import java.util.List;
+import android.os.Parcel;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.safeparcel.C0141a;
+import com.google.android.gms.common.internal.safeparcel.C0141a.C0140a;
+import com.google.android.gms.common.internal.safeparcel.C0142b;
+import com.google.android.gms.internal.cc.C1713a;
+import java.util.HashSet;
+import java.util.Set;
 
-public final class ce {
-    public final List<String> eW;
-    public final List<String> eX;
-    public final int errorCode;
-    public final cq fU;
-    public final long fa;
-    public final ao fm;
-    public final ax fn;
-    public final String fo;
-    public final ar fp;
-    public final C0770v gB;
-    public final String gE;
-    public final long gH;
-    public final boolean gI;
-    public final long gJ;
-    public final List<String> gK;
-    public final ap hA;
-    public final int orientation;
+public class ce implements Creator<C1713a> {
+    static void m425a(C1713a c1713a, Parcel parcel, int i) {
+        int d = C0142b.m131d(parcel);
+        Set bH = c1713a.bH();
+        if (bH.contains(Integer.valueOf(1))) {
+            C0142b.m129c(parcel, 1, c1713a.m1291i());
+        }
+        if (bH.contains(Integer.valueOf(2))) {
+            C0142b.m129c(parcel, 2, c1713a.getMax());
+        }
+        if (bH.contains(Integer.valueOf(3))) {
+            C0142b.m129c(parcel, 3, c1713a.getMin());
+        }
+        C0142b.m110C(parcel, d);
+    }
 
-    public ce(C0770v c0770v, cq cqVar, List<String> list, int i, List<String> list2, List<String> list3, int i2, long j, String str, boolean z, ao aoVar, ax axVar, String str2, ap apVar, ar arVar, long j2, long j3) {
-        this.gB = c0770v;
-        this.fU = cqVar;
-        this.eW = list != null ? Collections.unmodifiableList(list) : null;
-        this.errorCode = i;
-        this.eX = list2 != null ? Collections.unmodifiableList(list2) : null;
-        this.gK = list3 != null ? Collections.unmodifiableList(list3) : null;
-        this.orientation = i2;
-        this.fa = j;
-        this.gE = str;
-        this.gI = z;
-        this.fm = aoVar;
-        this.fn = axVar;
-        this.fo = str2;
-        this.hA = apVar;
-        this.fp = arVar;
-        this.gJ = j2;
-        this.gH = j3;
+    public C1713a[] m426Z(int i) {
+        return new C1713a[i];
+    }
+
+    public /* synthetic */ Object createFromParcel(Parcel x0) {
+        return m427z(x0);
+    }
+
+    public /* synthetic */ Object[] newArray(int x0) {
+        return m426Z(x0);
+    }
+
+    public C1713a m427z(Parcel parcel) {
+        int i = 0;
+        int c = C0141a.m81c(parcel);
+        Set hashSet = new HashSet();
+        int i2 = 0;
+        int i3 = 0;
+        while (parcel.dataPosition() < c) {
+            int b = C0141a.m78b(parcel);
+            switch (C0141a.m93m(b)) {
+                case 1:
+                    i3 = C0141a.m86f(parcel, b);
+                    hashSet.add(Integer.valueOf(1));
+                    break;
+                case 2:
+                    i2 = C0141a.m86f(parcel, b);
+                    hashSet.add(Integer.valueOf(2));
+                    break;
+                case 3:
+                    i = C0141a.m86f(parcel, b);
+                    hashSet.add(Integer.valueOf(3));
+                    break;
+                default:
+                    C0141a.m79b(parcel, b);
+                    break;
+            }
+        }
+        if (parcel.dataPosition() == c) {
+            return new C1713a(hashSet, i3, i2, i);
+        }
+        throw new C0140a("Overread allowed size end=" + c, parcel);
     }
 }

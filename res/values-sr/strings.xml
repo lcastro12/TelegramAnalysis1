@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="abc_action_bar_home_description">Одлазак на Почетну</string>
-    <string name="abc_action_bar_up_description">Кретање нагоре</string>
-    <string name="abc_action_menu_overflow_description">Још опција</string>
-    <string name="abc_action_mode_done">Готово</string>
-    <string name="abc_activity_chooser_view_see_all">Прикажи све</string>
-    <string name="abc_activitychooserview_choose_application">Избор апликације</string>
-    <string name="abc_searchview_description_clear">Брисање упита</string>
-    <string name="abc_searchview_description_query">Упит за претрагу</string>
-    <string name="abc_searchview_description_search">Претрага</string>
-    <string name="abc_searchview_description_submit">Слање упита</string>
-    <string name="abc_searchview_description_voice">Гласовна претрага</string>
-    <string name="abc_shareactionprovider_share_with">Дели са</string>
-    <string name="abc_shareactionprovider_share_with_application">Дели са апликацијом %s</string>
     <string name="auth_client_needs_enabling_title">Апликација захтева да Google Play услуге буду омогућене.</string>
     <string name="auth_client_needs_installation_title">Апликација захтева инсталирање Google Play услуга.</string>
     <string name="auth_client_needs_update_title">Апликација захтева ажурирање Google Play услуга.</string>
@@ -31,7 +18,6 @@
     <string name="common_google_play_services_network_error_text">За повезивање са Google Play услугама потребна је веза за пренос података.</string>
     <string name="common_google_play_services_network_error_title">Грешка на мрежи</string>
     <string name="common_google_play_services_unknown_issue">Непознат проблем са Google Play услугама.</string>
-    <string name="common_google_play_services_unsupported_date_text">Изгледа да су подаци на уређају нетачни. Проверите датум на уређају.</string>
     <string name="common_google_play_services_unsupported_text">Google Play услуге, које су потребне за функционисање неких од апликација, нису подржане на уређају. Контактирајте произвођача да бисте добили помоћ.</string>
     <string name="common_google_play_services_unsupported_title">Google Play услуге</string>
     <string name="common_google_play_services_update_button">Ажурирај</string>
