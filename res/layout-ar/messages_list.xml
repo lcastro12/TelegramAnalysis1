@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+    <ListView android:id="@+id/messages_list_view" android:fadingEdge="UNKNOWN_DATA_0x0" android:fadingEdgeLength="0dp" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="match_parent" android:divider="@drawable/messages_list_divider" android:dividerHeight="1px" android:layout_alignParentLeft="true" android:layout_alignParentTop="true" android:layout_alignParentBottom="true" android:verticalScrollbarPosition="left" />
+    <TextView android:textSize="24dp" android:textColor="#808080" android:gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:id="@+id/searchEmptyView" android:visibility="invisible" android:layout_width="match_parent" android:layout_height="match_parent" android:text="@string/NoResult" />
+    <LinearLayout android:gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:orientation="vertical" android:id="@+id/list_empty_view" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_centerInParent="true">
+        <TextView android:textSize="24dp" android:textColor="#959595" android:id="@+id/list_empty_view_text1" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/NoChats" />
+        <TextView android:textSize="15dp" android:textColor="#959595" android:gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:id="@+id/list_empty_view_text2" android:paddingTop="6dp" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/NoChatsHelp" android:lineSpacingExtra="2dp" />
+    </LinearLayout>
+    <LinearLayout android:gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:orientation="vertical" android:id="@+id/progressLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent">
+        <ProgressBar android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </LinearLayout>
+</RelativeLayout>

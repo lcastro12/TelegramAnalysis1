@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:orientation="vertical" android:paddingLeft="16dp" android:paddingTop="8dp" android:paddingRight="16dp" android:layout_width="match_parent" android:layout_height="match_parent">
+        <include layout="@layout/settings_section_layout" />
+        <EditText android:textSize="19dp" android:textColor="#000000" android:textColorHint="#a3a3a3" android:gravity="left|right|center_horizontal|fill_horizontal|center|fill|start|end" android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/first_name_field" android:paddingLeft="15dp" android:paddingRight="15dp" android:paddingBottom="15dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="15dp" android:hint="@string/GroupName" android:maxLines="3" android:inputType="text|textCapCharacters|textCapWords|textCapSentences|textAutoCorrect|textAutoComplete|textMultiLine|textImeMultiLine|textNoSuggestions|textUri|textEmailAddress|textEmailSubject|textShortMessage|textLongMessage|textPersonName|textPostalAddress|textPassword|textVisiblePassword|textWebEditText|textFilter|textPhonetic|textWebEmailAddress|textWebPassword|phone" android:imeOptions="actionGo|actionSearch|actionSend|actionNext|actionDone|actionPrevious" android:textCursorDrawable="0x0" />
+    </LinearLayout>
+</RelativeLayout>

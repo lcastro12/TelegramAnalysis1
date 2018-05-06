@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res-auto">
+    <item sabd:icon="@drawable/ic_ab_location" sabd:id="@+id/map_to_my_location" sabd:title="@string/MyLocation" sabd:showAsAction="always" />
+    <item sabd:id="@+id/map_list_menu_map" sabd:title="@string/Map" />
+    <item sabd:id="@+id/map_list_menu_satellite" sabd:title="@string/Satellite" />
+    <item sabd:id="@+id/map_list_menu_hybrid" sabd:title="@string/Hybrid" />
+</menu>

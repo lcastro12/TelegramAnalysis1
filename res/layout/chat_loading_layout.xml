@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:paddingTop="4dp" android:paddingBottom="4dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+    <FrameLayout android:gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:layout_gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:id="@+id/progressLayout" android:layout_width="UNKNOWN_DATA_0x2401" android:layout_height="UNKNOWN_DATA_0x2401">
+        <ProgressBar android:layout_gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:id="@+id/center_progress" android:layout_width="UNKNOWN_DATA_0x2001" android:layout_height="UNKNOWN_DATA_0x2001" android:indeterminate="true" android:indeterminateDrawable="@drawable/loading_animation" android:indeterminateDuration="1500" android:indeterminateBehavior="repeat" />
+    </FrameLayout>
+</FrameLayout>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="UNKNOWN_DATA_0x6401" android:layout_height="UNKNOWN_DATA_0x6601">
+    <org.telegram.ui.Views.BackupImageView android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@id/image" android:background="#5a475866" android:layout_width="UNKNOWN_DATA_0x6401" android:layout_height="UNKNOWN_DATA_0x6401" android:scaleType="centerCrop" />
+    <FrameLayout android:id="@+id/selection" android:background="@drawable/wall_selection" android:layout_width="UNKNOWN_DATA_0x6401" android:layout_height="UNKNOWN_DATA_0x6601" /> />

@@ -1,0 +1,22 @@
+!!brut.androlib.meta.MetaInfo
+apkFileName: telegram-1-3-16-en-ar-android.apk
+compressionType: false
+doNotCompress:
+- arsc
+isFrameworkApk: false
+packageInfo:
+  forcedPackageId: '127'
+  renameManifestPackage: null
+sdkInfo:
+  minSdkVersion: '8'
+  targetSdkVersion: '19'
+sharedLibrary: false
+unknownFiles: {}
+usesFramework:
+  ids:
+  - 1
+  tag: null
+version: 2.3.0
+versionInfo:
+  versionCode: '141'
+  versionName: 1.3.16

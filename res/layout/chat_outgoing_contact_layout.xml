@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:paddingTop="1dp" android:paddingBottom="1dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+    <LinearLayout android:layout_gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:orientation="horizontal" android:id="@+id/chat_bubble_layout" android:layout_width="wrap_content" android:layout_height="UNKNOWN_DATA_0x4501" android:layout_marginLeft="40dp">
+        <FrameLayout android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/add_contact_view" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="8dp"
+            <FrameLayout android:layout_gravity="left|right|center_horizontal|fill_horizontal|center|fill|start|end" android:background="#aa70b15c" android:paddingLeft="8dp" android:layout_width="UNKNOWN_DATA_0x101" android:layout_height="UNKNOWN_DATA_0x3601" />
+            <ImageView android:id="@+id/add_contact_button" android:paddingLeft="4dp" android:layout_width="UNKNOWN_DATA_0x2801" android:layout_height="UNKNOWN_DATA_0x3601" android:layout_marginRight="8dp" android:src="@drawable/ic_ab_add_member" android:scaleType="center" />
+        </FrameLayout>
+        <FrameLayout android:id="@+id/shared_layout" android:layout_width="UNKNOWN_DATA_0x1" android:layout_height="UNKNOWN_DATA_0x3a01" android:layout_weight="1.0">
+            <org.telegram.ui.Views.BackupImageView android:id="@+id/contact_avatar" android:layout_width="UNKNOWN_DATA_0x2a01" android:layout_height="UNKNOWN_DATA_0x2a01" />
+            <TextView android:textSize="15dp" android:ellipsize="end" android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/chat_user_group_name" android:paddingLeft="51dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:lines="1" android:scrollHorizontally="true" android:singleLine="true" />
+            <TextView android:textSize="15dp" android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/phone_text_view" android:paddingLeft="51dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp" android:maxLines="1" />
+            <LinearLayout android:layout_gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:id="@+id/chat_time_layout" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <TextView android:textSize="12dp" android:textColor="#70b15c" android:id="@+id/chat_time_text" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                <ImageView android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/chat_row_check" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4dp" android:layout_marginTop="2dp" android:layout_marginRight="-8dp" android:src="@drawable/msg_check" />
+                <ImageView android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/chat_row_halfcheck" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:src="@drawable/msg_halfcheck" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

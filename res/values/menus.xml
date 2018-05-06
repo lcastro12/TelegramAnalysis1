@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <menu name="chat_menu">res/menu/chat_menu.xml</menu>
+    <menu name="contacts_menu">res/menu/contacts_menu.xml</menu>
+    <menu name="gallery_menu">res/menu/gallery_menu.xml</menu>
+    <menu name="gallery_save_only_menu">res/menu/gallery_save_only_menu.xml</menu>
+    <menu name="gallery_video_menu">res/menu/gallery_video_menu.xml</menu>
+    <menu name="group_create_menu">res/menu/group_create_menu.xml</menu>
+    <menu name="group_profile_menu">res/menu/group_profile_menu.xml</menu>
+    <menu name="location_menu">res/menu/location_menu.xml</menu>
+    <menu name="messages_deleteonly_menu">res/menu/messages_deleteonly_menu.xml</menu>
+    <menu name="messages_encrypted_menu">res/menu/messages_encrypted_menu.xml</menu>
+    <menu name="messages_full_menu">res/menu/messages_full_menu.xml</menu>
+    <menu name="messages_list_menu">res/menu/messages_list_menu.xml</menu>
+    <menu name="messages_list_select_menu">res/menu/messages_list_select_menu.xml</menu>
+    <menu name="settings_block_users_bar_menu">res/menu/settings_block_users_bar_menu.xml</menu>
+    <menu name="user_profile_block_menu">res/menu/user_profile_block_menu.xml</menu>
+    <menu name="user_profile_contact_menu">res/menu/user_profile_contact_menu.xml</menu>
+    <menu name="user_profile_menu">res/menu/user_profile_menu.xml</menu>
+</resources>

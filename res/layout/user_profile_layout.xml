@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:orientation="vertical" android:background="#fafafa" android:layout_width="match_parent" android:layout_height="match_parent">
+    <ListView android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/listView" android:paddingLeft="13dp" android:paddingRight="13dp" android:paddingBottom="16dp" android:scrollbars="UNKNOWN_DATA_0x0" android:fadingEdge="UNKNOWN_DATA_0x0" android:fadingEdgeLength="0dp" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="UNKNOWN_DATA_0x1" android:divider="0x0" android:dividerHeight="0dp" android:layout_weight="1.0" />
+    <FrameLayout android:id="@+id/start_secret_button" android:background="@drawable/gray_button" android:layout_width="match_parent" android:layout_height="UNKNOWN_DATA_0x3001">
+        <TextView android:textSize="18dp" android:textColor="#444444" android:gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:layout_gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/StartEncryptedChat" android:drawableLeft="@drawable/bigtimer" />
+    </FrameLayout>
+</LinearLayout>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="UNKNOWN_DATA_0x6401" android:layout_height="UNKNOWN_DATA_0x6401">
+    <org.telegram.ui.Views.BackupImageView android:id="@+id/media_photo_image" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+    <LinearLayout android:gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:orientation="horizontal" android:background="@drawable/phototime" android:paddingLeft="3dp" android:paddingRight="3dp" android:layout_width="wrap_content" android:layout_height="UNKNOWN_DATA_0x1001">
+        <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_video" />
+        <TextView android:textSize="12dp" android:textColor="#ffffff" android:gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/chat_video_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="4dp" android:layout_marginBottom="1dp" />
+    </LinearLayout>
+</FrameLayout>

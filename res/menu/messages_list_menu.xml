@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res-auto">
+    <item sabd:icon="@drawable/ic_ab_search" sabd:id="@+id/messages_list_menu_search" sabd:title="@string/Search" sabd:showAsAction="always|collapseActionView" sabd:actionViewClass="android.support.v7.widget.SearchView" />
+    <item sabd:icon="@drawable/ic_ab_compose" sabd:id="@+id/messages_list_menu_new_messages" sabd:title="@string/NewMessages" sabd:showAsAction="always" />
+    <item sabd:icon="@drawable/ic_ab_other" sabd:id="@+id/chat_menu_attach" sabd:showAsAction="always">
+        <menu>
+            <item sabd:id="@+id/messages_list_menu_new_chat" sabd:title="@string/NewGroup" />
+            <item sabd:id="@+id/messages_list_menu_new_secret_chat" sabd:title="@string/NewSecretChat" />
+            <item sabd:id="@+id/messages_list_menu_contacts" sabd:title="@string/Contacts" />
+            <item sabd:id="@+id/messages_list_menu_settings" sabd:title="@string/Settings" />
+        </menu> />
+</menu>

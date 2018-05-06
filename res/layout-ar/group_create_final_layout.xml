@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout android:layout_gravity="top|bottom|center_vertical|fill_vertical|center|fill" android:id="@+id/top_layout" android:layout_width="match_parent" android:layout_height="wrap_content"
+        <FrameLayout android:layout_gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:layout_width="UNKNOWN_DATA_0x4001" android:layout_height="UNKNOWN_DATA_0x4001" android:layout_marginTop="12dp" android:layout_marginRight="16dp" android:layout_marginBottom="12dp">
+            <org.telegram.ui.Views.BackupImageView android:id="@+id/settings_avatar_image" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/group_blue" />
+            <ImageButton android:id="@+id/settings_change_avatar_button" android:background="@drawable/photo_spinner" android:layout_width="match_parent" android:layout_height="match_parent" />
+        </FrameLayout>
+        <EditText android:textSize="18dp" android:textColor="#000000" android:textColorHint="#a6a6a6" android:gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:layout_gravity="top|bottom|left|right|center_vertical|fill_vertical|center_horizontal|fill_horizontal|center|fill|start|end" android:id="@+id/bubble_input_text" android:paddingTop="0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="16dp" android:layout_marginTop="0dp" android:layout_marginRight="96dp" android:minHeight="52dp" android:hint="@string/EnterGroupNamePlaceholder" android:maxLines="4" android:imeOptions="flagNoExtractUi" android:textCursorDrawable="0x0" />
+    </FrameLayout>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+        <org.telegram.ui.Views.PinnedHeaderListView android:id="@+id/listView" android:paddingLeft="16dp" android:paddingRight="16dp" android:paddingBottom="16dp" android:scrollbars="UNKNOWN_DATA_0x0" android:fadingEdge="UNKNOWN_DATA_0x0" android:fadingEdgeLength="0dp" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="match_parent" android:divider="0x0" android:dividerHeight="0dp" />
+    </FrameLayout>
+</LinearLayout>

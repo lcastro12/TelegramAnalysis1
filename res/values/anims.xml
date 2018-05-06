@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <anim name="abc_fade_in">res/anim/abc_fade_in.xml</anim>
+    <anim name="abc_fade_out">res/anim/abc_fade_out.xml</anim>
+    <anim name="abc_slide_in_bottom">res/anim/abc_slide_in_bottom.xml</anim>
+    <anim name="abc_slide_in_top">res/anim/abc_slide_in_top.xml</anim>
+    <anim name="abc_slide_out_bottom">res/anim/abc_slide_out_bottom.xml</anim>
+    <anim name="abc_slide_out_top">res/anim/abc_slide_out_top.xml</anim>
+    <anim name="icon_anim_fade_in">res/anim/icon_anim_fade_in.xml</anim>
+    <anim name="icon_anim_fade_out">res/anim/icon_anim_fade_out.xml</anim>
+    <anim name="no_anim">res/anim/no_anim.xml</anim>
+    <anim name="no_anim_show">res/anim/no_anim_show.xml</anim>
+    <anim name="scale_in">res/anim/scale_in.xml</anim>
+    <anim name="scale_out">res/anim/scale_out.xml</anim>
+    <anim name="slide_down">res/anim/slide_down.xml</anim>
+    <anim name="slide_left">res/anim/slide_left.xml</anim>
+    <anim name="slide_left_away">res/anim/slide_left_away.xml</anim>
+    <anim name="slide_right">res/anim/slide_right.xml</anim>
+    <anim name="slide_right_away">res/anim/slide_right_away.xml</anim>
+    <anim name="slide_up">res/anim/slide_up.xml</anim>
+</resources>
