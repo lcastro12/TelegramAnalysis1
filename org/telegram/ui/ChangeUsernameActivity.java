@@ -1,24 +1,31 @@
 package org.telegram.ui;
 
-import android.app.AlertDialog.Builder;
-import android.app.ProgressDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.text.Editable;
+import android.text.Selection;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.TextPaint;
+import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import android.widget.Toast;
 import java.util.ArrayList;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -34,58 +41,29 @@ import org.telegram.tgnet.TLRPC.TL_boolTrue;
 import org.telegram.tgnet.TLRPC.TL_error;
 import org.telegram.tgnet.TLRPC.User;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
+import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.LayoutHelper;
 
 public class ChangeUsernameActivity extends BaseFragment {
     private static final int done_button = 1;
-    private int checkReqId = 0;
-    private Runnable checkRunnable = null;
+    private int checkReqId;
+    private Runnable checkRunnable;
     private TextView checkTextView;
     private View doneButton;
-    private EditText firstNameField;
-    private String lastCheckName = null;
-    private boolean lastNameAvailable = false;
+    private EditTextBoldCursor firstNameField;
+    private TextView helpTextView;
+    private boolean ignoreCheck;
+    private CharSequence infoText;
+    private String lastCheckName;
+    private boolean lastNameAvailable;
 
-    class C08182 implements OnTouchListener {
-        C08182() {
-        }
-
-        public boolean onTouch(View v, MotionEvent event) {
-            return true;
-        }
-    }
-
-    class C08193 implements OnEditorActionListener {
-        C08193() {
-        }
-
-        public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-            if (i != 6 || ChangeUsernameActivity.this.doneButton == null) {
-                return false;
-            }
-            ChangeUsernameActivity.this.doneButton.performClick();
-            return true;
-        }
-    }
-
-    class C08204 implements TextWatcher {
-        C08204() {
-        }
-
-        public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-        }
-
-        public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-            ChangeUsernameActivity.this.checkUserName(ChangeUsernameActivity.this.firstNameField.getText().toString(), false);
-        }
-
-        public void afterTextChanged(Editable editable) {
-        }
-    }
-
-    class C15241 extends ActionBarMenuOnItemClick {
-        C15241() {
+    class C11401 extends ActionBarMenuOnItemClick {
+        C11401() {
         }
 
         public void onItemClick(int id) {
@@ -97,23 +75,117 @@ public class ChangeUsernameActivity extends BaseFragment {
         }
     }
 
+    class C11412 implements OnTouchListener {
+        C11412() {
+        }
+
+        public boolean onTouch(View v, MotionEvent event) {
+            return true;
+        }
+    }
+
+    class C11423 implements OnEditorActionListener {
+        C11423() {
+        }
+
+        public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+            if (i != 6 || ChangeUsernameActivity.this.doneButton == null) {
+                return false;
+            }
+            ChangeUsernameActivity.this.doneButton.performClick();
+            return true;
+        }
+    }
+
+    class C11434 implements TextWatcher {
+        C11434() {
+        }
+
+        public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+        }
+
+        public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+            if (!ChangeUsernameActivity.this.ignoreCheck) {
+                ChangeUsernameActivity.this.checkUserName(ChangeUsernameActivity.this.firstNameField.getText().toString(), false);
+            }
+        }
+
+        public void afterTextChanged(Editable editable) {
+            if (ChangeUsernameActivity.this.firstNameField.length() > 0) {
+                String url = "https://" + MessagesController.getInstance(ChangeUsernameActivity.this.currentAccount).linkPrefix + "/" + ChangeUsernameActivity.this.firstNameField.getText();
+                String text = LocaleController.formatString("UsernameHelpLink", C0488R.string.UsernameHelpLink, url);
+                int index = text.indexOf(url);
+                SpannableStringBuilder textSpan = new SpannableStringBuilder(text);
+                if (index >= 0) {
+                    textSpan.setSpan(new LinkSpan(url), index, url.length() + index, 33);
+                }
+                ChangeUsernameActivity.this.helpTextView.setText(TextUtils.concat(new CharSequence[]{ChangeUsernameActivity.this.infoText, "\n\n", textSpan}));
+                return;
+            }
+            ChangeUsernameActivity.this.helpTextView.setText(ChangeUsernameActivity.this.infoText);
+        }
+    }
+
+    private static class LinkMovementMethodMy extends LinkMovementMethod {
+        private LinkMovementMethodMy() {
+        }
+
+        public boolean onTouchEvent(TextView widget, Spannable buffer, MotionEvent event) {
+            try {
+                boolean result = super.onTouchEvent(widget, buffer, event);
+                if (event.getAction() != 1 && event.getAction() != 3) {
+                    return result;
+                }
+                Selection.removeSelection(buffer);
+                return result;
+            } catch (Throwable e) {
+                FileLog.m3e(e);
+                return false;
+            }
+        }
+    }
+
+    public class LinkSpan extends ClickableSpan {
+        private String url;
+
+        public LinkSpan(String value) {
+            this.url = value;
+        }
+
+        public void updateDrawState(TextPaint ds) {
+            super.updateDrawState(ds);
+            ds.setUnderlineText(false);
+        }
+
+        public void onClick(View widget) {
+            try {
+                ((ClipboardManager) ApplicationLoader.applicationContext.getSystemService("clipboard")).setPrimaryClip(ClipData.newPlainText("label", this.url));
+                Toast.makeText(ChangeUsernameActivity.this.getParentActivity(), LocaleController.getString("LinkCopied", C0488R.string.LinkCopied), 0).show();
+            } catch (Throwable e) {
+                FileLog.m3e(e);
+            }
+        }
+    }
+
     public View createView(Context context) {
-        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_ab_back);
         this.actionBar.setAllowOverlayTitle(true);
-        this.actionBar.setTitle(LocaleController.getString("Username", C0553R.string.Username));
-        this.actionBar.setActionBarMenuOnItemClick(new C15241());
-        this.doneButton = this.actionBar.createMenu().addItemWithWidth(1, C0553R.drawable.ic_done, AndroidUtilities.dp(56.0f));
-        User user = MessagesController.getInstance().getUser(Integer.valueOf(UserConfig.getClientUserId()));
+        this.actionBar.setTitle(LocaleController.getString("Username", C0488R.string.Username));
+        this.actionBar.setActionBarMenuOnItemClick(new C11401());
+        this.doneButton = this.actionBar.createMenu().addItemWithWidth(1, C0488R.drawable.ic_done, AndroidUtilities.dp(56.0f));
+        User user = MessagesController.getInstance(this.currentAccount).getUser(Integer.valueOf(UserConfig.getInstance(this.currentAccount).getClientUserId()));
         if (user == null) {
-            user = UserConfig.getCurrentUser();
+            user = UserConfig.getInstance(this.currentAccount).getCurrentUser();
         }
         this.fragmentView = new LinearLayout(context);
-        ((LinearLayout) this.fragmentView).setOrientation(1);
-        this.fragmentView.setOnTouchListener(new C08182());
-        this.firstNameField = new EditText(context);
+        LinearLayout linearLayout = this.fragmentView;
+        linearLayout.setOrientation(1);
+        this.fragmentView.setOnTouchListener(new C11412());
+        this.firstNameField = new EditTextBoldCursor(context);
         this.firstNameField.setTextSize(1, 18.0f);
-        this.firstNameField.setHintTextColor(-6842473);
-        this.firstNameField.setTextColor(-14606047);
+        this.firstNameField.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
+        this.firstNameField.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        this.firstNameField.setBackgroundDrawable(Theme.createEditTextDrawable(context, false));
         this.firstNameField.setMaxLines(1);
         this.firstNameField.setLines(1);
         this.firstNameField.setPadding(0, 0, 0, 0);
@@ -121,78 +193,44 @@ public class ChangeUsernameActivity extends BaseFragment {
         this.firstNameField.setGravity(LocaleController.isRTL ? 5 : 3);
         this.firstNameField.setInputType(180224);
         this.firstNameField.setImeOptions(6);
-        this.firstNameField.setHint(LocaleController.getString("UsernamePlaceholder", C0553R.string.UsernamePlaceholder));
-        AndroidUtilities.clearCursorDrawable(this.firstNameField);
-        this.firstNameField.setOnEditorActionListener(new C08193());
-        ((LinearLayout) this.fragmentView).addView(this.firstNameField, LayoutHelper.createLinear(-1, 36, 24.0f, 24.0f, 24.0f, 0.0f));
-        if (!(user == null || user.username == null || user.username.length() <= 0)) {
-            this.firstNameField.setText(user.username);
-            this.firstNameField.setSelection(this.firstNameField.length());
-        }
+        this.firstNameField.setHint(LocaleController.getString("UsernamePlaceholder", C0488R.string.UsernamePlaceholder));
+        this.firstNameField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        this.firstNameField.setCursorSize(AndroidUtilities.dp(20.0f));
+        this.firstNameField.setCursorWidth(1.5f);
+        this.firstNameField.setOnEditorActionListener(new C11423());
+        this.firstNameField.addTextChangedListener(new C11434());
+        linearLayout.addView(this.firstNameField, LayoutHelper.createLinear(-1, 36, 24.0f, 24.0f, 24.0f, 0.0f));
         this.checkTextView = new TextView(context);
         this.checkTextView.setTextSize(1, 15.0f);
         this.checkTextView.setGravity(LocaleController.isRTL ? 5 : 3);
-        ((LinearLayout) this.fragmentView).addView(this.checkTextView, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 24, 12, 24, 0));
-        TextView helpTextView = new TextView(context);
-        helpTextView.setTextSize(1, 15.0f);
-        helpTextView.setTextColor(-9605774);
-        helpTextView.setGravity(LocaleController.isRTL ? 5 : 3);
-        helpTextView.setText(AndroidUtilities.replaceTags(LocaleController.getString("UsernameHelp", C0553R.string.UsernameHelp)));
-        ((LinearLayout) this.fragmentView).addView(helpTextView, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 24, 10, 24, 0));
-        this.firstNameField.addTextChangedListener(new C08204());
+        linearLayout.addView(this.checkTextView, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 24, 12, 24, 0));
+        this.helpTextView = new TextView(context);
+        this.helpTextView.setTextSize(1, 15.0f);
+        this.helpTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText8));
+        this.helpTextView.setGravity(LocaleController.isRTL ? 5 : 3);
+        TextView textView = this.helpTextView;
+        CharSequence replaceTags = AndroidUtilities.replaceTags(LocaleController.getString("UsernameHelp", C0488R.string.UsernameHelp));
+        this.infoText = replaceTags;
+        textView.setText(replaceTags);
+        this.helpTextView.setLinkTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteLinkText));
+        this.helpTextView.setHighlightColor(Theme.getColor(Theme.key_windowBackgroundWhiteLinkSelection));
+        this.helpTextView.setMovementMethod(new LinkMovementMethodMy());
+        linearLayout.addView(this.helpTextView, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 24, 10, 24, 0));
         this.checkTextView.setVisibility(8);
+        if (!(user == null || user.username == null || user.username.length() <= 0)) {
+            this.ignoreCheck = true;
+            this.firstNameField.setText(user.username);
+            this.firstNameField.setSelection(this.firstNameField.length());
+            this.ignoreCheck = false;
+        }
         return this.fragmentView;
     }
 
     public void onResume() {
         super.onResume();
-        if (!ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", 0).getBoolean("view_animations", true)) {
+        if (!MessagesController.getGlobalMainSettings().getBoolean("view_animations", true)) {
             this.firstNameField.requestFocus();
             AndroidUtilities.showKeyboard(this.firstNameField);
-        }
-    }
-
-    private void showErrorAlert(String error) {
-        if (getParentActivity() != null) {
-            Builder builder = new Builder(getParentActivity());
-            builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-            Object obj = -1;
-            switch (error.hashCode()) {
-                case -141887186:
-                    if (error.equals("USERNAMES_UNAVAILABLE")) {
-                        obj = 2;
-                        break;
-                    }
-                    break;
-                case 288843630:
-                    if (error.equals("USERNAME_INVALID")) {
-                        obj = null;
-                        break;
-                    }
-                    break;
-                case 533175271:
-                    if (error.equals("USERNAME_OCCUPIED")) {
-                        obj = 1;
-                        break;
-                    }
-                    break;
-            }
-            switch (obj) {
-                case null:
-                    builder.setMessage(LocaleController.getString("UsernameInvalid", C0553R.string.UsernameInvalid));
-                    break;
-                case 1:
-                    builder.setMessage(LocaleController.getString("UsernameInUse", C0553R.string.UsernameInUse));
-                    break;
-                case 2:
-                    builder.setMessage(LocaleController.getString("FeatureUnavailable", C0553R.string.FeatureUnavailable));
-                    break;
-                default:
-                    builder.setMessage(LocaleController.getString("ErrorOccurred", C0553R.string.ErrorOccurred));
-                    break;
-            }
-            builder.setPositiveButton(LocaleController.getString("OK", C0553R.string.OK), null);
-            showDialog(builder.create());
         }
     }
 
@@ -210,14 +248,15 @@ public class ChangeUsernameActivity extends BaseFragment {
             this.checkRunnable = null;
             this.lastCheckName = null;
             if (this.checkReqId != 0) {
-                ConnectionsManager.getInstance().cancelRequest(this.checkReqId, true);
+                ConnectionsManager.getInstance(this.currentAccount).cancelRequest(this.checkReqId, true);
             }
         }
         this.lastNameAvailable = false;
         if (name != null) {
             if (name.startsWith("_") || name.endsWith("_")) {
-                this.checkTextView.setText(LocaleController.getString("UsernameInvalid", C0553R.string.UsernameInvalid));
-                this.checkTextView.setTextColor(-3198928);
+                this.checkTextView.setText(LocaleController.getString("UsernameInvalid", C0488R.string.UsernameInvalid));
+                this.checkTextView.setTag(Theme.key_windowBackgroundWhiteRedText4);
+                this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText4));
                 return false;
             }
             int a = 0;
@@ -225,18 +264,20 @@ public class ChangeUsernameActivity extends BaseFragment {
                 char ch = name.charAt(a);
                 if (a == 0 && ch >= '0' && ch <= '9') {
                     if (alert) {
-                        showErrorAlert(LocaleController.getString("UsernameInvalidStartNumber", C0553R.string.UsernameInvalidStartNumber));
+                        AlertsCreator.showSimpleAlert(this, LocaleController.getString("UsernameInvalidStartNumber", C0488R.string.UsernameInvalidStartNumber));
                     } else {
-                        this.checkTextView.setText(LocaleController.getString("UsernameInvalidStartNumber", C0553R.string.UsernameInvalidStartNumber));
-                        this.checkTextView.setTextColor(-3198928);
+                        this.checkTextView.setText(LocaleController.getString("UsernameInvalidStartNumber", C0488R.string.UsernameInvalidStartNumber));
+                        this.checkTextView.setTag(Theme.key_windowBackgroundWhiteRedText4);
+                        this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText4));
                     }
                     return false;
                 } else if ((ch < '0' || ch > '9') && ((ch < 'a' || ch > 'z') && ((ch < 'A' || ch > 'Z') && ch != '_'))) {
                     if (alert) {
-                        showErrorAlert(LocaleController.getString("UsernameInvalid", C0553R.string.UsernameInvalid));
+                        AlertsCreator.showSimpleAlert(this, LocaleController.getString("UsernameInvalid", C0488R.string.UsernameInvalid));
                     } else {
-                        this.checkTextView.setText(LocaleController.getString("UsernameInvalid", C0553R.string.UsernameInvalid));
-                        this.checkTextView.setTextColor(-3198928);
+                        this.checkTextView.setText(LocaleController.getString("UsernameInvalid", C0488R.string.UsernameInvalid));
+                        this.checkTextView.setTag(Theme.key_windowBackgroundWhiteRedText4);
+                        this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText4));
                     }
                     return false;
                 } else {
@@ -246,39 +287,43 @@ public class ChangeUsernameActivity extends BaseFragment {
         }
         if (name == null || name.length() < 5) {
             if (alert) {
-                showErrorAlert(LocaleController.getString("UsernameInvalidShort", C0553R.string.UsernameInvalidShort));
+                AlertsCreator.showSimpleAlert(this, LocaleController.getString("UsernameInvalidShort", C0488R.string.UsernameInvalidShort));
             } else {
-                this.checkTextView.setText(LocaleController.getString("UsernameInvalidShort", C0553R.string.UsernameInvalidShort));
-                this.checkTextView.setTextColor(-3198928);
+                this.checkTextView.setText(LocaleController.getString("UsernameInvalidShort", C0488R.string.UsernameInvalidShort));
+                this.checkTextView.setTag(Theme.key_windowBackgroundWhiteRedText4);
+                this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText4));
             }
             return false;
         } else if (name.length() > 32) {
             if (alert) {
-                showErrorAlert(LocaleController.getString("UsernameInvalidLong", C0553R.string.UsernameInvalidLong));
+                AlertsCreator.showSimpleAlert(this, LocaleController.getString("UsernameInvalidLong", C0488R.string.UsernameInvalidLong));
             } else {
-                this.checkTextView.setText(LocaleController.getString("UsernameInvalidLong", C0553R.string.UsernameInvalidLong));
-                this.checkTextView.setTextColor(-3198928);
+                this.checkTextView.setText(LocaleController.getString("UsernameInvalidLong", C0488R.string.UsernameInvalidLong));
+                this.checkTextView.setTag(Theme.key_windowBackgroundWhiteRedText4);
+                this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText4));
             }
             return false;
         } else if (alert) {
             return true;
         } else {
-            String currentName = UserConfig.getCurrentUser().username;
+            String currentName = UserConfig.getInstance(this.currentAccount).getCurrentUser().username;
             if (currentName == null) {
-                currentName = "";
+                currentName = TtmlNode.ANONYMOUS_REGION_ID;
             }
             if (name.equals(currentName)) {
-                this.checkTextView.setText(LocaleController.formatString("UsernameAvailable", C0553R.string.UsernameAvailable, name));
-                this.checkTextView.setTextColor(-14248148);
+                this.checkTextView.setText(LocaleController.formatString("UsernameAvailable", C0488R.string.UsernameAvailable, name));
+                this.checkTextView.setTag(Theme.key_windowBackgroundWhiteGreenText);
+                this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGreenText));
                 return true;
             }
-            this.checkTextView.setText(LocaleController.getString("UsernameChecking", C0553R.string.UsernameChecking));
-            this.checkTextView.setTextColor(-9605774);
+            this.checkTextView.setText(LocaleController.getString("UsernameChecking", C0488R.string.UsernameChecking));
+            this.checkTextView.setTag(Theme.key_windowBackgroundWhiteGrayText8);
+            this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText8));
             this.lastCheckName = name;
             this.checkRunnable = new Runnable() {
 
-                class C15251 implements RequestDelegate {
-                    C15251() {
+                class C11451 implements RequestDelegate {
+                    C11451() {
                     }
 
                     public void run(final TLObject response, final TL_error error) {
@@ -287,13 +332,15 @@ public class ChangeUsernameActivity extends BaseFragment {
                                 ChangeUsernameActivity.this.checkReqId = 0;
                                 if (ChangeUsernameActivity.this.lastCheckName != null && ChangeUsernameActivity.this.lastCheckName.equals(name)) {
                                     if (error == null && (response instanceof TL_boolTrue)) {
-                                        ChangeUsernameActivity.this.checkTextView.setText(LocaleController.formatString("UsernameAvailable", C0553R.string.UsernameAvailable, name));
-                                        ChangeUsernameActivity.this.checkTextView.setTextColor(-14248148);
+                                        ChangeUsernameActivity.this.checkTextView.setText(LocaleController.formatString("UsernameAvailable", C0488R.string.UsernameAvailable, name));
+                                        ChangeUsernameActivity.this.checkTextView.setTag(Theme.key_windowBackgroundWhiteGreenText);
+                                        ChangeUsernameActivity.this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGreenText));
                                         ChangeUsernameActivity.this.lastNameAvailable = true;
                                         return;
                                     }
-                                    ChangeUsernameActivity.this.checkTextView.setText(LocaleController.getString("UsernameInUse", C0553R.string.UsernameInUse));
-                                    ChangeUsernameActivity.this.checkTextView.setTextColor(-3198928);
+                                    ChangeUsernameActivity.this.checkTextView.setText(LocaleController.getString("UsernameInUse", C0488R.string.UsernameInUse));
+                                    ChangeUsernameActivity.this.checkTextView.setTag(Theme.key_windowBackgroundWhiteRedText4);
+                                    ChangeUsernameActivity.this.checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText4));
                                     ChangeUsernameActivity.this.lastNameAvailable = false;
                                 }
                             }
@@ -304,7 +351,7 @@ public class ChangeUsernameActivity extends BaseFragment {
                 public void run() {
                     TL_account_checkUsername req = new TL_account_checkUsername();
                     req.username = name;
-                    ChangeUsernameActivity.this.checkReqId = ConnectionsManager.getInstance().sendRequest(req, new C15251(), 2);
+                    ChangeUsernameActivity.this.checkReqId = ConnectionsManager.getInstance(ChangeUsernameActivity.this.currentAccount).sendRequest(req, new C11451(), 2);
                 }
             };
             AndroidUtilities.runOnUIThread(this.checkRunnable, 300);
@@ -314,25 +361,25 @@ public class ChangeUsernameActivity extends BaseFragment {
 
     private void saveName() {
         if (checkUserName(this.firstNameField.getText().toString(), true)) {
-            User user = UserConfig.getCurrentUser();
+            User user = UserConfig.getInstance(this.currentAccount).getCurrentUser();
             if (getParentActivity() != null && user != null) {
                 String currentName = user.username;
                 if (currentName == null) {
-                    currentName = "";
+                    currentName = TtmlNode.ANONYMOUS_REGION_ID;
                 }
                 String newName = this.firstNameField.getText().toString();
                 if (currentName.equals(newName)) {
                     finishFragment();
                     return;
                 }
-                final ProgressDialog progressDialog = new ProgressDialog(getParentActivity());
-                progressDialog.setMessage(LocaleController.getString("Loading", C0553R.string.Loading));
+                final AlertDialog progressDialog = new AlertDialog(getParentActivity(), 1);
+                progressDialog.setMessage(LocaleController.getString("Loading", C0488R.string.Loading));
                 progressDialog.setCanceledOnTouchOutside(false);
                 progressDialog.setCancelable(false);
-                TL_account_updateUsername req = new TL_account_updateUsername();
+                final TL_account_updateUsername req = new TL_account_updateUsername();
                 req.username = newName;
-                NotificationCenter.getInstance().postNotificationName(NotificationCenter.updateInterfaces, Integer.valueOf(1));
-                final int reqId = ConnectionsManager.getInstance().sendRequest(req, new RequestDelegate() {
+                NotificationCenter.getInstance(this.currentAccount).postNotificationName(NotificationCenter.updateInterfaces, Integer.valueOf(1));
+                final int reqId = ConnectionsManager.getInstance(this.currentAccount).sendRequest(req, new RequestDelegate() {
                     public void run(TLObject response, final TL_error error) {
                         if (error == null) {
                             final User user = (User) response;
@@ -341,13 +388,13 @@ public class ChangeUsernameActivity extends BaseFragment {
                                     try {
                                         progressDialog.dismiss();
                                     } catch (Throwable e) {
-                                        FileLog.m611e("tmessages", e);
+                                        FileLog.m3e(e);
                                     }
                                     ArrayList<User> users = new ArrayList();
                                     users.add(user);
-                                    MessagesController.getInstance().putUsers(users, false);
-                                    MessagesStorage.getInstance().putUsersAndChats(users, null, false, true);
-                                    UserConfig.saveConfig(true);
+                                    MessagesController.getInstance(ChangeUsernameActivity.this.currentAccount).putUsers(users, false);
+                                    MessagesStorage.getInstance(ChangeUsernameActivity.this.currentAccount).putUsersAndChats(users, null, false, true);
+                                    UserConfig.getInstance(ChangeUsernameActivity.this.currentAccount).saveConfig(true);
                                     ChangeUsernameActivity.this.finishFragment();
                                 }
                             });
@@ -358,21 +405,21 @@ public class ChangeUsernameActivity extends BaseFragment {
                                 try {
                                     progressDialog.dismiss();
                                 } catch (Throwable e) {
-                                    FileLog.m611e("tmessages", e);
+                                    FileLog.m3e(e);
                                 }
-                                ChangeUsernameActivity.this.showErrorAlert(error.text);
+                                AlertsCreator.processError(ChangeUsernameActivity.this.currentAccount, error, ChangeUsernameActivity.this, req, new Object[0]);
                             }
                         });
                     }
                 }, 2);
-                ConnectionsManager.getInstance().bindRequestToGuid(reqId, this.classGuid);
-                progressDialog.setButton(-2, LocaleController.getString("Cancel", C0553R.string.Cancel), new OnClickListener() {
+                ConnectionsManager.getInstance(this.currentAccount).bindRequestToGuid(reqId, this.classGuid);
+                progressDialog.setButton(-2, LocaleController.getString("Cancel", C0488R.string.Cancel), new OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        ConnectionsManager.getInstance().cancelRequest(reqId, true);
+                        ConnectionsManager.getInstance(ChangeUsernameActivity.this.currentAccount).cancelRequest(reqId, true);
                         try {
                             dialog.dismiss();
                         } catch (Throwable e) {
-                            FileLog.m611e("tmessages", e);
+                            FileLog.m3e(e);
                         }
                     }
                 });
@@ -386,5 +433,23 @@ public class ChangeUsernameActivity extends BaseFragment {
             this.firstNameField.requestFocus();
             AndroidUtilities.showKeyboard(this.firstNameField);
         }
+    }
+
+    public ThemeDescription[] getThemeDescriptions() {
+        ThemeDescription[] themeDescriptionArr = new ThemeDescription[13];
+        themeDescriptionArr[0] = new ThemeDescription(this.fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite);
+        themeDescriptionArr[1] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault);
+        themeDescriptionArr[2] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_actionBarDefaultIcon);
+        themeDescriptionArr[3] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_actionBarDefaultTitle);
+        themeDescriptionArr[4] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_actionBarDefaultSelector);
+        themeDescriptionArr[5] = new ThemeDescription(this.firstNameField, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        themeDescriptionArr[6] = new ThemeDescription(this.firstNameField, ThemeDescription.FLAG_HINTTEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteHintText);
+        themeDescriptionArr[7] = new ThemeDescription(this.firstNameField, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_windowBackgroundWhiteInputField);
+        themeDescriptionArr[8] = new ThemeDescription(this.firstNameField, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_windowBackgroundWhiteInputFieldActivated);
+        themeDescriptionArr[9] = new ThemeDescription(this.helpTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText8);
+        themeDescriptionArr[10] = new ThemeDescription(this.checkTextView, ThemeDescription.FLAG_TEXTCOLOR | ThemeDescription.FLAG_CHECKTAG, null, null, null, null, Theme.key_windowBackgroundWhiteRedText4);
+        themeDescriptionArr[11] = new ThemeDescription(this.checkTextView, ThemeDescription.FLAG_TEXTCOLOR | ThemeDescription.FLAG_CHECKTAG, null, null, null, null, Theme.key_windowBackgroundWhiteGreenText);
+        themeDescriptionArr[12] = new ThemeDescription(this.checkTextView, ThemeDescription.FLAG_TEXTCOLOR | ThemeDescription.FLAG_CHECKTAG, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText8);
+        return themeDescriptionArr;
     }
 }

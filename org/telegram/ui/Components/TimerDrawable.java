@@ -3,89 +3,91 @@ package org.telegram.ui.Components;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
 import android.graphics.drawable.Drawable;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
 import org.telegram.messenger.FileLog;
+import org.telegram.ui.ActionBar.Theme;
 
 public class TimerDrawable extends Drawable {
-    private static Drawable emptyTimerDrawable;
-    private static TextPaint timePaint;
-    private static Drawable timerDrawable;
+    private Paint linePaint = new Paint(1);
+    private Paint paint = new Paint(1);
     private int time = 0;
     private int timeHeight = 0;
     private StaticLayout timeLayout;
+    private TextPaint timePaint = new TextPaint(1);
     private float timeWidth = 0.0f;
 
     public TimerDrawable(Context context) {
-        if (emptyTimerDrawable == null) {
-            emptyTimerDrawable = context.getResources().getDrawable(C0553R.drawable.header_timer);
-            timerDrawable = context.getResources().getDrawable(C0553R.drawable.header_timer2);
-            timePaint = new TextPaint(1);
-            timePaint.setTextSize((float) AndroidUtilities.dp(11.0f));
-            timePaint.setColor(-1);
-            timePaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        }
+        this.timePaint.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        this.timePaint.setTextSize((float) AndroidUtilities.dp(11.0f));
+        this.linePaint.setStrokeWidth((float) AndroidUtilities.dp(1.0f));
+        this.linePaint.setStyle(Style.STROKE);
     }
 
     public void setTime(int value) {
         String timeString;
         this.time = value;
         if (this.time >= 1 && this.time < 60) {
-            timeString = "" + value;
+            timeString = TtmlNode.ANONYMOUS_REGION_ID + value;
             if (timeString.length() < 2) {
                 timeString = timeString + "s";
             }
         } else if (this.time >= 60 && this.time < 3600) {
-            timeString = "" + (value / 60);
+            timeString = TtmlNode.ANONYMOUS_REGION_ID + (value / 60);
             if (timeString.length() < 2) {
                 timeString = timeString + "m";
             }
         } else if (this.time >= 3600 && this.time < 86400) {
-            timeString = "" + ((value / 60) / 60);
+            timeString = TtmlNode.ANONYMOUS_REGION_ID + ((value / 60) / 60);
             if (timeString.length() < 2) {
                 timeString = timeString + "h";
             }
         } else if (this.time < 86400 || this.time >= 604800) {
-            timeString = "" + ((((value / 60) / 60) / 24) / 7);
+            timeString = TtmlNode.ANONYMOUS_REGION_ID + ((((value / 60) / 60) / 24) / 7);
             if (timeString.length() < 2) {
                 timeString = timeString + "w";
             } else if (timeString.length() > 2) {
                 timeString = "c";
             }
         } else {
-            timeString = "" + (((value / 60) / 60) / 24);
+            timeString = TtmlNode.ANONYMOUS_REGION_ID + (((value / 60) / 60) / 24);
             if (timeString.length() < 2) {
                 timeString = timeString + "d";
             }
         }
-        this.timeWidth = timePaint.measureText(timeString);
+        this.timeWidth = this.timePaint.measureText(timeString);
         try {
-            this.timeLayout = new StaticLayout(timeString, timePaint, (int) Math.ceil((double) this.timeWidth), Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+            this.timeLayout = new StaticLayout(timeString, this.timePaint, (int) Math.ceil((double) this.timeWidth), Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
             this.timeHeight = this.timeLayout.getHeight();
         } catch (Throwable e) {
             this.timeLayout = null;
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
         invalidateSelf();
     }
 
     public void draw(Canvas canvas) {
-        Drawable drawable;
-        int width = timerDrawable.getIntrinsicWidth();
-        int height = timerDrawable.getIntrinsicHeight();
+        int width = getIntrinsicWidth();
+        int height = getIntrinsicHeight();
         if (this.time == 0) {
-            drawable = timerDrawable;
+            this.paint.setColor(Theme.getColor(Theme.key_chat_secretTimerBackground));
+            this.linePaint.setColor(Theme.getColor(Theme.key_chat_secretTimerText));
+            canvas.drawCircle(AndroidUtilities.dpf2(9.0f), AndroidUtilities.dpf2(9.0f), AndroidUtilities.dpf2(7.5f), this.paint);
+            canvas.drawCircle(AndroidUtilities.dpf2(9.0f), AndroidUtilities.dpf2(9.0f), AndroidUtilities.dpf2(8.0f), this.linePaint);
+            this.paint.setColor(Theme.getColor(Theme.key_chat_secretTimerText));
+            canvas.drawLine((float) AndroidUtilities.dp(9.0f), (float) AndroidUtilities.dp(9.0f), (float) AndroidUtilities.dp(13.0f), (float) AndroidUtilities.dp(9.0f), this.linePaint);
+            canvas.drawLine((float) AndroidUtilities.dp(9.0f), (float) AndroidUtilities.dp(5.0f), (float) AndroidUtilities.dp(9.0f), (float) AndroidUtilities.dp(9.5f), this.linePaint);
+            canvas.drawRect(AndroidUtilities.dpf2(7.0f), AndroidUtilities.dpf2(0.0f), AndroidUtilities.dpf2(11.0f), AndroidUtilities.dpf2(1.5f), this.paint);
         } else {
-            drawable = emptyTimerDrawable;
+            this.paint.setColor(Theme.getColor(Theme.key_chat_secretTimerBackground));
+            this.timePaint.setColor(Theme.getColor(Theme.key_chat_secretTimerText));
+            canvas.drawCircle((float) AndroidUtilities.dp(9.5f), (float) AndroidUtilities.dp(9.5f), (float) AndroidUtilities.dp(9.5f), this.paint);
         }
-        int x = (width - drawable.getIntrinsicWidth()) / 2;
-        int y = (height - drawable.getIntrinsicHeight()) / 2;
-        drawable.setBounds(x, y, drawable.getIntrinsicWidth() + x, drawable.getIntrinsicHeight() + y);
-        drawable.draw(canvas);
         if (this.time != 0 && this.timeLayout != null) {
             int xOffxet = 0;
             if (AndroidUtilities.density == 3.0f) {
@@ -107,10 +109,10 @@ public class TimerDrawable extends Drawable {
     }
 
     public int getIntrinsicWidth() {
-        return timerDrawable.getIntrinsicWidth();
+        return AndroidUtilities.dp(19.0f);
     }
 
     public int getIntrinsicHeight() {
-        return timerDrawable.getIntrinsicHeight();
+        return AndroidUtilities.dp(19.0f);
     }
 }

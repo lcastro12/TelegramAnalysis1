@@ -2,57 +2,30 @@ package com.google.android.gms.wallet;
 
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
 
-public final class ProxyCard implements SafeParcelable {
-    public static final Creator<ProxyCard> CREATOR = new C0264k();
-    private final int iM;
-    String um;
-    String un;
-    int uo;
-    int up;
+@Deprecated
+public final class ProxyCard extends AbstractSafeParcelable {
+    public static final Creator<ProxyCard> CREATOR = new zzak();
+    private String zzeh;
+    private String zzei;
+    private int zzej;
+    private int zzek;
 
-    ProxyCard(int versionCode, String pan, String cvn, int expirationMonth, int expirationYear) {
-        this.iM = versionCode;
-        this.um = pan;
-        this.un = cvn;
-        this.uo = expirationMonth;
-        this.up = expirationYear;
+    public ProxyCard(String str, String str2, int i, int i2) {
+        this.zzeh = str;
+        this.zzei = str2;
+        this.zzej = i;
+        this.zzek = i2;
     }
 
-    public ProxyCard(String pan, String cvn, int expirationMonth, int expirationYear) {
-        this.iM = 1;
-        this.um = pan;
-        this.un = cvn;
-        this.uo = expirationMonth;
-        this.up = expirationYear;
-    }
-
-    public int describeContents() {
-        return 0;
-    }
-
-    public String getCvn() {
-        return this.un;
-    }
-
-    public int getExpirationMonth() {
-        return this.uo;
-    }
-
-    public int getExpirationYear() {
-        return this.up;
-    }
-
-    public String getPan() {
-        return this.um;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
-    }
-
-    public void writeToParcel(Parcel out, int flags) {
-        C0264k.m796a(this, out, flags);
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeString(parcel, 2, this.zzeh, false);
+        SafeParcelWriter.writeString(parcel, 3, this.zzei, false);
+        SafeParcelWriter.writeInt(parcel, 4, this.zzej);
+        SafeParcelWriter.writeInt(parcel, 5, this.zzek);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

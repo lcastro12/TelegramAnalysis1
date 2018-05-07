@@ -10,14 +10,16 @@ class LayoutState {
     static final int ITEM_DIRECTION_TAIL = 1;
     static final int LAYOUT_END = 1;
     static final int LAYOUT_START = -1;
-    static final int SCOLLING_OFFSET_NaN = Integer.MIN_VALUE;
     static final String TAG = "LayoutState";
     int mAvailable;
     int mCurrentPosition;
     int mEndLine = 0;
+    boolean mInfinite;
     int mItemDirection;
     int mLayoutDirection;
+    boolean mRecycle = true;
     int mStartLine = 0;
+    boolean mStopInFocusable;
 
     LayoutState() {
     }

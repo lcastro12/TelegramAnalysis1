@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.JoinPoint.StaticPart;
 import org.aspectj.runtime.reflect.Factory;
 
@@ -23,9 +22,9 @@ public class HandlerBox extends AbstractFullBox {
     private static final /* synthetic */ StaticPart ajc$tjp_4 = null;
     private static final /* synthetic */ StaticPart ajc$tjp_5 = null;
     public static final Map<String, String> readableTypes;
-    private long f160a;
-    private long f161b;
-    private long f162c;
+    private long f0a;
+    private long f1b;
+    private long f2c;
     private String handlerType;
     private String name = null;
     private long shouldBeZeroButAppleWritesHereSomeValue;
@@ -33,12 +32,12 @@ public class HandlerBox extends AbstractFullBox {
 
     private static /* synthetic */ void ajc$preClinit() {
         Factory factory = new Factory("HandlerBox.java", HandlerBox.class);
-        ajc$tjp_0 = factory.makeSJP(JoinPoint.METHOD_EXECUTION, factory.makeMethodSig("1", "getHandlerType", "com.coremedia.iso.boxes.HandlerBox", "", "", "", "java.lang.String"), 78);
-        ajc$tjp_1 = factory.makeSJP(JoinPoint.METHOD_EXECUTION, factory.makeMethodSig("1", "setName", "com.coremedia.iso.boxes.HandlerBox", "java.lang.String", "name", "", "void"), 87);
-        ajc$tjp_2 = factory.makeSJP(JoinPoint.METHOD_EXECUTION, factory.makeMethodSig("1", "setHandlerType", "com.coremedia.iso.boxes.HandlerBox", "java.lang.String", "handlerType", "", "void"), 91);
-        ajc$tjp_3 = factory.makeSJP(JoinPoint.METHOD_EXECUTION, factory.makeMethodSig("1", "getName", "com.coremedia.iso.boxes.HandlerBox", "", "", "", "java.lang.String"), 95);
-        ajc$tjp_4 = factory.makeSJP(JoinPoint.METHOD_EXECUTION, factory.makeMethodSig("1", "getHumanReadableTrackType", "com.coremedia.iso.boxes.HandlerBox", "", "", "", "java.lang.String"), 99);
-        ajc$tjp_5 = factory.makeSJP(JoinPoint.METHOD_EXECUTION, factory.makeMethodSig("1", "toString", "com.coremedia.iso.boxes.HandlerBox", "", "", "", "java.lang.String"), 149);
+        ajc$tjp_0 = factory.makeSJP("method-execution", factory.makeMethodSig("1", "getHandlerType", "com.coremedia.iso.boxes.HandlerBox", TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, "java.lang.String"), 78);
+        ajc$tjp_1 = factory.makeSJP("method-execution", factory.makeMethodSig("1", "setName", "com.coremedia.iso.boxes.HandlerBox", "java.lang.String", "name", TtmlNode.ANONYMOUS_REGION_ID, "void"), 87);
+        ajc$tjp_2 = factory.makeSJP("method-execution", factory.makeMethodSig("1", "setHandlerType", "com.coremedia.iso.boxes.HandlerBox", "java.lang.String", "handlerType", TtmlNode.ANONYMOUS_REGION_ID, "void"), 91);
+        ajc$tjp_3 = factory.makeSJP("method-execution", factory.makeMethodSig("1", "getName", "com.coremedia.iso.boxes.HandlerBox", TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, "java.lang.String"), 95);
+        ajc$tjp_4 = factory.makeSJP("method-execution", factory.makeMethodSig("1", "getHumanReadableTrackType", "com.coremedia.iso.boxes.HandlerBox", TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, "java.lang.String"), 99);
+        ajc$tjp_5 = factory.makeSJP("method-execution", factory.makeMethodSig("1", "toString", "com.coremedia.iso.boxes.HandlerBox", TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, TtmlNode.ANONYMOUS_REGION_ID, "java.lang.String"), 149);
     }
 
     static {
@@ -102,9 +101,9 @@ public class HandlerBox extends AbstractFullBox {
         parseVersionAndFlags(content);
         this.shouldBeZeroButAppleWritesHereSomeValue = IsoTypeReader.readUInt32(content);
         this.handlerType = IsoTypeReader.read4cc(content);
-        this.f160a = IsoTypeReader.readUInt32(content);
-        this.f161b = IsoTypeReader.readUInt32(content);
-        this.f162c = IsoTypeReader.readUInt32(content);
+        this.f0a = IsoTypeReader.readUInt32(content);
+        this.f1b = IsoTypeReader.readUInt32(content);
+        this.f2c = IsoTypeReader.readUInt32(content);
         if (content.remaining() > 0) {
             this.name = IsoTypeReader.readString(content, content.remaining());
             if (this.name.endsWith("\u0000")) {
@@ -122,9 +121,9 @@ public class HandlerBox extends AbstractFullBox {
         writeVersionAndFlags(byteBuffer);
         IsoTypeWriter.writeUInt32(byteBuffer, this.shouldBeZeroButAppleWritesHereSomeValue);
         byteBuffer.put(IsoFile.fourCCtoBytes(this.handlerType));
-        IsoTypeWriter.writeUInt32(byteBuffer, this.f160a);
-        IsoTypeWriter.writeUInt32(byteBuffer, this.f161b);
-        IsoTypeWriter.writeUInt32(byteBuffer, this.f162c);
+        IsoTypeWriter.writeUInt32(byteBuffer, this.f0a);
+        IsoTypeWriter.writeUInt32(byteBuffer, this.f1b);
+        IsoTypeWriter.writeUInt32(byteBuffer, this.f2c);
         if (this.name != null) {
             byteBuffer.put(Utf8.convert(this.name));
         }

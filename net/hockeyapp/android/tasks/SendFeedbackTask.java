@@ -1,118 +1,149 @@
 package net.hockeyapp.android.tasks;
 
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.net.Uri;
+import android.os.AsyncTask.Status;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.os.EnvironmentCompat;
 import java.io.File;
-import java.io.IOException;
+import java.io.FilenameFilter;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.hockeyapp.android.C0051R;
 import net.hockeyapp.android.Constants;
+import net.hockeyapp.android.utils.HockeyLog;
 import net.hockeyapp.android.utils.HttpURLConnectionBuilder;
 import net.hockeyapp.android.utils.Util;
+import org.telegram.messenger.exoplayer2.util.MimeTypes;
 
+@SuppressLint({"StaticFieldLeak"})
 public class SendFeedbackTask extends ConnectionTask<Void, Void, HashMap<String, String>> {
-    private List<Uri> attachmentUris;
-    private Context context;
-    private String email;
-    private Handler handler;
-    private boolean isFetchMessages;
-    private int lastMessageId = -1;
-    private String name;
-    private ProgressDialog progressDialog;
-    private boolean showProgressDialog = true;
-    private String subject;
-    private String text;
-    private String token;
-    private HttpURLConnection urlConnection;
-    private String urlString;
+    private List<Uri> mAttachmentUris;
+    private Context mContext;
+    private String mEmail;
+    private Handler mHandler;
+    private boolean mIsFetchMessages;
+    private int mLastMessageId = -1;
+    private String mName;
+    private ProgressDialog mProgressDialog;
+    private boolean mShowProgressDialog = true;
+    private String mSubject;
+    private String mText;
+    private String mToken;
+    private String mUrlString;
+
+    class C00611 implements FilenameFilter {
+        C00611() {
+        }
+
+        public boolean accept(File dir, String name) {
+            return name.endsWith(".jpg");
+        }
+    }
 
     public SendFeedbackTask(Context context, String urlString, String name, String email, String subject, String text, List<Uri> attachmentUris, String token, Handler handler, boolean isFetchMessages) {
-        this.context = context;
-        this.urlString = urlString;
-        this.name = name;
-        this.email = email;
-        this.subject = subject;
-        this.text = text;
-        this.attachmentUris = attachmentUris;
-        this.token = token;
-        this.handler = handler;
-        this.isFetchMessages = isFetchMessages;
+        this.mContext = context;
+        this.mUrlString = urlString;
+        this.mName = name;
+        this.mEmail = email;
+        this.mSubject = subject;
+        this.mText = text;
+        this.mAttachmentUris = attachmentUris;
+        this.mToken = token;
+        this.mHandler = handler;
+        this.mIsFetchMessages = isFetchMessages;
         if (context != null) {
             Constants.loadFromContext(context);
         }
     }
 
-    public void setShowProgressDialog(boolean showProgressDialog) {
-        this.showProgressDialog = showProgressDialog;
-    }
-
-    public void setLastMessageId(int lastMessageId) {
-        this.lastMessageId = lastMessageId;
+    public void setHandler(Handler handler) {
+        this.mHandler = handler;
     }
 
     public void attach(Context context) {
-        this.context = context;
+        this.mContext = context;
+        if (getStatus() != Status.RUNNING) {
+            return;
+        }
+        if ((this.mProgressDialog == null || !this.mProgressDialog.isShowing()) && this.mShowProgressDialog) {
+            this.mProgressDialog = ProgressDialog.show(this.mContext, TtmlNode.ANONYMOUS_REGION_ID, getLoadingMessage(), true, false);
+        }
     }
 
     public void detach() {
-        this.context = null;
-        if (this.progressDialog != null) {
-            this.progressDialog.dismiss();
+        this.mContext = null;
+        if (this.mProgressDialog != null) {
+            this.mProgressDialog.dismiss();
+            this.mProgressDialog = null;
         }
-        this.progressDialog = null;
     }
 
     protected void onPreExecute() {
-        String loadingMessage = "Sending feedback..";
-        if (this.isFetchMessages) {
-            loadingMessage = "Retrieving discussions...";
-        }
-        if ((this.progressDialog == null || !this.progressDialog.isShowing()) && this.showProgressDialog) {
-            this.progressDialog = ProgressDialog.show(this.context, "", loadingMessage, true, false);
+        if ((this.mProgressDialog == null || !this.mProgressDialog.isShowing()) && this.mShowProgressDialog) {
+            this.mProgressDialog = ProgressDialog.show(this.mContext, TtmlNode.ANONYMOUS_REGION_ID, getLoadingMessage(), true, false);
         }
     }
 
     protected HashMap<String, String> doInBackground(Void... args) {
-        if (this.isFetchMessages && this.token != null) {
+        if (this.mIsFetchMessages && this.mToken != null) {
             return doGet();
         }
-        if (this.isFetchMessages) {
+        if (this.mIsFetchMessages) {
             return null;
         }
-        if (this.attachmentUris.isEmpty()) {
+        if (this.mAttachmentUris.isEmpty()) {
             return doPostPut();
         }
         HashMap<String, String> result = doPostPutWithAttachments();
-        String status = (String) result.get("status");
-        if (status == null || !status.startsWith("2") || this.context == null) {
+        if (result == null) {
             return result;
         }
-        File folder = new File(this.context.getCacheDir(), "HockeyApp");
-        if (!folder.exists()) {
-            return result;
-        }
-        for (File file : folder.listFiles()) {
-            file.delete();
-        }
+        clearTemporaryFolder(result);
         return result;
     }
 
-    protected void onPostExecute(HashMap<String, String> result) {
-        if (this.progressDialog != null) {
-            try {
-                this.progressDialog.dismiss();
-            } catch (Exception e) {
-                e.printStackTrace();
+    private void clearTemporaryFolder(HashMap<String, String> result) {
+        int i = 0;
+        String status = (String) result.get("status");
+        if (status != null && status.startsWith("2") && this.mContext != null) {
+            File folder = new File(this.mContext.getCacheDir(), "HockeyApp");
+            if (folder.exists()) {
+                for (File file : folder.listFiles()) {
+                    if (!(file == null || Boolean.valueOf(file.delete()).booleanValue())) {
+                        HockeyLog.debug("SendFeedbackTask", "Error deleting file from temporary folder");
+                    }
+                }
+            }
+            File[] screenshots = Constants.getHockeyAppStorageDir(this.mContext).listFiles(new C00611());
+            int length = screenshots.length;
+            while (i < length) {
+                File screenshot = screenshots[i];
+                if (this.mAttachmentUris.contains(Uri.fromFile(screenshot))) {
+                    if (screenshot.delete()) {
+                        HockeyLog.debug("SendFeedbackTask", "Screenshot '" + screenshot.getName() + "' has been deleted");
+                    } else {
+                        HockeyLog.error("SendFeedbackTask", "Error deleting screenshot");
+                    }
+                }
+                i++;
             }
         }
-        if (this.handler != null) {
+    }
+
+    protected void onPostExecute(HashMap<String, String> result) {
+        if (this.mProgressDialog != null) {
+            try {
+                this.mProgressDialog.dismiss();
+            } catch (Exception e) {
+            }
+        }
+        if (this.mHandler != null) {
             Message msg = new Message();
             Bundle bundle = new Bundle();
             if (result != null) {
@@ -120,10 +151,10 @@ public class SendFeedbackTask extends ConnectionTask<Void, Void, HashMap<String,
                 bundle.putString("feedback_response", (String) result.get("response"));
                 bundle.putString("feedback_status", (String) result.get("status"));
             } else {
-                bundle.putString("request_type", EnvironmentCompat.MEDIA_UNKNOWN);
+                bundle.putString("request_type", "unknown");
             }
             msg.setData(bundle);
-            this.handler.sendMessage(msg);
+            this.mHandler.sendMessage(msg);
         }
     }
 
@@ -133,28 +164,29 @@ public class SendFeedbackTask extends ConnectionTask<Void, Void, HashMap<String,
         HttpURLConnection urlConnection = null;
         try {
             Map<String, String> parameters = new HashMap();
-            parameters.put("name", this.name);
-            parameters.put("email", this.email);
-            parameters.put("subject", this.subject);
-            parameters.put("text", this.text);
+            parameters.put("name", this.mName);
+            parameters.put("email", this.mEmail);
+            parameters.put("subject", this.mSubject);
+            parameters.put(MimeTypes.BASE_TYPE_TEXT, this.mText);
             parameters.put("bundle_identifier", Constants.APP_PACKAGE);
             parameters.put("bundle_short_version", Constants.APP_VERSION_NAME);
             parameters.put("bundle_version", Constants.APP_VERSION);
             parameters.put("os_version", Constants.ANDROID_VERSION);
             parameters.put("oem", Constants.PHONE_MANUFACTURER);
             parameters.put("model", Constants.PHONE_MODEL);
-            if (this.token != null) {
-                this.urlString += this.token + "/";
+            parameters.put("sdk_version", "5.0.4");
+            if (this.mToken != null) {
+                this.mUrlString += this.mToken + "/";
             }
-            urlConnection = new HttpURLConnectionBuilder(this.urlString).setRequestMethod(this.token != null ? "PUT" : "POST").writeFormFields(parameters).build();
+            urlConnection = new HttpURLConnectionBuilder(this.mUrlString).setRequestMethod(this.mToken != null ? "PUT" : "POST").writeFormFields(parameters).build();
             urlConnection.connect();
             result.put("status", String.valueOf(urlConnection.getResponseCode()));
             result.put("response", ConnectionTask.getStringFromConnection(urlConnection));
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            HockeyLog.error("Failed to send feedback message", e);
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
@@ -172,28 +204,29 @@ public class SendFeedbackTask extends ConnectionTask<Void, Void, HashMap<String,
         HttpURLConnection urlConnection = null;
         try {
             Map<String, String> parameters = new HashMap();
-            parameters.put("name", this.name);
-            parameters.put("email", this.email);
-            parameters.put("subject", this.subject);
-            parameters.put("text", this.text);
+            parameters.put("name", this.mName);
+            parameters.put("email", this.mEmail);
+            parameters.put("subject", this.mSubject);
+            parameters.put(MimeTypes.BASE_TYPE_TEXT, this.mText);
             parameters.put("bundle_identifier", Constants.APP_PACKAGE);
             parameters.put("bundle_short_version", Constants.APP_VERSION_NAME);
             parameters.put("bundle_version", Constants.APP_VERSION);
             parameters.put("os_version", Constants.ANDROID_VERSION);
             parameters.put("oem", Constants.PHONE_MANUFACTURER);
             parameters.put("model", Constants.PHONE_MODEL);
-            if (this.token != null) {
-                this.urlString += this.token + "/";
+            parameters.put("sdk_version", "5.0.4");
+            if (this.mToken != null) {
+                this.mUrlString += this.mToken + "/";
             }
-            urlConnection = new HttpURLConnectionBuilder(this.urlString).setRequestMethod(this.token != null ? "PUT" : "POST").writeMultipartData(parameters, this.context, this.attachmentUris).build();
+            urlConnection = new HttpURLConnectionBuilder(this.mUrlString).setRequestMethod(this.mToken != null ? "PUT" : "POST").writeMultipartData(parameters, this.mContext, this.mAttachmentUris).build();
             urlConnection.connect();
             result.put("status", String.valueOf(urlConnection.getResponseCode()));
             result.put("response", ConnectionTask.getStringFromConnection(urlConnection));
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            HockeyLog.error("Failed to send feedback message", e);
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
@@ -207,9 +240,9 @@ public class SendFeedbackTask extends ConnectionTask<Void, Void, HashMap<String,
 
     private HashMap<String, String> doGet() {
         StringBuilder sb = new StringBuilder();
-        sb.append(this.urlString + Util.encodeParam(this.token));
-        if (this.lastMessageId != -1) {
-            sb.append("?last_message_id=" + this.lastMessageId);
+        sb.append(this.mUrlString).append(Util.encodeParam(this.mToken));
+        if (this.mLastMessageId != -1) {
+            sb.append("?last_message_id=").append(this.mLastMessageId);
         }
         HashMap<String, String> result = new HashMap();
         HttpURLConnection urlConnection = null;
@@ -222,8 +255,8 @@ public class SendFeedbackTask extends ConnectionTask<Void, Void, HashMap<String,
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            HockeyLog.error("Failed to fetching feedback messages", e);
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
@@ -233,5 +266,13 @@ public class SendFeedbackTask extends ConnectionTask<Void, Void, HashMap<String,
             }
         }
         return result;
+    }
+
+    private String getLoadingMessage() {
+        String loadingMessage = this.mContext.getString(C0051R.string.hockeyapp_feedback_sending_feedback_text);
+        if (this.mIsFetchMessages) {
+            return this.mContext.getString(C0051R.string.hockeyapp_feedback_fetching_feedback_text);
+        }
+        return loadingMessage;
     }
 }

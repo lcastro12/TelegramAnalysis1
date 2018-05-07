@@ -1,74 +1,51 @@
 package android.support.v4.view;
 
+import android.content.Context;
 import android.os.Build.VERSION;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.ViewConfiguration;
+import java.lang.reflect.Method;
 
-public class ViewConfigurationCompat {
-    static final ViewConfigurationVersionImpl IMPL;
-
-    interface ViewConfigurationVersionImpl {
-        int getScaledPagingTouchSlop(ViewConfiguration viewConfiguration);
-
-        boolean hasPermanentMenuKey(ViewConfiguration viewConfiguration);
-    }
-
-    static class BaseViewConfigurationVersionImpl implements ViewConfigurationVersionImpl {
-        BaseViewConfigurationVersionImpl() {
-        }
-
-        public int getScaledPagingTouchSlop(ViewConfiguration config) {
-            return config.getScaledTouchSlop();
-        }
-
-        public boolean hasPermanentMenuKey(ViewConfiguration config) {
-            return true;
-        }
-    }
-
-    static class FroyoViewConfigurationVersionImpl extends BaseViewConfigurationVersionImpl {
-        FroyoViewConfigurationVersionImpl() {
-        }
-
-        public int getScaledPagingTouchSlop(ViewConfiguration config) {
-            return ViewConfigurationCompatFroyo.getScaledPagingTouchSlop(config);
-        }
-    }
-
-    static class HoneycombViewConfigurationVersionImpl extends FroyoViewConfigurationVersionImpl {
-        HoneycombViewConfigurationVersionImpl() {
-        }
-
-        public boolean hasPermanentMenuKey(ViewConfiguration config) {
-            return false;
-        }
-    }
-
-    static class IcsViewConfigurationVersionImpl extends HoneycombViewConfigurationVersionImpl {
-        IcsViewConfigurationVersionImpl() {
-        }
-
-        public boolean hasPermanentMenuKey(ViewConfiguration config) {
-            return ViewConfigurationCompatICS.hasPermanentMenuKey(config);
-        }
-    }
+public final class ViewConfigurationCompat {
+    private static Method sGetScaledScrollFactorMethod;
 
     static {
-        if (VERSION.SDK_INT >= 14) {
-            IMPL = new IcsViewConfigurationVersionImpl();
-        } else if (VERSION.SDK_INT >= 11) {
-            IMPL = new HoneycombViewConfigurationVersionImpl();
-        } else if (VERSION.SDK_INT >= 8) {
-            IMPL = new FroyoViewConfigurationVersionImpl();
-        } else {
-            IMPL = new BaseViewConfigurationVersionImpl();
+        if (VERSION.SDK_INT == 25) {
+            try {
+                sGetScaledScrollFactorMethod = ViewConfiguration.class.getDeclaredMethod("getScaledScrollFactor", new Class[0]);
+            } catch (Exception e) {
+                Log.i("ViewConfigCompat", "Could not find method getScaledScrollFactor() on ViewConfiguration");
+            }
         }
     }
 
-    public static int getScaledPagingTouchSlop(ViewConfiguration config) {
-        return IMPL.getScaledPagingTouchSlop(config);
+    public static float getScaledHorizontalScrollFactor(ViewConfiguration config, Context context) {
+        if (VERSION.SDK_INT >= 26) {
+            return config.getScaledHorizontalScrollFactor();
+        }
+        return getLegacyScrollFactor(config, context);
     }
 
-    public static boolean hasPermanentMenuKey(ViewConfiguration config) {
-        return IMPL.hasPermanentMenuKey(config);
+    public static float getScaledVerticalScrollFactor(ViewConfiguration config, Context context) {
+        if (VERSION.SDK_INT >= 26) {
+            return config.getScaledVerticalScrollFactor();
+        }
+        return getLegacyScrollFactor(config, context);
+    }
+
+    private static float getLegacyScrollFactor(ViewConfiguration config, Context context) {
+        if (VERSION.SDK_INT >= 25 && sGetScaledScrollFactorMethod != null) {
+            try {
+                return (float) ((Integer) sGetScaledScrollFactorMethod.invoke(config, new Object[0])).intValue();
+            } catch (Exception e) {
+                Log.i("ViewConfigCompat", "Could not find method getScaledScrollFactor() on ViewConfiguration");
+            }
+        }
+        TypedValue outValue = new TypedValue();
+        if (context.getTheme().resolveAttribute(16842829, outValue, true)) {
+            return outValue.getDimension(context.getResources().getDisplayMetrics());
+        }
+        return 0.0f;
     }
 }

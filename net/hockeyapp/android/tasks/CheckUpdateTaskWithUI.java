@@ -1,6 +1,5 @@
 package net.hockeyapp.android.tasks;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
@@ -8,27 +7,26 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
-import android.util.Log;
 import android.widget.Toast;
-import com.google.android.gms.plus.PlusShare;
 import java.lang.ref.WeakReference;
-import net.hockeyapp.android.Strings;
+import net.hockeyapp.android.C0051R;
 import net.hockeyapp.android.UpdateActivity;
 import net.hockeyapp.android.UpdateFragment;
 import net.hockeyapp.android.UpdateManagerListener;
+import net.hockeyapp.android.utils.HockeyLog;
 import net.hockeyapp.android.utils.Util;
-import net.hockeyapp.android.utils.VersionCache;
 import org.json.JSONArray;
 
 public class CheckUpdateTaskWithUI extends CheckUpdateTask {
-    private Activity activity = null;
-    private AlertDialog dialog = null;
-    protected boolean isDialogRequired = false;
+    private AlertDialog mDialog = null;
+    protected boolean mIsDialogRequired = false;
+    private WeakReference<Activity> mWeakActivity = null;
 
-    class C02781 implements OnClickListener {
-        C02781() {
+    class C00561 implements OnClickListener {
+        C00561() {
         }
 
         public void onClick(DialogInterface dialog, int which) {
@@ -39,69 +37,78 @@ public class CheckUpdateTaskWithUI extends CheckUpdateTask {
         }
     }
 
+    class C00572 implements OnCancelListener {
+        C00572() {
+        }
+
+        public void onCancel(DialogInterface dialog) {
+            CheckUpdateTaskWithUI.this.cleanUp();
+            if (CheckUpdateTaskWithUI.this.listener != null) {
+                CheckUpdateTaskWithUI.this.listener.onCancel();
+            }
+        }
+    }
+
     public CheckUpdateTaskWithUI(WeakReference<Activity> weakActivity, String urlString, String appIdentifier, UpdateManagerListener listener, boolean isDialogRequired) {
         super(weakActivity, urlString, appIdentifier, listener);
-        if (weakActivity != null) {
-            this.activity = (Activity) weakActivity.get();
-        }
-        this.isDialogRequired = isDialogRequired;
+        this.mWeakActivity = weakActivity;
+        this.mIsDialogRequired = isDialogRequired;
     }
 
     public void detach() {
         super.detach();
-        this.activity = null;
-        if (this.dialog != null) {
-            this.dialog.dismiss();
-            this.dialog = null;
+        this.mWeakActivity = null;
+        if (this.mDialog != null) {
+            this.mDialog.dismiss();
+            this.mDialog = null;
         }
     }
 
     protected void onPostExecute(JSONArray updateInfo) {
         super.onPostExecute(updateInfo);
-        if (updateInfo != null && this.isDialogRequired) {
-            showDialog(updateInfo);
+        if (updateInfo != null && this.mIsDialogRequired) {
+            showDialog((Activity) this.mWeakActivity.get(), updateInfo);
         }
     }
 
-    @TargetApi(11)
-    private void showDialog(final JSONArray updateInfo) {
-        if (getCachingEnabled()) {
-            VersionCache.setVersionInfo(this.activity, updateInfo.toString());
-        }
-        if (this.activity != null && !this.activity.isFinishing()) {
-            Builder builder = new Builder(this.activity);
-            builder.setTitle(Strings.get(this.listener, 513));
+    private void showDialog(final Activity activity, final JSONArray updateInfo) {
+        if (activity != null && !activity.isFinishing()) {
+            Builder builder = new Builder(activity);
+            builder.setTitle(C0051R.string.hockeyapp_update_dialog_title);
             if (this.mandatory.booleanValue()) {
-                Toast.makeText(this.activity, Strings.get(this.listener, 512), 1).show();
-                startUpdateIntent(updateInfo, Boolean.valueOf(true));
+                String appName = Util.getAppName(activity);
+                Toast.makeText(activity, activity.getString(C0051R.string.hockeyapp_update_mandatory_toast, new Object[]{appName}), 1).show();
+                startUpdateIntent(activity, updateInfo, Boolean.valueOf(true));
                 return;
             }
-            builder.setMessage(Strings.get(this.listener, Strings.UPDATE_DIALOG_MESSAGE_ID));
-            builder.setNegativeButton(Strings.get(this.listener, Strings.UPDATE_DIALOG_NEGATIVE_BUTTON_ID), new C02781());
-            builder.setPositiveButton(Strings.get(this.listener, Strings.UPDATE_DIALOG_POSITIVE_BUTTON_ID), new OnClickListener() {
+            builder.setMessage(C0051R.string.hockeyapp_update_dialog_message);
+            builder.setNegativeButton(C0051R.string.hockeyapp_update_dialog_negative_button, new C00561());
+            builder.setOnCancelListener(new C00572());
+            builder.setPositiveButton(C0051R.string.hockeyapp_update_dialog_positive_button, new OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
-                    if (CheckUpdateTaskWithUI.this.getCachingEnabled()) {
-                        VersionCache.setVersionInfo(CheckUpdateTaskWithUI.this.activity, "[]");
-                    }
-                    WeakReference<Activity> weakActivity = new WeakReference(CheckUpdateTaskWithUI.this.activity);
-                    if (Util.fragmentsSupported().booleanValue() && Util.runsOnTablet(weakActivity).booleanValue()) {
-                        CheckUpdateTaskWithUI.this.showUpdateFragment(updateInfo);
+                    boolean useUpdateDialog;
+                    if (CheckUpdateTaskWithUI.this.listener != null) {
+                        useUpdateDialog = CheckUpdateTaskWithUI.this.listener.useUpdateDialog(activity);
                     } else {
-                        CheckUpdateTaskWithUI.this.startUpdateIntent(updateInfo, Boolean.valueOf(false));
+                        useUpdateDialog = Util.runsOnTablet(activity).booleanValue();
+                    }
+                    if (useUpdateDialog) {
+                        CheckUpdateTaskWithUI.this.showUpdateFragment(activity, updateInfo);
+                    } else {
+                        CheckUpdateTaskWithUI.this.startUpdateIntent(activity, updateInfo, Boolean.valueOf(false));
                     }
                 }
             });
-            this.dialog = builder.create();
-            this.dialog.show();
+            this.mDialog = builder.create();
+            this.mDialog.show();
         }
     }
 
-    @TargetApi(11)
-    private void showUpdateFragment(JSONArray updateInfo) {
-        if (this.activity != null) {
-            FragmentTransaction fragmentTransaction = this.activity.getFragmentManager().beginTransaction();
+    private void showUpdateFragment(Activity activity, JSONArray updateInfo) {
+        if (activity != null) {
+            FragmentTransaction fragmentTransaction = activity.getFragmentManager().beginTransaction();
             fragmentTransaction.setTransition(4097);
-            Fragment existingFragment = this.activity.getFragmentManager().findFragmentByTag("hockey_update_dialog");
+            Fragment existingFragment = activity.getFragmentManager().findFragmentByTag(UpdateFragment.FRAGMENT_TAG);
             if (existingFragment != null) {
                 fragmentTransaction.remove(existingFragment);
             }
@@ -111,33 +118,28 @@ public class CheckUpdateTaskWithUI extends CheckUpdateTask {
                 fragmentClass = this.listener.getUpdateFragmentClass();
             }
             try {
-                ((DialogFragment) fragmentClass.getMethod("newInstance", new Class[]{JSONArray.class, String.class}).invoke(null, new Object[]{updateInfo, getURLString("apk")})).show(fragmentTransaction, "hockey_update_dialog");
-            } catch (Exception e) {
-                Log.d("HockeyApp", "An exception happened while showing the update fragment:");
-                e.printStackTrace();
-                Log.d("HockeyApp", "Showing update activity instead.");
-                startUpdateIntent(updateInfo, Boolean.valueOf(false));
+                ((DialogFragment) fragmentClass.getMethod("newInstance", new Class[]{String.class, String.class, Boolean.TYPE}).invoke(null, new Object[]{updateInfo.toString(), this.apkUrlString, Boolean.valueOf(true)})).show(fragmentTransaction, UpdateFragment.FRAGMENT_TAG);
+            } catch (Throwable e) {
+                HockeyLog.error("An exception happened while showing the update fragment", e);
             }
         }
     }
 
-    @TargetApi(11)
-    private void startUpdateIntent(JSONArray updateInfo, Boolean finish) {
-        Class<?> activityClass = null;
-        if (this.listener != null) {
-            activityClass = this.listener.getUpdateActivityClass();
-        }
-        if (activityClass == null) {
-            activityClass = UpdateActivity.class;
-        }
-        if (this.activity != null) {
+    private void startUpdateIntent(Activity activity, JSONArray updateInfo, Boolean finish) {
+        if (activity != null) {
+            Class<? extends UpdateFragment> fragmentClass = UpdateFragment.class;
+            if (this.listener != null) {
+                fragmentClass = this.listener.getUpdateFragmentClass();
+            }
             Intent intent = new Intent();
-            intent.setClass(this.activity, activityClass);
-            intent.putExtra("json", updateInfo.toString());
-            intent.putExtra(PlusShare.KEY_CALL_TO_ACTION_URL, getURLString("apk"));
-            this.activity.startActivity(intent);
+            intent.setClass(activity, UpdateActivity.class);
+            intent.putExtra("fragmentClass", fragmentClass.getName());
+            intent.putExtra(UpdateFragment.FRAGMENT_VERSION_INFO, updateInfo.toString());
+            intent.putExtra(UpdateFragment.FRAGMENT_URL, this.apkUrlString);
+            intent.putExtra(UpdateFragment.FRAGMENT_DIALOG, false);
+            activity.startActivity(intent);
             if (finish.booleanValue()) {
-                this.activity.finish();
+                activity.finish();
             }
         }
         cleanUp();
@@ -145,7 +147,7 @@ public class CheckUpdateTaskWithUI extends CheckUpdateTask {
 
     protected void cleanUp() {
         super.cleanUp();
-        this.activity = null;
-        this.dialog = null;
+        this.mWeakActivity = null;
+        this.mDialog = null;
     }
 }

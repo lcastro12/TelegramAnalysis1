@@ -1,13 +1,11 @@
 package org.telegram.messenger.video;
 
-import android.annotation.TargetApi;
 import android.media.MediaCodec.BufferInfo;
 import android.media.MediaFormat;
 import com.googlecode.mp4parser.util.Matrix;
 import java.io.File;
 import java.util.ArrayList;
 
-@TargetApi(16)
 public class Mp4Movie {
     private File cacheFile;
     private int height;
@@ -56,13 +54,13 @@ public class Mp4Movie {
         return this.cacheFile;
     }
 
-    public void addSample(int trackIndex, long offset, BufferInfo bufferInfo) throws Exception {
+    public void addSample(int trackIndex, long offset, BufferInfo bufferInfo) {
         if (trackIndex >= 0 && trackIndex < this.tracks.size()) {
             ((Track) this.tracks.get(trackIndex)).addSample(offset, bufferInfo);
         }
     }
 
-    public int addTrack(MediaFormat mediaFormat, boolean isAudio) throws Exception {
+    public int addTrack(MediaFormat mediaFormat, boolean isAudio) {
         this.tracks.add(new Track(this.tracks.size(), mediaFormat, isAudio));
         return this.tracks.size() - 1;
     }

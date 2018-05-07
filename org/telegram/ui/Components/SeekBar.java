@@ -3,40 +3,41 @@ package org.telegram.ui.Components;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import org.telegram.messenger.AndroidUtilities;
 
 public class SeekBar {
-    private static Paint innerPaint1;
-    private static Paint innerPaint2;
-    private static Paint outerPaint1;
-    private static Paint outerPaint2;
-    private static int thumbHeight;
+    private static Paint paint;
     private static int thumbWidth;
-    public SeekBarDelegate delegate;
-    public int height;
+    private int backgroundColor;
+    private int backgroundSelectedColor;
+    private float bufferedProgress;
+    private int cacheColor;
+    private int circleColor;
+    private SeekBarDelegate delegate;
+    private int height;
+    private int lineHeight = AndroidUtilities.dp(2.0f);
     private boolean pressed = false;
-    public int thumbDX = 0;
-    public int thumbX = 0;
-    public int type;
-    public int width;
+    private int progressColor;
+    private RectF rect = new RectF();
+    private boolean selected;
+    private int thumbDX = 0;
+    private int thumbX = 0;
+    private int width;
 
     public interface SeekBarDelegate {
         void onSeekBarDrag(float f);
     }
 
     public SeekBar(Context context) {
-        if (innerPaint1 == null) {
-            innerPaint1 = new Paint(1);
-            innerPaint1.setColor(-3939413);
-            outerPaint1 = new Paint(1);
-            outerPaint1.setColor(-7880840);
-            innerPaint2 = new Paint(1);
-            innerPaint2.setColor(-1774864);
-            outerPaint2 = new Paint(1);
-            outerPaint2.setColor(-12479003);
+        if (paint == null) {
+            paint = new Paint(1);
             thumbWidth = AndroidUtilities.dp(24.0f);
-            thumbHeight = AndroidUtilities.dp(24.0f);
         }
+    }
+
+    public void setDelegate(SeekBarDelegate seekBarDelegate) {
+        this.delegate = seekBarDelegate;
     }
 
     public boolean onTouch(int action, float x, float y) {
@@ -70,6 +71,14 @@ public class SeekBar {
         return false;
     }
 
+    public void setColors(int background, int cache, int progress, int circle, int selected) {
+        this.backgroundColor = background;
+        this.cacheColor = cache;
+        this.circleColor = circle;
+        this.progressColor = progress;
+        this.backgroundSelectedColor = selected;
+    }
+
     public void setProgress(float progress) {
         this.thumbX = (int) Math.ceil((double) (((float) (this.width - thumbWidth)) * progress));
         if (this.thumbX < 0) {
@@ -79,23 +88,44 @@ public class SeekBar {
         }
     }
 
+    public void setBufferedProgress(float value) {
+        this.bufferedProgress = value;
+    }
+
+    public float getProgress() {
+        return ((float) this.thumbX) / ((float) (this.width - thumbWidth));
+    }
+
     public boolean isDragging() {
         return this.pressed;
     }
 
+    public void setSelected(boolean value) {
+        this.selected = value;
+    }
+
+    public void setSize(int w, int h) {
+        this.width = w;
+        this.height = h;
+    }
+
+    public void setLineHeight(int value) {
+        this.lineHeight = value;
+    }
+
     public void draw(Canvas canvas) {
-        Paint inner = null;
-        Paint outer = null;
-        if (this.type == 0) {
-            inner = innerPaint1;
-            outer = outerPaint1;
-        } else if (this.type == 1) {
-            inner = innerPaint2;
-            outer = outerPaint2;
+        this.rect.set((float) (thumbWidth / 2), (float) ((this.height / 2) - (this.lineHeight / 2)), (float) (this.width - (thumbWidth / 2)), (float) ((this.height / 2) + (this.lineHeight / 2)));
+        paint.setColor(this.selected ? this.backgroundSelectedColor : this.backgroundColor);
+        canvas.drawRoundRect(this.rect, (float) (thumbWidth / 2), (float) (thumbWidth / 2), paint);
+        if (this.bufferedProgress > 0.0f) {
+            paint.setColor(this.selected ? this.backgroundSelectedColor : this.cacheColor);
+            this.rect.set((float) (thumbWidth / 2), (float) ((this.height / 2) - (this.lineHeight / 2)), ((float) (thumbWidth / 2)) + (this.bufferedProgress * ((float) (this.width - thumbWidth))), (float) ((this.height / 2) + (this.lineHeight / 2)));
+            canvas.drawRoundRect(this.rect, (float) (thumbWidth / 2), (float) (thumbWidth / 2), paint);
         }
-        int y = (this.height - thumbHeight) / 2;
-        canvas.drawRect((float) (thumbWidth / 2), (float) ((this.height / 2) - AndroidUtilities.dp(1.0f)), (float) (this.width - (thumbWidth / 2)), (float) ((this.height / 2) + AndroidUtilities.dp(1.0f)), inner);
-        canvas.drawRect((float) (thumbWidth / 2), (float) ((this.height / 2) - AndroidUtilities.dp(1.0f)), (float) ((thumbWidth / 2) + this.thumbX), (float) ((this.height / 2) + AndroidUtilities.dp(1.0f)), outer);
-        canvas.drawCircle((float) (this.thumbX + (thumbWidth / 2)), (float) ((thumbHeight / 2) + y), (float) AndroidUtilities.dp(this.pressed ? 8.0f : 6.0f), outer);
+        this.rect.set((float) (thumbWidth / 2), (float) ((this.height / 2) - (this.lineHeight / 2)), (float) ((thumbWidth / 2) + this.thumbX), (float) ((this.height / 2) + (this.lineHeight / 2)));
+        paint.setColor(this.progressColor);
+        canvas.drawRoundRect(this.rect, (float) (thumbWidth / 2), (float) (thumbWidth / 2), paint);
+        paint.setColor(this.circleColor);
+        canvas.drawCircle((float) (this.thumbX + (thumbWidth / 2)), (float) (this.height / 2), (float) AndroidUtilities.dp(this.pressed ? 8.0f : 6.0f), paint);
     }
 }

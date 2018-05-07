@@ -13,7 +13,6 @@ import android.view.Surface;
 public class InputSurface {
     private static final int EGL_OPENGL_ES2_BIT = 4;
     private static final int EGL_RECORDABLE_ANDROID = 12610;
-    private static final boolean VERBOSE = false;
     private EGLContext mEGLContext;
     private EGLDisplay mEGLDisplay;
     private EGLSurface mEGLSurface;

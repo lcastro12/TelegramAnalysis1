@@ -2,15 +2,14 @@ package org.telegram.ui.Cells;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.os.Build.VERSION;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.TextView;
-import java.util.Iterator;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.DataQuery;
 import org.telegram.messenger.Emoji;
-import org.telegram.messenger.query.StickersQuery;
+import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC.Document;
 import org.telegram.tgnet.TLRPC.DocumentAttribute;
 import org.telegram.tgnet.TLRPC.TL_documentAttributeSticker;
@@ -18,16 +17,18 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.LayoutHelper;
 
 public class StickerEmojiCell extends FrameLayout {
+    private static AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
     private float alpha = 1.0f;
     private boolean changingAlpha;
+    private int currentAccount = UserConfig.selectedAccount;
     private TextView emojiTextView;
     private BackupImageView imageView;
-    private AccelerateInterpolator interpolator = new AccelerateInterpolator(0.5f);
     private long lastUpdateTime;
+    private boolean recent;
     private float scale;
     private boolean scaled;
     private Document sticker;
-    private long time = 0;
+    private long time;
 
     public StickerEmojiCell(Context context) {
         super(context);
@@ -43,6 +44,14 @@ public class StickerEmojiCell extends FrameLayout {
         return this.sticker;
     }
 
+    public boolean isRecent() {
+        return this.recent;
+    }
+
+    public void setRecent(boolean value) {
+        this.recent = value;
+    }
+
     public void setSticker(Document document, boolean showEmoji) {
         if (document != null) {
             this.sticker = document;
@@ -51,23 +60,22 @@ public class StickerEmojiCell extends FrameLayout {
             }
             if (showEmoji) {
                 boolean set = false;
-                Iterator i$ = document.attributes.iterator();
-                while (i$.hasNext()) {
-                    DocumentAttribute attribute = (DocumentAttribute) i$.next();
+                for (int a = 0; a < document.attributes.size(); a++) {
+                    DocumentAttribute attribute = (DocumentAttribute) document.attributes.get(a);
                     if (attribute instanceof TL_documentAttributeSticker) {
                         if (attribute.alt != null && attribute.alt.length() > 0) {
                             this.emojiTextView.setText(Emoji.replaceEmoji(attribute.alt, this.emojiTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(16.0f), false));
                             set = true;
                         }
                         if (!set) {
-                            this.emojiTextView.setText(Emoji.replaceEmoji(StickersQuery.getEmojiForSticker(this.sticker.id), this.emojiTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(16.0f), false));
+                            this.emojiTextView.setText(Emoji.replaceEmoji(DataQuery.getInstance(this.currentAccount).getEmojiForSticker(this.sticker.id), this.emojiTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(16.0f), false));
                         }
                         this.emojiTextView.setVisibility(0);
                         return;
                     }
                 }
                 if (set) {
-                    this.emojiTextView.setText(Emoji.replaceEmoji(StickersQuery.getEmojiForSticker(this.sticker.id), this.emojiTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(16.0f), false));
+                    this.emojiTextView.setText(Emoji.replaceEmoji(DataQuery.getInstance(this.currentAccount).getEmojiForSticker(this.sticker.id), this.emojiTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(16.0f), false));
                 }
                 this.emojiTextView.setVisibility(0);
                 return;
@@ -100,6 +108,11 @@ public class StickerEmojiCell extends FrameLayout {
         return this.imageView.getImageReceiver().getBitmap() != null;
     }
 
+    public void invalidate() {
+        this.emojiTextView.invalidate();
+        super.invalidate();
+    }
+
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
         boolean result = super.drawChild(canvas, child, drawingTime);
         if (child == this.imageView && (this.changingAlpha || ((this.scaled && this.scale != 0.8f) || !(this.scaled || this.scale == 1.0f)))) {
@@ -111,7 +124,7 @@ public class StickerEmojiCell extends FrameLayout {
                 if (this.time > 1050) {
                     this.time = 1050;
                 }
-                this.alpha = 0.5f + (this.interpolator.getInterpolation(((float) this.time) / 1050.0f) * 0.5f);
+                this.alpha = 0.5f + (interpolator.getInterpolation(((float) this.time) / 1050.0f) * 0.5f);
                 if (this.alpha >= 1.0f) {
                     this.changingAlpha = false;
                     this.alpha = 1.0f;
@@ -128,10 +141,8 @@ public class StickerEmojiCell extends FrameLayout {
                     this.scale = 0.8f;
                 }
             }
-            if (VERSION.SDK_INT >= 11) {
-                this.imageView.setScaleX(this.scale);
-                this.imageView.setScaleY(this.scale);
-            }
+            this.imageView.setScaleX(this.scale);
+            this.imageView.setScaleY(this.scale);
             this.imageView.invalidate();
             invalidate();
         }

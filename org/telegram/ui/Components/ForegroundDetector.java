@@ -8,6 +8,7 @@ import android.os.Build.VERSION;
 import android.os.Bundle;
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLog;
 
 @SuppressLint({"NewApi"})
@@ -56,13 +57,15 @@ public class ForegroundDetector implements ActivityLifecycleCallbacks {
             if (System.currentTimeMillis() - this.enterBackgroundTime < 200) {
                 this.wasInBackground = false;
             }
-            FileLog.m609e("tmessages", "switch to foreground");
-            Iterator i$ = this.listeners.iterator();
-            while (i$.hasNext()) {
+            if (BuildVars.LOGS_ENABLED) {
+                FileLog.m0d("switch to foreground");
+            }
+            Iterator it = this.listeners.iterator();
+            while (it.hasNext()) {
                 try {
-                    ((Listener) i$.next()).onBecameForeground();
+                    ((Listener) it.next()).onBecameForeground();
                 } catch (Throwable e) {
-                    FileLog.m611e("tmessages", e);
+                    FileLog.m3e(e);
                 }
             }
         }
@@ -85,13 +88,15 @@ public class ForegroundDetector implements ActivityLifecycleCallbacks {
         if (i == 0) {
             this.enterBackgroundTime = System.currentTimeMillis();
             this.wasInBackground = true;
-            FileLog.m609e("tmessages", "switch to background");
-            Iterator i$ = this.listeners.iterator();
-            while (i$.hasNext()) {
+            if (BuildVars.LOGS_ENABLED) {
+                FileLog.m0d("switch to background");
+            }
+            Iterator it = this.listeners.iterator();
+            while (it.hasNext()) {
                 try {
-                    ((Listener) i$.next()).onBecameBackground();
+                    ((Listener) it.next()).onBecameBackground();
                 } catch (Throwable e) {
-                    FileLog.m611e("tmessages", e);
+                    FileLog.m3e(e);
                 }
             }
         }

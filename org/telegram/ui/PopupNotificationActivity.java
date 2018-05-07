@@ -1,8 +1,11 @@
 package org.telegram.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog.Builder;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -20,24 +23,24 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.View.MeasureSpec;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.MarginLayoutParams;
 import android.view.ViewTreeObserver.OnPreDrawListener;
-import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
-import com.google.android.gms.location.LocationStatusCodes;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import java.util.ArrayList;
 import java.util.Locale;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.DownloadController;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
@@ -47,32 +50,48 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationCenter.NotificationCenterDelegate;
 import org.telegram.messenger.NotificationsController;
+import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
+import org.telegram.messenger.exoplayer2.extractor.ts.PsExtractor;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC.Chat;
+import org.telegram.tgnet.TLRPC.KeyboardButton;
 import org.telegram.tgnet.TLRPC.PhotoSize;
+import org.telegram.tgnet.TLRPC.ReplyMarkup;
+import org.telegram.tgnet.TLRPC.TL_keyboardButtonCallback;
+import org.telegram.tgnet.TLRPC.TL_keyboardButtonRow;
 import org.telegram.tgnet.TLRPC.User;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
+import org.telegram.ui.ActionBar.AlertDialog.Builder;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.ChatActivityEnterView.ChatActivityEnterViewDelegate;
-import org.telegram.ui.Components.FrameLayoutFixed;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.PlayingGameDrawable;
 import org.telegram.ui.Components.PopupAudioView;
 import org.telegram.ui.Components.RecordStatusDrawable;
+import org.telegram.ui.Components.RoundStatusDrawable;
+import org.telegram.ui.Components.SendingFileDrawable;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
+import org.telegram.ui.Components.StatusDrawable;
 import org.telegram.ui.Components.TypingDotsDrawable;
 
 public class PopupNotificationActivity extends Activity implements NotificationCenterDelegate {
+    private static final int id_chat_compose_panel = 1000;
     private ActionBar actionBar;
     private boolean animationInProgress = false;
     private long animationStartTime = 0;
     private ArrayList<ViewGroup> audioViews = new ArrayList();
     private FrameLayout avatarContainer;
     private BackupImageView avatarImageView;
+    private ViewGroup centerButtonsView;
     private ViewGroup centerView;
     private ChatActivityEnterView chatActivityEnterView;
     private int classGuid;
@@ -83,99 +102,36 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     private User currentUser;
     private boolean finished = false;
     private ArrayList<ViewGroup> imageViews = new ArrayList();
+    private boolean isReply;
     private CharSequence lastPrintString;
+    private int lastResumedAccount = -1;
+    private ViewGroup leftButtonsView;
     private ViewGroup leftView;
     private ViewGroup messageContainer;
-    private float moveStartX = GroundOverlayOptions.NO_DIMENSION;
+    private float moveStartX = -1.0f;
     private TextView nameTextView;
     private Runnable onAnimationEndRunnable = null;
     private TextView onlineTextView;
     private RelativeLayout popupContainer;
-    private RecordStatusDrawable recordStatusDrawable;
+    private ArrayList<MessageObject> popupMessages = new ArrayList();
+    private ViewGroup rightButtonsView;
     private ViewGroup rightView;
     private boolean startedMoving = false;
+    private StatusDrawable[] statusDrawables = new StatusDrawable[5];
     private ArrayList<ViewGroup> textViews = new ArrayList();
-    private TypingDotsDrawable typingDotsDrawable;
     private VelocityTracker velocityTracker = null;
     private WakeLock wakeLock = null;
 
-    class C11564 implements OnClickListener {
-        C11564() {
+    class C21313 implements ChatActivityEnterViewDelegate {
+        C21313() {
         }
 
-        @TargetApi(9)
-        public void onClick(DialogInterface dialog, int which) {
-            try {
-                Intent intent = new Intent("android.settings.APPLICATION_DETAILS_SETTINGS");
-                intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
-                PopupNotificationActivity.this.startActivity(intent);
-            } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
-            }
-        }
-    }
-
-    class C11575 implements Runnable {
-        C11575() {
-        }
-
-        public void run() {
-            PopupNotificationActivity.this.animationInProgress = false;
-            PopupNotificationActivity.this.switchToPreviousMessage();
-            AndroidUtilities.unlockOrientation(PopupNotificationActivity.this);
-        }
-    }
-
-    class C11586 implements Runnable {
-        C11586() {
-        }
-
-        public void run() {
-            PopupNotificationActivity.this.animationInProgress = false;
-            PopupNotificationActivity.this.switchToNextMessage();
-            AndroidUtilities.unlockOrientation(PopupNotificationActivity.this);
-        }
-    }
-
-    class C11597 implements Runnable {
-        C11597() {
-        }
-
-        public void run() {
-            PopupNotificationActivity.this.animationInProgress = false;
-            PopupNotificationActivity.this.applyViewsLayoutParams(0);
-            AndroidUtilities.unlockOrientation(PopupNotificationActivity.this);
-        }
-    }
-
-    class C11608 implements View.OnClickListener {
-        C11608() {
-        }
-
-        public void onClick(View v) {
-            PopupNotificationActivity.this.openCurrentMessage();
-        }
-    }
-
-    class C11619 implements View.OnClickListener {
-        C11619() {
-        }
-
-        public void onClick(View v) {
-            PopupNotificationActivity.this.openCurrentMessage();
-        }
-    }
-
-    class C16492 implements ChatActivityEnterViewDelegate {
-        C16492() {
-        }
-
-        public void onMessageSend(String message) {
+        public void onMessageSend(CharSequence message) {
             if (PopupNotificationActivity.this.currentMessageObject != null) {
-                if (PopupNotificationActivity.this.currentMessageNum >= 0 && PopupNotificationActivity.this.currentMessageNum < NotificationsController.getInstance().popupMessages.size()) {
-                    NotificationsController.getInstance().popupMessages.remove(PopupNotificationActivity.this.currentMessageNum);
+                if (PopupNotificationActivity.this.currentMessageNum >= 0 && PopupNotificationActivity.this.currentMessageNum < PopupNotificationActivity.this.popupMessages.size()) {
+                    PopupNotificationActivity.this.popupMessages.remove(PopupNotificationActivity.this.currentMessageNum);
                 }
-                MessagesController.getInstance().markDialogAsRead(PopupNotificationActivity.this.currentMessageObject.getDialogId(), PopupNotificationActivity.this.currentMessageObject.getId(), Math.max(0, PopupNotificationActivity.this.currentMessageObject.getId()), PopupNotificationActivity.this.currentMessageObject.messageOwner.date, true, true);
+                MessagesController.getInstance(PopupNotificationActivity.this.currentMessageObject.currentAccount).markDialogAsRead(PopupNotificationActivity.this.currentMessageObject.getDialogId(), PopupNotificationActivity.this.currentMessageObject.getId(), Math.max(0, PopupNotificationActivity.this.currentMessageObject.getId()), PopupNotificationActivity.this.currentMessageObject.messageOwner.date, true, 0, true);
                 PopupNotificationActivity.this.currentMessageObject = null;
                 PopupNotificationActivity.this.getNewMessage();
             }
@@ -184,9 +140,21 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         public void onTextChanged(CharSequence text, boolean big) {
         }
 
+        public void onStickersExpandedChange() {
+        }
+
+        public void onSwitchRecordMode(boolean video) {
+        }
+
+        public void onPreAudioVideoRecord() {
+        }
+
+        public void onMessageEditEnd(boolean loading) {
+        }
+
         public void needSendTyping() {
             if (PopupNotificationActivity.this.currentMessageObject != null) {
-                MessagesController.getInstance().sendTyping(PopupNotificationActivity.this.currentMessageObject.getDialogId(), 0, PopupNotificationActivity.this.classGuid);
+                MessagesController.getInstance(PopupNotificationActivity.this.currentMessageObject.currentAccount).sendTyping(PopupNotificationActivity.this.currentMessageObject.getDialogId(), 0, PopupNotificationActivity.this.classGuid);
             }
         }
 
@@ -198,10 +166,28 @@ public class PopupNotificationActivity extends Activity implements NotificationC
 
         public void onWindowSizeChanged(int size) {
         }
+
+        public void onStickersTab(boolean opened) {
+        }
+
+        public void didPressedAttachButton() {
+        }
+
+        public void needStartRecordVideo(int state) {
+        }
+
+        public void needStartRecordAudio(int state) {
+        }
+
+        public void needChangeVideoPreviewState(int state, float seekProgress) {
+        }
+
+        public void needShowMediaBanHint() {
+        }
     }
 
-    class C16503 extends ActionBarMenuOnItemClick {
-        C16503() {
+    class C21324 extends ActionBarMenuOnItemClick {
+        C21324() {
         }
 
         public void onItemClick(int id) {
@@ -216,21 +202,60 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         }
     }
 
-    public class FrameLayoutAnimationListener extends FrameLayoutFixed {
-        public FrameLayoutAnimationListener(Context context) {
-            super(context);
+    class C21335 implements OnClickListener {
+        C21335() {
         }
 
-        public FrameLayoutAnimationListener(Context context, AttributeSet attrs) {
-            super(context, attrs);
+        @TargetApi(9)
+        public void onClick(DialogInterface dialog, int which) {
+            try {
+                Intent intent = new Intent("android.settings.APPLICATION_DETAILS_SETTINGS");
+                intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
+                PopupNotificationActivity.this.startActivity(intent);
+            } catch (Throwable e) {
+                FileLog.m3e(e);
+            }
+        }
+    }
+
+    class C21346 implements Runnable {
+        C21346() {
         }
 
-        public FrameLayoutAnimationListener(Context context, AttributeSet attrs, int defStyle) {
-            super(context, attrs, defStyle);
+        public void run() {
+            PopupNotificationActivity.this.animationInProgress = false;
+            PopupNotificationActivity.this.switchToPreviousMessage();
+            AndroidUtilities.unlockOrientation(PopupNotificationActivity.this);
+        }
+    }
+
+    class C21357 implements Runnable {
+        C21357() {
         }
 
-        protected void onAnimationEnd() {
-            super.onAnimationEnd();
+        public void run() {
+            PopupNotificationActivity.this.animationInProgress = false;
+            PopupNotificationActivity.this.switchToNextMessage();
+            AndroidUtilities.unlockOrientation(PopupNotificationActivity.this);
+        }
+    }
+
+    class C21368 implements Runnable {
+        C21368() {
+        }
+
+        public void run() {
+            PopupNotificationActivity.this.animationInProgress = false;
+            PopupNotificationActivity.this.applyViewsLayoutParams(0);
+            AndroidUtilities.unlockOrientation(PopupNotificationActivity.this);
+        }
+    }
+
+    class C21379 extends AnimatorListenerAdapter {
+        C21379() {
+        }
+
+        public void onAnimationEnd(Animator animation) {
             if (PopupNotificationActivity.this.onAnimationEndRunnable != null) {
                 PopupNotificationActivity.this.onAnimationEndRunnable.run();
                 PopupNotificationActivity.this.onAnimationEndRunnable = null;
@@ -238,7 +263,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         }
     }
 
-    private class FrameLayoutTouch extends FrameLayoutFixed {
+    private class FrameLayoutTouch extends FrameLayout {
         public FrameLayoutTouch(Context context) {
             super(context);
         }
@@ -267,20 +292,26 @@ public class PopupNotificationActivity extends Activity implements NotificationC
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Theme.createChatResources(this, false);
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
             AndroidUtilities.statusBarHeight = getResources().getDimensionPixelSize(resourceId);
         }
-        this.classGuid = ConnectionsManager.getInstance().generateClassGuid();
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.appDidLogout);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.pushMessagesUpdated);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.updateInterfaces);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.audioProgressDidChanged);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.audioDidReset);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.contactsDidLoaded);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.emojiDidLoaded);
-        this.typingDotsDrawable = new TypingDotsDrawable();
-        this.recordStatusDrawable = new RecordStatusDrawable();
+        for (int a = 0; a < 3; a++) {
+            NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.appDidLogout);
+            NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.updateInterfaces);
+            NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
+            NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.messagePlayingDidReset);
+            NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.contactsDidLoaded);
+        }
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.pushMessagesUpdated);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiDidLoaded);
+        this.classGuid = ConnectionsManager.generateClassGuid();
+        this.statusDrawables[0] = new TypingDotsDrawable();
+        this.statusDrawables[1] = new RecordStatusDrawable();
+        this.statusDrawables[2] = new SendingFileDrawable();
+        this.statusDrawables[3] = new PlayingGameDrawable();
+        this.statusDrawables[4] = new RoundStatusDrawable();
         SizeNotifierFrameLayout contentView = new SizeNotifierFrameLayout(this) {
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 int widthMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -362,37 +393,64 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         setContentView(contentView);
         contentView.setBackgroundColor(-1728053248);
         RelativeLayout relativeLayout = new RelativeLayout(this);
-        contentView.addView(relativeLayout, LayoutHelper.createFrame(-1, GroundOverlayOptions.NO_DIMENSION));
-        this.popupContainer = new RelativeLayout(this);
-        this.popupContainer.setBackgroundColor(-1);
-        relativeLayout.addView(this.popupContainer, LayoutHelper.createRelative(-1, 240, 12, 0, 12, 0, 13));
+        contentView.addView(relativeLayout, LayoutHelper.createFrame(-1, -1.0f));
+        this.popupContainer = new RelativeLayout(this) {
+            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+                int w = PopupNotificationActivity.this.chatActivityEnterView.getMeasuredWidth();
+                int h = PopupNotificationActivity.this.chatActivityEnterView.getMeasuredHeight();
+                for (int a = 0; a < getChildCount(); a++) {
+                    View v = getChildAt(a);
+                    if (v.getTag() instanceof String) {
+                        v.measure(MeasureSpec.makeMeasureSpec(w, 1073741824), MeasureSpec.makeMeasureSpec(h - AndroidUtilities.dp(3.0f), 1073741824));
+                    }
+                }
+            }
+
+            protected void onLayout(boolean changed, int l, int t, int r, int b) {
+                super.onLayout(changed, l, t, r, b);
+                for (int a = 0; a < getChildCount(); a++) {
+                    View v = getChildAt(a);
+                    if (v.getTag() instanceof String) {
+                        v.layout(v.getLeft(), PopupNotificationActivity.this.chatActivityEnterView.getTop() + AndroidUtilities.dp(3.0f), v.getRight(), PopupNotificationActivity.this.chatActivityEnterView.getBottom());
+                    }
+                }
+            }
+        };
+        this.popupContainer.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        relativeLayout.addView(this.popupContainer, LayoutHelper.createRelative(-1, PsExtractor.VIDEO_STREAM_MASK, 12, 0, 12, 0, 13));
         if (this.chatActivityEnterView != null) {
             this.chatActivityEnterView.onDestroy();
         }
         this.chatActivityEnterView = new ChatActivityEnterView(this, contentView, null, false);
+        this.chatActivityEnterView.setId(id_chat_compose_panel);
         this.popupContainer.addView(this.chatActivityEnterView, LayoutHelper.createRelative(-1, -2, 12));
-        this.chatActivityEnterView.setDelegate(new C16492());
+        this.chatActivityEnterView.setDelegate(new C21313());
         this.messageContainer = new FrameLayoutTouch(this);
         this.popupContainer.addView(this.messageContainer, 0);
         this.actionBar = new ActionBar(this);
         this.actionBar.setOccupyStatusBar(false);
-        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
-        this.actionBar.setBackgroundColor(-11242082);
-        this.actionBar.setItemsBackground(C0553R.drawable.bar_selector);
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_close_white);
+        this.actionBar.setBackgroundColor(Theme.getColor(Theme.key_actionBarDefault));
+        this.actionBar.setItemsBackgroundColor(Theme.getColor(Theme.key_actionBarDefaultSelector), false);
         this.popupContainer.addView(this.actionBar);
         ViewGroup.LayoutParams layoutParams = this.actionBar.getLayoutParams();
         layoutParams.width = -1;
         this.actionBar.setLayoutParams(layoutParams);
-        this.countText = (TextView) this.actionBar.createMenu().addItemResource(2, C0553R.layout.popup_count_layout).findViewById(C0553R.id.count_text);
-        this.avatarContainer = new FrameLayoutFixed(this);
-        this.avatarContainer.setBackgroundResource(C0553R.drawable.bar_selector);
+        ActionBarMenuItem view = this.actionBar.createMenu().addItemWithWidth(2, 0, AndroidUtilities.dp(56.0f));
+        this.countText = new TextView(this);
+        this.countText.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubtitle));
+        this.countText.setTextSize(1, 14.0f);
+        this.countText.setGravity(17);
+        view.addView(this.countText, LayoutHelper.createFrame(56, -1.0f));
+        this.avatarContainer = new FrameLayout(this);
         this.avatarContainer.setPadding(AndroidUtilities.dp(4.0f), 0, AndroidUtilities.dp(4.0f), 0);
         this.actionBar.addView(this.avatarContainer);
         LayoutParams layoutParams2 = (LayoutParams) this.avatarContainer.getLayoutParams();
         layoutParams2.height = -1;
         layoutParams2.width = -2;
         layoutParams2.rightMargin = AndroidUtilities.dp(48.0f);
-        layoutParams2.leftMargin = AndroidUtilities.dp(BitmapDescriptorFactory.HUE_YELLOW);
+        layoutParams2.leftMargin = AndroidUtilities.dp(60.0f);
         layoutParams2.gravity = 51;
         this.avatarContainer.setLayoutParams(layoutParams2);
         this.avatarImageView = new BackupImageView(this);
@@ -404,7 +462,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         layoutParams2.topMargin = AndroidUtilities.dp(3.0f);
         this.avatarImageView.setLayoutParams(layoutParams2);
         this.nameTextView = new TextView(this);
-        this.nameTextView.setTextColor(-1);
+        this.nameTextView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultTitle));
         this.nameTextView.setTextSize(1, 18.0f);
         this.nameTextView.setLines(1);
         this.nameTextView.setMaxLines(1);
@@ -421,7 +479,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         layoutParams2.gravity = 80;
         this.nameTextView.setLayoutParams(layoutParams2);
         this.onlineTextView = new TextView(this);
-        this.onlineTextView.setTextColor(-2627337);
+        this.onlineTextView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubtitle));
         this.onlineTextView.setTextSize(1, 14.0f);
         this.onlineTextView.setLines(1);
         this.onlineTextView.setMaxLines(1);
@@ -436,7 +494,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         layoutParams2.bottomMargin = AndroidUtilities.dp(4.0f);
         layoutParams2.gravity = 80;
         this.onlineTextView.setLayoutParams(layoutParams2);
-        this.actionBar.setActionBarMenuOnItemClick(new C16503());
+        this.actionBar.setActionBarMenuOnItemClick(new C21324());
         this.wakeLock = ((PowerManager) ApplicationLoader.applicationContext.getSystemService("power")).newWakeLock(268435462, "screen");
         this.wakeLock.setReferenceCounted(false);
         handleIntent(getIntent());
@@ -444,7 +502,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
 
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        AndroidUtilities.checkDisplaySize();
+        AndroidUtilities.checkDisplaySize(this, newConfig);
         fixLayout();
     }
 
@@ -456,38 +514,38 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 3 && grantResults[0] != 0) {
-            Builder builder = new Builder(this);
-            builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-            builder.setMessage(LocaleController.getString("PermissionNoAudio", C0553R.string.PermissionNoAudio));
-            builder.setNegativeButton(LocaleController.getString("PermissionOpenSettings", C0553R.string.PermissionOpenSettings), new C11564());
-            builder.setPositiveButton(LocaleController.getString("OK", C0553R.string.OK), null);
+            Builder builder = new Builder((Context) this);
+            builder.setTitle(LocaleController.getString("AppName", C0488R.string.AppName));
+            builder.setMessage(LocaleController.getString("PermissionNoAudio", C0488R.string.PermissionNoAudio));
+            builder.setNegativeButton(LocaleController.getString("PermissionOpenSettings", C0488R.string.PermissionOpenSettings), new C21335());
+            builder.setPositiveButton(LocaleController.getString("OK", C0488R.string.OK), null);
             builder.show();
         }
     }
 
     private void switchToNextMessage() {
-        if (NotificationsController.getInstance().popupMessages.size() > 1) {
-            if (this.currentMessageNum < NotificationsController.getInstance().popupMessages.size() - 1) {
+        if (this.popupMessages.size() > 1) {
+            if (this.currentMessageNum < this.popupMessages.size() - 1) {
                 this.currentMessageNum++;
             } else {
                 this.currentMessageNum = 0;
             }
-            this.currentMessageObject = (MessageObject) NotificationsController.getInstance().popupMessages.get(this.currentMessageNum);
+            this.currentMessageObject = (MessageObject) this.popupMessages.get(this.currentMessageNum);
             updateInterfaceForCurrentMessage(2);
-            this.countText.setText(String.format("%d/%d", new Object[]{Integer.valueOf(this.currentMessageNum + 1), Integer.valueOf(NotificationsController.getInstance().popupMessages.size())}));
+            this.countText.setText(String.format("%d/%d", new Object[]{Integer.valueOf(this.currentMessageNum + 1), Integer.valueOf(this.popupMessages.size())}));
         }
     }
 
     private void switchToPreviousMessage() {
-        if (NotificationsController.getInstance().popupMessages.size() > 1) {
+        if (this.popupMessages.size() > 1) {
             if (this.currentMessageNum > 0) {
                 this.currentMessageNum--;
             } else {
-                this.currentMessageNum = NotificationsController.getInstance().popupMessages.size() - 1;
+                this.currentMessageNum = this.popupMessages.size() - 1;
             }
-            this.currentMessageObject = (MessageObject) NotificationsController.getInstance().popupMessages.get(this.currentMessageNum);
+            this.currentMessageObject = (MessageObject) this.popupMessages.get(this.currentMessageNum);
             updateInterfaceForCurrentMessage(1);
-            this.countText.setText(String.format("%d/%d", new Object[]{Integer.valueOf(this.currentMessageNum + 1), Integer.valueOf(NotificationsController.getInstance().popupMessages.size())}));
+            this.countText.setText(String.format("%d/%d", new Object[]{Integer.valueOf(this.currentMessageNum + 1), Integer.valueOf(this.popupMessages.size())}));
         }
     }
 
@@ -511,7 +569,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         } else if (motionEvent != null && motionEvent.getAction() == 2) {
             float x = motionEvent.getX();
             diff = (int) (x - this.moveStartX);
-            if (!(this.moveStartX == GroundOverlayOptions.NO_DIMENSION || this.startedMoving || Math.abs(diff) <= AndroidUtilities.dp(10.0f))) {
+            if (!(this.moveStartX == -1.0f || this.startedMoving || Math.abs(diff) <= AndroidUtilities.dp(10.0f))) {
                 this.startedMoving = true;
                 this.moveStartX = x;
                 AndroidUtilities.lockOrientation(this);
@@ -538,14 +596,14 @@ public class PopupNotificationActivity extends Activity implements NotificationC
             if (motionEvent == null || !this.startedMoving) {
                 applyViewsLayoutParams(0);
             } else {
-                LayoutParams layoutParams = (LayoutParams) this.centerView.getLayoutParams();
                 diff = (int) (motionEvent.getX() - this.moveStartX);
                 int width = AndroidUtilities.displaySize.x - AndroidUtilities.dp(24.0f);
-                int moveDiff = 0;
+                float moveDiff = 0.0f;
                 int forceMove = 0;
                 View otherView = null;
+                View otherButtonsView = null;
                 if (this.velocityTracker != null) {
-                    this.velocityTracker.computeCurrentVelocity(LocationStatusCodes.GEOFENCE_NOT_AVAILABLE);
+                    this.velocityTracker.computeCurrentVelocity(id_chat_compose_panel);
                     if (this.velocityTracker.getXVelocity() >= 3500.0f) {
                         forceMove = 1;
                     } else if (this.velocityTracker.getXVelocity() <= -3500.0f) {
@@ -553,28 +611,43 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                     }
                 }
                 if ((forceMove == 1 || diff > width / 3) && this.leftView != null) {
-                    moveDiff = width - layoutParams.leftMargin;
+                    moveDiff = ((float) width) - this.centerView.getTranslationX();
                     otherView = this.leftView;
-                    this.onAnimationEndRunnable = new C11575();
+                    otherButtonsView = this.leftButtonsView;
+                    this.onAnimationEndRunnable = new C21346();
                 } else if ((forceMove == 2 || diff < (-width) / 3) && this.rightView != null) {
-                    moveDiff = (-width) - layoutParams.leftMargin;
+                    moveDiff = ((float) (-width)) - this.centerView.getTranslationX();
                     otherView = this.rightView;
-                    this.onAnimationEndRunnable = new C11586();
-                } else if (layoutParams.leftMargin != 0) {
-                    moveDiff = -layoutParams.leftMargin;
+                    otherButtonsView = this.rightButtonsView;
+                    this.onAnimationEndRunnable = new C21357();
+                } else if (this.centerView.getTranslationX() != 0.0f) {
+                    moveDiff = -this.centerView.getTranslationX();
                     otherView = diff > 0 ? this.leftView : this.rightView;
-                    this.onAnimationEndRunnable = new C11597();
-                }
-                if (moveDiff != 0) {
-                    int time = (int) (Math.abs(((float) moveDiff) / ((float) width)) * 200.0f);
-                    TranslateAnimation animation = new TranslateAnimation(0.0f, (float) moveDiff, 0.0f, 0.0f);
-                    animation.setDuration((long) time);
-                    this.centerView.startAnimation(animation);
-                    if (otherView != null) {
-                        animation = new TranslateAnimation(0.0f, (float) moveDiff, 0.0f, 0.0f);
-                        animation.setDuration((long) time);
-                        otherView.startAnimation(animation);
+                    if (diff > 0) {
+                        otherButtonsView = this.leftButtonsView;
+                    } else {
+                        otherButtonsView = this.rightButtonsView;
                     }
+                    this.onAnimationEndRunnable = new C21368();
+                }
+                if (moveDiff != 0.0f) {
+                    int time = (int) (Math.abs(moveDiff / ((float) width)) * 200.0f);
+                    ArrayList<Animator> animators = new ArrayList();
+                    animators.add(ObjectAnimator.ofFloat(this.centerView, "translationX", new float[]{this.centerView.getTranslationX() + moveDiff}));
+                    if (this.centerButtonsView != null) {
+                        animators.add(ObjectAnimator.ofFloat(this.centerButtonsView, "translationX", new float[]{this.centerButtonsView.getTranslationX() + moveDiff}));
+                    }
+                    if (otherView != null) {
+                        animators.add(ObjectAnimator.ofFloat(otherView, "translationX", new float[]{otherView.getTranslationX() + moveDiff}));
+                    }
+                    if (otherButtonsView != null) {
+                        animators.add(ObjectAnimator.ofFloat(otherButtonsView, "translationX", new float[]{otherButtonsView.getTranslationX() + moveDiff}));
+                    }
+                    AnimatorSet animatorSet = new AnimatorSet();
+                    animatorSet.playTogether(animators);
+                    animatorSet.setDuration((long) time);
+                    animatorSet.addListener(new C21379());
+                    animatorSet.start();
                     this.animationInProgress = true;
                     this.animationStartTime = System.currentTimeMillis();
                 }
@@ -584,65 +657,186 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                 this.velocityTracker = null;
             }
             this.startedMoving = false;
-            this.moveStartX = GroundOverlayOptions.NO_DIMENSION;
+            this.moveStartX = -1.0f;
         }
         return this.startedMoving;
     }
 
     private void applyViewsLayoutParams(int xOffset) {
+        LayoutParams layoutParams;
         int widht = AndroidUtilities.displaySize.x - AndroidUtilities.dp(24.0f);
         if (this.leftView != null) {
-            LayoutParams layoutParams = (LayoutParams) this.leftView.getLayoutParams();
-            layoutParams.gravity = 51;
-            layoutParams.height = -1;
-            layoutParams.width = widht;
-            layoutParams.leftMargin = (-widht) + xOffset;
-            this.leftView.setLayoutParams(layoutParams);
+            layoutParams = (LayoutParams) this.leftView.getLayoutParams();
+            if (layoutParams.width != widht) {
+                layoutParams.width = widht;
+                this.leftView.setLayoutParams(layoutParams);
+            }
+            this.leftView.setTranslationX((float) ((-widht) + xOffset));
+        }
+        if (this.leftButtonsView != null) {
+            this.leftButtonsView.setTranslationX((float) ((-widht) + xOffset));
         }
         if (this.centerView != null) {
             layoutParams = (LayoutParams) this.centerView.getLayoutParams();
-            layoutParams.gravity = 51;
-            layoutParams.height = -1;
-            layoutParams.width = widht;
-            layoutParams.leftMargin = xOffset;
-            this.centerView.setLayoutParams(layoutParams);
+            if (layoutParams.width != widht) {
+                layoutParams.width = widht;
+                this.centerView.setLayoutParams(layoutParams);
+            }
+            this.centerView.setTranslationX((float) xOffset);
+        }
+        if (this.centerButtonsView != null) {
+            this.centerButtonsView.setTranslationX((float) xOffset);
         }
         if (this.rightView != null) {
             layoutParams = (LayoutParams) this.rightView.getLayoutParams();
-            layoutParams.gravity = 51;
-            layoutParams.height = -1;
-            layoutParams.width = widht;
-            layoutParams.leftMargin = widht + xOffset;
-            this.rightView.setLayoutParams(layoutParams);
+            if (layoutParams.width != widht) {
+                layoutParams.width = widht;
+                this.rightView.setLayoutParams(layoutParams);
+            }
+            this.rightView.setTranslationX((float) (widht + xOffset));
+        }
+        if (this.rightButtonsView != null) {
+            this.rightButtonsView.setTranslationX((float) (widht + xOffset));
         }
         this.messageContainer.invalidate();
     }
 
+    private LinearLayout getButtonsViewForMessage(int num, boolean applyOffset) {
+        if (this.popupMessages.size() == 1 && (num < 0 || num >= this.popupMessages.size())) {
+            return null;
+        }
+        ArrayList<TL_keyboardButtonRow> rows;
+        int size;
+        int a;
+        TL_keyboardButtonRow row;
+        int size2;
+        int b;
+        if (num == -1) {
+            num = this.popupMessages.size() - 1;
+        } else if (num == this.popupMessages.size()) {
+            num = 0;
+        }
+        LinearLayout view = null;
+        final MessageObject messageObject = (MessageObject) this.popupMessages.get(num);
+        int buttonsCount = 0;
+        ReplyMarkup markup = messageObject.messageOwner.reply_markup;
+        if (messageObject.getDialogId() == 777000 && markup != null) {
+            rows = markup.rows;
+            size = rows.size();
+            for (a = 0; a < size; a++) {
+                row = (TL_keyboardButtonRow) rows.get(a);
+                size2 = row.buttons.size();
+                for (b = 0; b < size2; b++) {
+                    if (((KeyboardButton) row.buttons.get(b)) instanceof TL_keyboardButtonCallback) {
+                        buttonsCount++;
+                    }
+                }
+            }
+        }
+        final int account = messageObject.currentAccount;
+        if (buttonsCount > 0) {
+            rows = markup.rows;
+            size = rows.size();
+            for (a = 0; a < size; a++) {
+                row = (TL_keyboardButtonRow) rows.get(a);
+                size2 = row.buttons.size();
+                for (b = 0; b < size2; b++) {
+                    KeyboardButton button = (KeyboardButton) row.buttons.get(b);
+                    if (button instanceof TL_keyboardButtonCallback) {
+                        if (view == null) {
+                            view = new LinearLayout(this);
+                            view.setOrientation(0);
+                            view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                            view.setWeightSum(100.0f);
+                            view.setTag("b");
+                            view.setOnTouchListener(new OnTouchListener() {
+                                public boolean onTouch(View v, MotionEvent event) {
+                                    return true;
+                                }
+                            });
+                        }
+                        TextView textView = new TextView(this);
+                        textView.setTextSize(1, 16.0f);
+                        textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText));
+                        textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+                        textView.setText(button.text.toUpperCase());
+                        textView.setTag(button);
+                        textView.setGravity(17);
+                        textView.setBackgroundDrawable(Theme.getSelectorDrawable(true));
+                        view.addView(textView, LayoutHelper.createLinear(-1, -1, 100.0f / ((float) buttonsCount)));
+                        textView.setOnClickListener(new View.OnClickListener() {
+                            public void onClick(View v) {
+                                KeyboardButton button = (KeyboardButton) v.getTag();
+                                if (button != null) {
+                                    SendMessagesHelper.getInstance(account).sendNotificationCallback(messageObject.getDialogId(), messageObject.getId(), button.data);
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        if (view == null) {
+            return view;
+        }
+        int widht = AndroidUtilities.displaySize.x - AndroidUtilities.dp(24.0f);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(-1, -2);
+        layoutParams.addRule(12);
+        if (applyOffset) {
+            if (num == this.currentMessageNum) {
+                view.setTranslationX(0.0f);
+            } else if (num == this.currentMessageNum - 1) {
+                view.setTranslationX((float) (-widht));
+            } else if (num == this.currentMessageNum + 1) {
+                view.setTranslationX((float) widht);
+            }
+        }
+        this.popupContainer.addView(view, layoutParams);
+        return view;
+    }
+
     private ViewGroup getViewForMessage(int num, boolean applyOffset) {
-        if (NotificationsController.getInstance().popupMessages.size() == 1 && (num < 0 || num >= NotificationsController.getInstance().popupMessages.size())) {
+        if (this.popupMessages.size() == 1 && (num < 0 || num >= this.popupMessages.size())) {
             return null;
         }
         View view;
         if (num == -1) {
-            num = NotificationsController.getInstance().popupMessages.size() - 1;
-        } else if (num == NotificationsController.getInstance().popupMessages.size()) {
+            num = this.popupMessages.size() - 1;
+        } else if (num == this.popupMessages.size()) {
             num = 0;
         }
-        MessageObject messageObject = (MessageObject) NotificationsController.getInstance().popupMessages.get(num);
-        View frameLayoutAnimationListener;
+        MessageObject messageObject = (MessageObject) this.popupMessages.get(num);
+        View frameLayout;
+        FrameLayout frameLayout2;
         TextView messageText;
         if (messageObject.type == 1 || messageObject.type == 4) {
             if (this.imageViews.size() > 0) {
                 view = (ViewGroup) this.imageViews.get(0);
                 this.imageViews.remove(0);
             } else {
-                frameLayoutAnimationListener = new FrameLayoutAnimationListener(this);
-                frameLayoutAnimationListener.addView(getLayoutInflater().inflate(C0553R.layout.popup_image_layout, null));
-                frameLayoutAnimationListener.setTag(Integer.valueOf(2));
-                frameLayoutAnimationListener.setOnClickListener(new C11608());
+                frameLayout = new FrameLayout(this);
+                frameLayout2 = new FrameLayout(this);
+                frameLayout2.setPadding(AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f));
+                frameLayout2.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+                frameLayout.addView(frameLayout2, LayoutHelper.createFrame(-1, -1.0f));
+                BackupImageView backupImageView = new BackupImageView(this);
+                backupImageView.setTag(Integer.valueOf(311));
+                frameLayout2.addView(backupImageView, LayoutHelper.createFrame(-1, -1.0f));
+                frameLayout = new TextView(this);
+                frameLayout.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                frameLayout.setTextSize(1, 16.0f);
+                frameLayout.setGravity(17);
+                frameLayout.setTag(Integer.valueOf(312));
+                frameLayout2.addView(frameLayout, LayoutHelper.createFrame(-1, -2, 17));
+                frameLayout.setTag(Integer.valueOf(2));
+                frameLayout.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        PopupNotificationActivity.this.openCurrentMessage();
+                    }
+                });
             }
-            messageText = (TextView) view.findViewById(C0553R.id.message_text);
-            BackupImageView imageView = (BackupImageView) view.findViewById(C0553R.id.message_image);
+            messageText = (TextView) view.findViewWithTag(Integer.valueOf(312));
+            BackupImageView imageView = (BackupImageView) view.findViewWithTag(Integer.valueOf(311));
             imageView.setAspectFit(true);
             if (messageObject.type == 1) {
                 PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, AndroidUtilities.getPhotoSize());
@@ -653,7 +847,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                     if (messageObject.type == 1 && !FileLoader.getPathToMessage(messageObject.messageOwner).exists()) {
                         photoExist = false;
                     }
-                    if (photoExist || MediaController.getInstance().canDownloadMedia(1)) {
+                    if (photoExist || DownloadController.getInstance(messageObject.currentAccount).canDownloadMedia(messageObject)) {
                         imageView.setImage(currentPhotoObject.location, "100_100", thumb.location, currentPhotoObject.size);
                         photoSet = true;
                     } else if (thumb != null) {
@@ -667,7 +861,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                 } else {
                     imageView.setVisibility(8);
                     messageText.setVisibility(0);
-                    messageText.setTextSize(2, (float) MessagesController.getInstance().fontSize);
+                    messageText.setTextSize(2, (float) SharedConfig.fontSize);
                     messageText.setText(messageObject.messageText);
                 }
             } else if (messageObject.type == 4) {
@@ -676,7 +870,8 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                 imageView.setVisibility(0);
                 double lat = messageObject.messageOwner.media.geo.lat;
                 double lon = messageObject.messageOwner.media.geo._long;
-                imageView.setImage(String.format(Locale.US, "https://maps.googleapis.com/maps/api/staticmap?center=%f,%f&zoom=13&size=100x100&maptype=roadmap&scale=%d&markers=color:red|size:big|%f,%f&sensor=false", new Object[]{Double.valueOf(lat), Double.valueOf(lon), Integer.valueOf(Math.min(2, (int) Math.ceil((double) AndroidUtilities.density))), Double.valueOf(lat), Double.valueOf(lon)}), null, null);
+                BackupImageView backupImageView2 = imageView;
+                backupImageView2.setImage(String.format(Locale.US, "https://maps.googleapis.com/maps/api/staticmap?center=%f,%f&zoom=13&size=100x100&maptype=roadmap&scale=%d&markers=color:red|size:big|%f,%f&sensor=false", new Object[]{Double.valueOf(lat), Double.valueOf(lon), Integer.valueOf(Math.min(2, (int) Math.ceil((double) AndroidUtilities.density))), Double.valueOf(lat), Double.valueOf(lon)}), null, null);
             }
         } else if (messageObject.type == 2) {
             PopupAudioView cell;
@@ -685,17 +880,25 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                 this.audioViews.remove(0);
                 cell = (PopupAudioView) view.findViewWithTag(Integer.valueOf(300));
             } else {
-                frameLayoutAnimationListener = new FrameLayoutAnimationListener(this);
-                frameLayoutAnimationListener.addView(getLayoutInflater().inflate(C0553R.layout.popup_audio_layout, null));
-                frameLayoutAnimationListener.setTag(Integer.valueOf(3));
-                frameLayoutAnimationListener.setOnClickListener(new C11619());
-                ViewGroup audioContainer = (ViewGroup) frameLayoutAnimationListener.findViewById(C0553R.id.audio_container);
+                frameLayout = new FrameLayout(this);
+                frameLayout2 = new FrameLayout(this);
+                frameLayout2.setPadding(AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f));
+                frameLayout2.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+                frameLayout.addView(frameLayout2, LayoutHelper.createFrame(-1, -1.0f));
+                FrameLayout frameLayout1 = new FrameLayout(this);
+                frameLayout2.addView(frameLayout1, LayoutHelper.createFrame(-1, -2.0f, 17, 20.0f, 0.0f, 20.0f, 0.0f));
                 cell = new PopupAudioView(this);
                 cell.setTag(Integer.valueOf(300));
-                audioContainer.addView(cell);
+                frameLayout1.addView(cell);
+                frameLayout.setTag(Integer.valueOf(3));
+                frameLayout.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) {
+                        PopupNotificationActivity.this.openCurrentMessage();
+                    }
+                });
             }
             cell.setMessageObject(messageObject);
-            if (MediaController.getInstance().canDownloadMedia(2)) {
+            if (DownloadController.getInstance(messageObject.currentAccount).canDownloadMedia(messageObject)) {
                 cell.downloadAudioIfNeed();
             }
         } else {
@@ -703,18 +906,31 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                 view = (ViewGroup) this.textViews.get(0);
                 this.textViews.remove(0);
             } else {
-                frameLayoutAnimationListener = new FrameLayoutAnimationListener(this);
-                frameLayoutAnimationListener.addView(getLayoutInflater().inflate(C0553R.layout.popup_text_layout, null));
-                frameLayoutAnimationListener.setTag(Integer.valueOf(1));
-                frameLayoutAnimationListener.findViewById(C0553R.id.text_container).setOnClickListener(new View.OnClickListener() {
+                frameLayout = new FrameLayout(this);
+                frameLayout = new ScrollView(this);
+                frameLayout.setFillViewport(true);
+                frameLayout.addView(frameLayout, LayoutHelper.createFrame(-1, -1.0f));
+                frameLayout = new LinearLayout(this);
+                frameLayout.setOrientation(0);
+                frameLayout.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+                frameLayout.addView(frameLayout, LayoutHelper.createScroll(-1, -2, 1));
+                frameLayout.setPadding(AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(10.0f));
+                frameLayout.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) {
                         PopupNotificationActivity.this.openCurrentMessage();
                     }
                 });
+                frameLayout = new TextView(this);
+                frameLayout.setTextSize(1, 16.0f);
+                frameLayout.setTag(Integer.valueOf(301));
+                frameLayout.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                frameLayout.setLinkTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                frameLayout.setGravity(17);
+                frameLayout.addView(frameLayout, LayoutHelper.createLinear(-1, -2, 17));
+                frameLayout.setTag(Integer.valueOf(1));
             }
-            messageText = (TextView) view.findViewById(C0553R.id.message_text);
-            messageText.setTag(Integer.valueOf(301));
-            messageText.setTextSize(2, (float) MessagesController.getInstance().fontSize);
+            messageText = (TextView) view.findViewWithTag(Integer.valueOf(301));
+            messageText.setTextSize(2, (float) SharedConfig.fontSize);
             messageText.setText(messageObject.messageText);
         }
         if (view.getParent() == null) {
@@ -725,20 +941,26 @@ public class PopupNotificationActivity extends Activity implements NotificationC
             return view;
         }
         int widht = AndroidUtilities.displaySize.x - AndroidUtilities.dp(24.0f);
-        LayoutParams layoutParams = (LayoutParams) view.getLayoutParams();
+        ViewGroup.LayoutParams layoutParams = (LayoutParams) view.getLayoutParams();
         layoutParams.gravity = 51;
         layoutParams.height = -1;
         layoutParams.width = widht;
         if (num == this.currentMessageNum) {
-            layoutParams.leftMargin = 0;
+            view.setTranslationX(0.0f);
         } else if (num == this.currentMessageNum - 1) {
-            layoutParams.leftMargin = -widht;
+            view.setTranslationX((float) (-widht));
         } else if (num == this.currentMessageNum + 1) {
-            layoutParams.leftMargin = widht;
+            view.setTranslationX((float) widht);
         }
         view.setLayoutParams(layoutParams);
         view.invalidate();
         return view;
+    }
+
+    private void reuseButtonsView(ViewGroup view) {
+        if (view != null) {
+            this.popupContainer.removeView(view);
+        }
     }
 
     private void reuseView(ViewGroup view) {
@@ -756,55 +978,90 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     }
 
     private void prepareLayouts(int move) {
+        int widht = AndroidUtilities.displaySize.x - AndroidUtilities.dp(24.0f);
         if (move == 0) {
             reuseView(this.centerView);
             reuseView(this.leftView);
             reuseView(this.rightView);
+            reuseButtonsView(this.centerButtonsView);
+            reuseButtonsView(this.leftButtonsView);
+            reuseButtonsView(this.rightButtonsView);
             for (int a = this.currentMessageNum - 1; a < this.currentMessageNum + 2; a++) {
                 if (a == this.currentMessageNum - 1) {
                     this.leftView = getViewForMessage(a, true);
+                    this.leftButtonsView = getButtonsViewForMessage(a, true);
                 } else if (a == this.currentMessageNum) {
                     this.centerView = getViewForMessage(a, true);
+                    this.centerButtonsView = getButtonsViewForMessage(a, true);
                 } else if (a == this.currentMessageNum + 1) {
                     this.rightView = getViewForMessage(a, true);
+                    this.rightButtonsView = getButtonsViewForMessage(a, true);
                 }
             }
         } else if (move == 1) {
             reuseView(this.rightView);
+            reuseButtonsView(this.rightButtonsView);
             this.rightView = this.centerView;
             this.centerView = this.leftView;
             this.leftView = getViewForMessage(this.currentMessageNum - 1, true);
+            this.rightButtonsView = this.centerButtonsView;
+            this.centerButtonsView = this.leftButtonsView;
+            this.leftButtonsView = getButtonsViewForMessage(this.currentMessageNum - 1, true);
         } else if (move == 2) {
             reuseView(this.leftView);
+            reuseButtonsView(this.leftButtonsView);
             this.leftView = this.centerView;
             this.centerView = this.rightView;
             this.rightView = getViewForMessage(this.currentMessageNum + 1, true);
+            this.leftButtonsView = this.centerButtonsView;
+            this.centerButtonsView = this.rightButtonsView;
+            this.rightButtonsView = getButtonsViewForMessage(this.currentMessageNum + 1, true);
         } else if (move == 3) {
             if (this.rightView != null) {
-                offset = ((LayoutParams) this.rightView.getLayoutParams()).leftMargin;
+                offset = this.rightView.getTranslationX();
                 reuseView(this.rightView);
-                this.rightView = getViewForMessage(this.currentMessageNum + 1, false);
-                widht = AndroidUtilities.displaySize.x - AndroidUtilities.dp(24.0f);
-                layoutParams = (LayoutParams) this.rightView.getLayoutParams();
-                layoutParams.gravity = 51;
-                layoutParams.height = -1;
-                layoutParams.width = widht;
-                layoutParams.leftMargin = offset;
-                this.rightView.setLayoutParams(layoutParams);
-                this.rightView.invalidate();
+                r4 = getViewForMessage(this.currentMessageNum + 1, false);
+                this.rightView = r4;
+                if (r4 != null) {
+                    layoutParams = (LayoutParams) this.rightView.getLayoutParams();
+                    layoutParams.width = widht;
+                    this.rightView.setLayoutParams(layoutParams);
+                    this.rightView.setTranslationX(offset);
+                    this.rightView.invalidate();
+                }
             }
-        } else if (move == 4 && this.leftView != null) {
-            offset = ((LayoutParams) this.leftView.getLayoutParams()).leftMargin;
-            reuseView(this.leftView);
-            this.leftView = getViewForMessage(0, false);
-            widht = AndroidUtilities.displaySize.x - AndroidUtilities.dp(24.0f);
-            layoutParams = (LayoutParams) this.leftView.getLayoutParams();
-            layoutParams.gravity = 51;
-            layoutParams.height = -1;
-            layoutParams.width = widht;
-            layoutParams.leftMargin = offset;
-            this.leftView.setLayoutParams(layoutParams);
-            this.leftView.invalidate();
+            if (this.rightButtonsView != null) {
+                offset = this.rightButtonsView.getTranslationX();
+                reuseButtonsView(this.rightButtonsView);
+                r4 = getButtonsViewForMessage(this.currentMessageNum + 1, false);
+                this.rightButtonsView = r4;
+                if (r4 != null) {
+                    this.rightButtonsView.setTranslationX(offset);
+                }
+            }
+        } else if (move == 4) {
+            if (this.leftView != null) {
+                offset = this.leftView.getTranslationX();
+                reuseView(this.leftView);
+                r4 = getViewForMessage(0, false);
+                this.leftView = r4;
+                if (r4 != null) {
+                    layoutParams = (LayoutParams) this.leftView.getLayoutParams();
+                    layoutParams.width = widht;
+                    this.leftView.setLayoutParams(layoutParams);
+                    this.leftView.setTranslationX(offset);
+                    this.leftView.invalidate();
+                }
+            }
+            if (this.leftButtonsView != null) {
+                offset = this.leftButtonsView.getTranslationX();
+                reuseButtonsView(this.leftButtonsView);
+                r4 = getButtonsViewForMessage(0, false);
+                this.leftButtonsView = r4;
+                if (r4 != null) {
+                    this.leftButtonsView.setTranslationX(offset);
+                }
+            }
         }
     }
 
@@ -841,6 +1098,23 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     }
 
     private void handleIntent(Intent intent) {
+        boolean z;
+        if (intent == null || !intent.getBooleanExtra("force", false)) {
+            z = false;
+        } else {
+            z = true;
+        }
+        this.isReply = z;
+        this.popupMessages.clear();
+        if (this.isReply) {
+            this.popupMessages.addAll(NotificationsController.getInstance(intent != null ? intent.getIntExtra("currentAccount", UserConfig.selectedAccount) : UserConfig.selectedAccount).popupReplyMessages);
+        } else {
+            for (int a = 0; a < 3; a++) {
+                if (UserConfig.getInstance(a).isClientActivated()) {
+                    this.popupMessages.addAll(NotificationsController.getInstance(a).popupMessages);
+                }
+            }
+        }
         if (((KeyguardManager) getSystemService("keyguard")).inKeyguardRestrictedInputMode() || !ApplicationLoader.isScreenOn) {
             getWindow().addFlags(2623490);
         } else {
@@ -854,15 +1128,17 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     }
 
     private void getNewMessage() {
-        if (NotificationsController.getInstance().popupMessages.isEmpty()) {
+        if (this.popupMessages.isEmpty()) {
             onFinish();
             finish();
             return;
         }
         boolean found = false;
         if ((this.currentMessageNum != 0 || this.chatActivityEnterView.hasText() || this.startedMoving) && this.currentMessageObject != null) {
-            for (int a = 0; a < NotificationsController.getInstance().popupMessages.size(); a++) {
-                if (((MessageObject) NotificationsController.getInstance().popupMessages.get(a)).getId() == this.currentMessageObject.getId()) {
+            int size = this.popupMessages.size();
+            for (int a = 0; a < size; a++) {
+                MessageObject messageObject = (MessageObject) this.popupMessages.get(a);
+                if (messageObject.currentAccount == this.currentMessageObject.currentAccount && messageObject.getDialogId() == this.currentMessageObject.getDialogId() && messageObject.getId() == this.currentMessageObject.getId()) {
                     this.currentMessageNum = a;
                     found = true;
                     break;
@@ -871,16 +1147,16 @@ public class PopupNotificationActivity extends Activity implements NotificationC
         }
         if (!found) {
             this.currentMessageNum = 0;
-            this.currentMessageObject = (MessageObject) NotificationsController.getInstance().popupMessages.get(0);
+            this.currentMessageObject = (MessageObject) this.popupMessages.get(0);
             updateInterfaceForCurrentMessage(0);
         } else if (this.startedMoving) {
-            if (this.currentMessageNum == NotificationsController.getInstance().popupMessages.size() - 1) {
+            if (this.currentMessageNum == this.popupMessages.size() - 1) {
                 prepareLayouts(3);
             } else if (this.currentMessageNum == 1) {
                 prepareLayouts(4);
             }
         }
-        this.countText.setText(String.format("%d/%d", new Object[]{Integer.valueOf(this.currentMessageNum + 1), Integer.valueOf(NotificationsController.getInstance().popupMessages.size())}));
+        this.countText.setText(String.format("%d/%d", new Object[]{Integer.valueOf(this.currentMessageNum + 1), Integer.valueOf(this.popupMessages.size())}));
     }
 
     private void openCurrentMessage() {
@@ -897,6 +1173,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
             } else {
                 intent.putExtra("encId", (int) (dialog_id >> 32));
             }
+            intent.putExtra("currentAccount", this.currentMessageObject.currentAccount);
             intent.setAction("com.tmessages.openchat" + Math.random() + ConnectionsManager.DEFAULT_DATACENTER_ID);
             intent.setFlags(32768);
             startActivity(intent);
@@ -907,20 +1184,27 @@ public class PopupNotificationActivity extends Activity implements NotificationC
 
     private void updateInterfaceForCurrentMessage(int move) {
         if (this.actionBar != null) {
+            if (this.lastResumedAccount != this.currentMessageObject.currentAccount) {
+                if (this.lastResumedAccount >= 0) {
+                    ConnectionsManager.getInstance(this.lastResumedAccount).setAppPaused(true, false);
+                }
+                this.lastResumedAccount = this.currentMessageObject.currentAccount;
+                ConnectionsManager.getInstance(this.lastResumedAccount).setAppPaused(false, false);
+            }
             this.currentChat = null;
             this.currentUser = null;
             long dialog_id = this.currentMessageObject.getDialogId();
-            this.chatActivityEnterView.setDialogId(dialog_id);
+            this.chatActivityEnterView.setDialogId(dialog_id, this.currentMessageObject.currentAccount);
             if (((int) dialog_id) != 0) {
                 int lower_id = (int) dialog_id;
                 if (lower_id > 0) {
-                    this.currentUser = MessagesController.getInstance().getUser(Integer.valueOf(lower_id));
+                    this.currentUser = MessagesController.getInstance(this.currentMessageObject.currentAccount).getUser(Integer.valueOf(lower_id));
                 } else {
-                    this.currentChat = MessagesController.getInstance().getChat(Integer.valueOf(-lower_id));
-                    this.currentUser = MessagesController.getInstance().getUser(Integer.valueOf(this.currentMessageObject.messageOwner.from_id));
+                    this.currentChat = MessagesController.getInstance(this.currentMessageObject.currentAccount).getChat(Integer.valueOf(-lower_id));
+                    this.currentUser = MessagesController.getInstance(this.currentMessageObject.currentAccount).getUser(Integer.valueOf(this.currentMessageObject.messageOwner.from_id));
                 }
             } else {
-                this.currentUser = MessagesController.getInstance().getUser(Integer.valueOf(MessagesController.getInstance().getEncryptedChat(Integer.valueOf((int) (dialog_id >> 32))).user_id));
+                this.currentUser = MessagesController.getInstance(this.currentMessageObject.currentAccount).getUser(Integer.valueOf(MessagesController.getInstance(this.currentMessageObject.currentAccount).getEncryptedChat(Integer.valueOf((int) (dialog_id >> 32))).user_id));
             }
             if (this.currentChat != null && this.currentUser != null) {
                 this.nameTextView.setText(this.currentChat.title);
@@ -930,7 +1214,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
             } else if (this.currentUser != null) {
                 this.nameTextView.setText(UserObject.getUserName(this.currentUser));
                 if (((int) dialog_id) == 0) {
-                    this.nameTextView.setCompoundDrawablesWithIntrinsicBounds(C0553R.drawable.ic_lock_white, 0, 0, 0);
+                    this.nameTextView.setCompoundDrawablesWithIntrinsicBounds(C0488R.drawable.ic_lock_white, 0, 0, 0);
                     this.nameTextView.setCompoundDrawablePadding(AndroidUtilities.dp(4.0f));
                 } else {
                     this.nameTextView.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
@@ -945,91 +1229,94 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     }
 
     private void updateSubtitle() {
-        if (this.actionBar != null && this.currentChat == null && this.currentUser != null) {
-            if (this.currentUser.id / LocationStatusCodes.GEOFENCE_NOT_AVAILABLE == 777 || this.currentUser.id / LocationStatusCodes.GEOFENCE_NOT_AVAILABLE == 333 || ContactsController.getInstance().contactsDict.get(this.currentUser.id) != null || (ContactsController.getInstance().contactsDict.size() == 0 && ContactsController.getInstance().isLoadingContacts())) {
+        if (this.actionBar != null && this.currentMessageObject != null && this.currentChat == null && this.currentUser != null) {
+            if (this.currentUser.id / id_chat_compose_panel == 777 || this.currentUser.id / id_chat_compose_panel == 333 || ContactsController.getInstance(this.currentMessageObject.currentAccount).contactsDict.get(Integer.valueOf(this.currentUser.id)) != null || (ContactsController.getInstance(this.currentMessageObject.currentAccount).contactsDict.size() == 0 && ContactsController.getInstance(this.currentMessageObject.currentAccount).isLoadingContacts())) {
                 this.nameTextView.setText(UserObject.getUserName(this.currentUser));
             } else if (this.currentUser.phone == null || this.currentUser.phone.length() == 0) {
                 this.nameTextView.setText(UserObject.getUserName(this.currentUser));
             } else {
                 this.nameTextView.setText(PhoneFormat.getInstance().format("+" + this.currentUser.phone));
             }
-            CharSequence printString = (CharSequence) MessagesController.getInstance().printingStrings.get(Long.valueOf(this.currentMessageObject.getDialogId()));
-            if (printString == null || printString.length() == 0) {
-                this.lastPrintString = null;
-                setTypingAnimation(false);
-                User user = MessagesController.getInstance().getUser(Integer.valueOf(this.currentUser.id));
-                if (user != null) {
-                    this.currentUser = user;
+            if (this.currentUser == null || this.currentUser.id != 777000) {
+                CharSequence printString = (CharSequence) MessagesController.getInstance(this.currentMessageObject.currentAccount).printingStrings.get(this.currentMessageObject.getDialogId());
+                if (printString == null || printString.length() == 0) {
+                    this.lastPrintString = null;
+                    setTypingAnimation(false);
+                    User user = MessagesController.getInstance(this.currentMessageObject.currentAccount).getUser(Integer.valueOf(this.currentUser.id));
+                    if (user != null) {
+                        this.currentUser = user;
+                    }
+                    this.onlineTextView.setText(LocaleController.formatUserStatus(this.currentMessageObject.currentAccount, this.currentUser));
+                    return;
                 }
-                this.onlineTextView.setText(LocaleController.formatUserStatus(this.currentUser));
+                this.lastPrintString = printString;
+                this.onlineTextView.setText(printString);
+                setTypingAnimation(true);
                 return;
             }
-            this.lastPrintString = printString;
-            this.onlineTextView.setText(printString);
-            setTypingAnimation(true);
+            this.onlineTextView.setText(LocaleController.getString("ServiceNotifications", C0488R.string.ServiceNotifications));
         }
     }
 
     private void checkAndUpdateAvatar() {
-        TLObject newPhoto = null;
-        Drawable avatarDrawable = null;
-        if (this.currentChat != null) {
-            Chat chat = MessagesController.getInstance().getChat(Integer.valueOf(this.currentChat.id));
-            if (chat != null) {
-                this.currentChat = chat;
-                if (this.currentChat.photo != null) {
-                    newPhoto = this.currentChat.photo.photo_small;
+        if (this.currentMessageObject != null) {
+            TLObject newPhoto = null;
+            Drawable avatarDrawable = null;
+            if (this.currentChat != null) {
+                Chat chat = MessagesController.getInstance(this.currentMessageObject.currentAccount).getChat(Integer.valueOf(this.currentChat.id));
+                if (chat != null) {
+                    this.currentChat = chat;
+                    if (this.currentChat.photo != null) {
+                        newPhoto = this.currentChat.photo.photo_small;
+                    }
+                    avatarDrawable = new AvatarDrawable(this.currentChat);
+                } else {
+                    return;
                 }
-                avatarDrawable = new AvatarDrawable(this.currentChat);
-            } else {
-                return;
-            }
-        } else if (this.currentUser != null) {
-            User user = MessagesController.getInstance().getUser(Integer.valueOf(this.currentUser.id));
-            if (user != null) {
-                this.currentUser = user;
-                if (this.currentUser.photo != null) {
-                    newPhoto = this.currentUser.photo.photo_small;
+            } else if (this.currentUser != null) {
+                User user = MessagesController.getInstance(this.currentMessageObject.currentAccount).getUser(Integer.valueOf(this.currentUser.id));
+                if (user != null) {
+                    this.currentUser = user;
+                    if (this.currentUser.photo != null) {
+                        newPhoto = this.currentUser.photo.photo_small;
+                    }
+                    avatarDrawable = new AvatarDrawable(this.currentUser);
+                } else {
+                    return;
                 }
-                avatarDrawable = new AvatarDrawable(this.currentUser);
-            } else {
-                return;
             }
-        }
-        if (this.avatarImageView != null) {
-            this.avatarImageView.setImage(newPhoto, "50_50", avatarDrawable);
+            if (this.avatarImageView != null) {
+                this.avatarImageView.setImage(newPhoto, "50_50", avatarDrawable);
+            }
         }
     }
 
     private void setTypingAnimation(boolean start) {
         if (this.actionBar != null) {
+            int a;
             if (start) {
                 try {
-                    Integer type = (Integer) MessagesController.getInstance().printingStringsTypes.get(Long.valueOf(this.currentMessageObject.getDialogId()));
-                    if (type.intValue() == 0) {
-                        this.onlineTextView.setCompoundDrawablesWithIntrinsicBounds(this.typingDotsDrawable, null, null, null);
-                        this.onlineTextView.setCompoundDrawablePadding(AndroidUtilities.dp(4.0f));
-                        this.typingDotsDrawable.start();
-                        this.recordStatusDrawable.stop();
-                        return;
-                    } else if (type.intValue() == 1) {
-                        this.onlineTextView.setCompoundDrawablesWithIntrinsicBounds(this.recordStatusDrawable, null, null, null);
-                        this.onlineTextView.setCompoundDrawablePadding(AndroidUtilities.dp(4.0f));
-                        this.recordStatusDrawable.start();
-                        this.typingDotsDrawable.stop();
-                        return;
-                    } else {
-                        return;
+                    Integer type = (Integer) MessagesController.getInstance(this.currentMessageObject.currentAccount).printingStringsTypes.get(this.currentMessageObject.getDialogId());
+                    this.onlineTextView.setCompoundDrawablesWithIntrinsicBounds(this.statusDrawables[type.intValue()], null, null, null);
+                    this.onlineTextView.setCompoundDrawablePadding(AndroidUtilities.dp(4.0f));
+                    for (a = 0; a < this.statusDrawables.length; a++) {
+                        if (a == type.intValue()) {
+                            this.statusDrawables[a].start();
+                        } else {
+                            this.statusDrawables[a].stop();
+                        }
                     }
+                    return;
                 } catch (Throwable e) {
-                    FileLog.m611e("tmessages", e);
+                    FileLog.m3e(e);
                     return;
                 }
             }
             this.onlineTextView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
             this.onlineTextView.setCompoundDrawablePadding(0);
-            this.typingDotsDrawable.stop();
-            this.recordStatusDrawable.stop();
+            for (StatusDrawable stop : this.statusDrawables) {
+                stop.stop();
+            }
         }
     }
 
@@ -1043,10 +1330,10 @@ public class PopupNotificationActivity extends Activity implements NotificationC
 
     protected void onResume() {
         super.onResume();
+        MediaController.getInstance().setFeedbackView(this.chatActivityEnterView, true);
         if (this.chatActivityEnterView != null) {
             this.chatActivityEnterView.setFieldFocused(true);
         }
-        ConnectionsManager.getInstance().setAppPaused(false, false);
         fixLayout();
         checkAndUpdateAvatar();
         this.wakeLock.acquire(7000);
@@ -1059,17 +1346,29 @@ public class PopupNotificationActivity extends Activity implements NotificationC
             this.chatActivityEnterView.hidePopup(false);
             this.chatActivityEnterView.setFieldFocused(false);
         }
-        ConnectionsManager.getInstance().setAppPaused(true, false);
+        if (this.lastResumedAccount >= 0) {
+            ConnectionsManager.getInstance(this.lastResumedAccount).setAppPaused(true, false);
+        }
     }
 
-    public void didReceivedNotification(int id, Object... args) {
+    public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.appDidLogout) {
-            onFinish();
-            finish();
+            if (account == this.lastResumedAccount) {
+                onFinish();
+                finish();
+            }
         } else if (id == NotificationCenter.pushMessagesUpdated) {
-            getNewMessage();
+            if (!this.isReply) {
+                this.popupMessages.clear();
+                for (a = 0; a < 3; a++) {
+                    if (UserConfig.getInstance(a).isClientActivated()) {
+                        this.popupMessages.addAll(NotificationsController.getInstance(a).popupMessages);
+                    }
+                }
+                getNewMessage();
+            }
         } else if (id == NotificationCenter.updateInterfaces) {
-            if (this.currentMessageObject != null) {
+            if (this.currentMessageObject != null && account == this.lastResumedAccount) {
                 int updateMask = ((Integer) args[0]).intValue();
                 if (!((updateMask & 1) == 0 && (updateMask & 4) == 0 && (updateMask & 16) == 0 && (updateMask & 32) == 0)) {
                     updateSubtitle();
@@ -1078,13 +1377,13 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                     checkAndUpdateAvatar();
                 }
                 if ((updateMask & 64) != 0) {
-                    CharSequence printString = (CharSequence) MessagesController.getInstance().printingStrings.get(Long.valueOf(this.currentMessageObject.getDialogId()));
+                    CharSequence printString = (CharSequence) MessagesController.getInstance(this.currentMessageObject.currentAccount).printingStrings.get(this.currentMessageObject.getDialogId());
                     if ((this.lastPrintString != null && printString == null) || ((this.lastPrintString == null && printString != null) || (this.lastPrintString != null && printString != null && !this.lastPrintString.equals(printString)))) {
                         updateSubtitle();
                     }
                 }
             }
-        } else if (id == NotificationCenter.audioDidReset) {
+        } else if (id == NotificationCenter.messagePlayingDidReset) {
             mid = args[0];
             if (this.messageContainer != null) {
                 count = this.messageContainer.getChildCount();
@@ -1092,14 +1391,15 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                     view = this.messageContainer.getChildAt(a);
                     if (((Integer) view.getTag()).intValue() == 3) {
                         cell = (PopupAudioView) view.findViewWithTag(Integer.valueOf(300));
-                        if (cell.getMessageObject() != null && cell.getMessageObject().getId() == mid.intValue()) {
+                        messageObject = cell.getMessageObject();
+                        if (messageObject != null && messageObject.currentAccount == account && messageObject.getId() == mid.intValue()) {
                             cell.updateButtonState();
                             return;
                         }
                     }
                 }
             }
-        } else if (id == NotificationCenter.audioProgressDidChanged) {
+        } else if (id == NotificationCenter.messagePlayingProgressDidChanged) {
             mid = (Integer) args[0];
             if (this.messageContainer != null) {
                 count = this.messageContainer.getChildCount();
@@ -1107,7 +1407,8 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                     view = this.messageContainer.getChildAt(a);
                     if (((Integer) view.getTag()).intValue() == 3) {
                         cell = (PopupAudioView) view.findViewWithTag(Integer.valueOf(300));
-                        if (cell.getMessageObject() != null && cell.getMessageObject().getId() == mid.intValue()) {
+                        messageObject = cell.getMessageObject();
+                        if (messageObject != null && messageObject.currentAccount == account && messageObject.getId() == mid.intValue()) {
                             cell.updateProgress();
                             return;
                         }
@@ -1127,7 +1428,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
                     }
                 }
             }
-        } else if (id == NotificationCenter.contactsDidLoaded) {
+        } else if (id == NotificationCenter.contactsDidLoaded && account == this.lastResumedAccount) {
             updateSubtitle();
         }
     }
@@ -1135,6 +1436,7 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     protected void onDestroy() {
         super.onDestroy();
         onFinish();
+        MediaController.getInstance().setFeedbackView(this.chatActivityEnterView, false);
         if (this.wakeLock.isHeld()) {
             this.wakeLock.release();
         }
@@ -1146,13 +1448,18 @@ public class PopupNotificationActivity extends Activity implements NotificationC
     protected void onFinish() {
         if (!this.finished) {
             this.finished = true;
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.appDidLogout);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.pushMessagesUpdated);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.updateInterfaces);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.audioProgressDidChanged);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.audioDidReset);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.contactsDidLoaded);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.emojiDidLoaded);
+            if (this.isReply) {
+                this.popupMessages.clear();
+            }
+            for (int a = 0; a < 3; a++) {
+                NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.appDidLogout);
+                NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.updateInterfaces);
+                NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
+                NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.messagePlayingDidReset);
+                NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.contactsDidLoaded);
+            }
+            NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.pushMessagesUpdated);
+            NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiDidLoaded);
             if (this.chatActivityEnterView != null) {
                 this.chatActivityEnterView.onDestroy();
             }

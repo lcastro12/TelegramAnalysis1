@@ -1,126 +1,83 @@
 package com.google.android.gms.maps.model;
 
 import android.os.Parcel;
-import android.support.v4.view.ViewCompat;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0215q;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
+import java.util.List;
+import org.telegram.ui.ActionBar.Theme;
 
-public final class CircleOptions implements SafeParcelable {
-    public static final CircleOptionsCreator CREATOR = new CircleOptionsCreator();
-    private final int ab;
-    private LatLng gW;
-    private double gX;
-    private float gY;
-    private int gZ;
-    private int ha;
-    private float hb;
-    private boolean hc;
+public final class CircleOptions extends AbstractSafeParcelable {
+    public static final Creator<CircleOptions> CREATOR = new zzc();
+    private int fillColor = 0;
+    private int strokeColor = Theme.ACTION_BAR_VIDEO_EDIT_COLOR;
+    private LatLng zzco = null;
+    private double zzcp = 0.0d;
+    private float zzcq = 10.0f;
+    private float zzcr = 0.0f;
+    private boolean zzcs = true;
+    private boolean zzct = false;
+    private List<PatternItem> zzcu = null;
 
-    public CircleOptions() {
-        this.gW = null;
-        this.gX = 0.0d;
-        this.gY = 10.0f;
-        this.gZ = ViewCompat.MEASURED_STATE_MASK;
-        this.ha = 0;
-        this.hb = 0.0f;
-        this.hc = true;
-        this.ab = 1;
+    CircleOptions(LatLng latLng, double d, float f, int i, int i2, float f2, boolean z, boolean z2, List<PatternItem> list) {
+        this.zzco = latLng;
+        this.zzcp = d;
+        this.zzcq = f;
+        this.strokeColor = i;
+        this.fillColor = i2;
+        this.zzcr = f2;
+        this.zzcs = z;
+        this.zzct = z2;
+        this.zzcu = list;
     }
 
-    CircleOptions(int versionCode, LatLng center, double radius, float strokeWidth, int strokeColor, int fillColor, float zIndex, boolean visible) {
-        this.gW = null;
-        this.gX = 0.0d;
-        this.gY = 10.0f;
-        this.gZ = ViewCompat.MEASURED_STATE_MASK;
-        this.ha = 0;
-        this.hb = 0.0f;
-        this.hc = true;
-        this.ab = versionCode;
-        this.gW = center;
-        this.gX = radius;
-        this.gY = strokeWidth;
-        this.gZ = strokeColor;
-        this.ha = fillColor;
-        this.hb = zIndex;
-        this.hc = visible;
+    public final LatLng getCenter() {
+        return this.zzco;
     }
 
-    public CircleOptions center(LatLng center) {
-        this.gW = center;
-        return this;
+    public final int getFillColor() {
+        return this.fillColor;
     }
 
-    public int describeContents() {
-        return 0;
+    public final double getRadius() {
+        return this.zzcp;
     }
 
-    public CircleOptions fillColor(int color) {
-        this.ha = color;
-        return this;
+    public final int getStrokeColor() {
+        return this.strokeColor;
     }
 
-    public LatLng getCenter() {
-        return this.gW;
+    public final List<PatternItem> getStrokePattern() {
+        return this.zzcu;
     }
 
-    public int getFillColor() {
-        return this.ha;
+    public final float getStrokeWidth() {
+        return this.zzcq;
     }
 
-    public double getRadius() {
-        return this.gX;
+    public final float getZIndex() {
+        return this.zzcr;
     }
 
-    public int getStrokeColor() {
-        return this.gZ;
+    public final boolean isClickable() {
+        return this.zzct;
     }
 
-    public float getStrokeWidth() {
-        return this.gY;
+    public final boolean isVisible() {
+        return this.zzcs;
     }
 
-    public float getZIndex() {
-        return this.hb;
-    }
-
-    int m1085i() {
-        return this.ab;
-    }
-
-    public boolean isVisible() {
-        return this.hc;
-    }
-
-    public CircleOptions radius(double radius) {
-        this.gX = radius;
-        return this;
-    }
-
-    public CircleOptions strokeColor(int color) {
-        this.gZ = color;
-        return this;
-    }
-
-    public CircleOptions strokeWidth(float width) {
-        this.gY = width;
-        return this;
-    }
-
-    public CircleOptions visible(boolean visible) {
-        this.hc = visible;
-        return this;
-    }
-
-    public void writeToParcel(Parcel out, int flags) {
-        if (C0215q.bn()) {
-            C0217b.m575a(this, out, flags);
-        } else {
-            CircleOptionsCreator.m563a(this, out, flags);
-        }
-    }
-
-    public CircleOptions zIndex(float zIndex) {
-        this.hb = zIndex;
-        return this;
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeParcelable(parcel, 2, getCenter(), i, false);
+        SafeParcelWriter.writeDouble(parcel, 3, getRadius());
+        SafeParcelWriter.writeFloat(parcel, 4, getStrokeWidth());
+        SafeParcelWriter.writeInt(parcel, 5, getStrokeColor());
+        SafeParcelWriter.writeInt(parcel, 6, getFillColor());
+        SafeParcelWriter.writeFloat(parcel, 7, getZIndex());
+        SafeParcelWriter.writeBoolean(parcel, 8, isVisible());
+        SafeParcelWriter.writeBoolean(parcel, 9, isClickable());
+        SafeParcelWriter.writeTypedList(parcel, 10, getStrokePattern(), false);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

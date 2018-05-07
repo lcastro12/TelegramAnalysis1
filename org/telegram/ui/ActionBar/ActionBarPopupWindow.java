@@ -6,8 +6,11 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
+import android.support.annotation.Keep;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -21,29 +24,34 @@ import android.widget.ScrollView;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.FileLog;
 import org.telegram.ui.Components.LayoutHelper;
 
 public class ActionBarPopupWindow extends PopupWindow {
-    private static final OnScrollChangedListener NOP = new C07061();
-    private static final boolean animationEnabled;
+    private static final OnScrollChangedListener NOP = new C08551();
+    private static final boolean allowAnimation;
     private static DecelerateInterpolator decelerateInterpolator = new DecelerateInterpolator();
     private static final Field superListenerField;
+    private boolean animationEnabled = allowAnimation;
     private OnScrollChangedListener mSuperScrollListener;
     private ViewTreeObserver mViewTreeObserver;
     private AnimatorSet windowAnimatorSet;
 
-    static class C07061 implements OnScrollChangedListener {
-        C07061() {
+    public interface OnDispatchKeyEventListener {
+        void onDispatchKeyEvent(KeyEvent keyEvent);
+    }
+
+    static class C08551 implements OnScrollChangedListener {
+        C08551() {
         }
 
         public void onScrollChanged() {
         }
     }
 
-    class C07072 implements AnimatorListener {
-        C07072() {
+    class C08562 implements AnimatorListener {
+        C08562() {
         }
 
         public void onAnimationStart(Animator animation) {
@@ -61,8 +69,8 @@ public class ActionBarPopupWindow extends PopupWindow {
         }
     }
 
-    class C07083 implements AnimatorListener {
-        C07083() {
+    class C08573 implements AnimatorListener {
+        C08573() {
         }
 
         public void onAnimationStart(Animator animation) {
@@ -87,12 +95,13 @@ public class ActionBarPopupWindow extends PopupWindow {
     }
 
     public static class ActionBarPopupWindowLayout extends FrameLayout {
-        protected static Drawable backgroundDrawable;
+        private boolean animationEnabled = ActionBarPopupWindow.allowAnimation;
         private int backAlpha = 255;
         private float backScaleX = 1.0f;
         private float backScaleY = 1.0f;
+        protected Drawable backgroundDrawable = getResources().getDrawable(C0488R.drawable.popup_fixed).mutate();
         private int lastStartedChild = 0;
-        private LinearLayout linearLayout;
+        protected LinearLayout linearLayout;
         private OnDispatchKeyEventListener mOnDispatchKeyEventListener;
         private HashMap<View, Integer> positions = new HashMap();
         private ScrollView scrollView;
@@ -100,9 +109,7 @@ public class ActionBarPopupWindow extends PopupWindow {
 
         public ActionBarPopupWindowLayout(Context context) {
             super(context);
-            if (backgroundDrawable == null) {
-                backgroundDrawable = getResources().getDrawable(C0553R.drawable.popup_fixed);
-            }
+            this.backgroundDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground), Mode.MULTIPLY));
             setPadding(AndroidUtilities.dp(8.0f), AndroidUtilities.dp(8.0f), AndroidUtilities.dp(8.0f), AndroidUtilities.dp(8.0f));
             setWillNotDraw(false);
             try {
@@ -110,7 +117,7 @@ public class ActionBarPopupWindow extends PopupWindow {
                 this.scrollView.setVerticalScrollBarEnabled(false);
                 addView(this.scrollView, LayoutHelper.createFrame(-2, -2.0f));
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
             this.linearLayout = new LinearLayout(context);
             this.linearLayout.setOrientation(1);
@@ -129,22 +136,26 @@ public class ActionBarPopupWindow extends PopupWindow {
             this.mOnDispatchKeyEventListener = listener;
         }
 
+        @Keep
         public void setBackAlpha(int value) {
             this.backAlpha = value;
         }
 
+        @Keep
         public int getBackAlpha() {
             return this.backAlpha;
         }
 
+        @Keep
         public void setBackScaleX(float value) {
             this.backScaleX = value;
             invalidate();
         }
 
+        @Keep
         public void setBackScaleY(float value) {
             this.backScaleY = value;
-            if (ActionBarPopupWindow.animationEnabled) {
+            if (this.animationEnabled) {
                 int a;
                 int count = getItemsCount();
                 int visibleCount = 0;
@@ -183,8 +194,12 @@ public class ActionBarPopupWindow extends PopupWindow {
             invalidate();
         }
 
+        public void setBackgroundDrawable(Drawable drawable) {
+            this.backgroundDrawable = drawable;
+        }
+
         private void startChildAnimation(View child) {
-            if (ActionBarPopupWindow.animationEnabled) {
+            if (this.animationEnabled) {
                 AnimatorSet animatorSet = new AnimatorSet();
                 Animator[] animatorArr = new Animator[2];
                 animatorArr[0] = ObjectAnimator.ofFloat(child, "alpha", new float[]{0.0f, 1.0f});
@@ -200,8 +215,16 @@ public class ActionBarPopupWindow extends PopupWindow {
             }
         }
 
+        public void setAnimationEnabled(boolean value) {
+            this.animationEnabled = value;
+        }
+
         public void addView(View child) {
             this.linearLayout.addView(child);
+        }
+
+        public void removeInnerViews() {
+            this.linearLayout.removeAllViews();
         }
 
         public float getBackScaleX() {
@@ -220,14 +243,15 @@ public class ActionBarPopupWindow extends PopupWindow {
         }
 
         protected void onDraw(Canvas canvas) {
-            if (backgroundDrawable != null) {
-                backgroundDrawable.setAlpha(this.backAlpha);
+            if (this.backgroundDrawable != null) {
+                this.backgroundDrawable.setAlpha(this.backAlpha);
+                int height = getMeasuredHeight();
                 if (this.showedFromBotton) {
-                    backgroundDrawable.setBounds(0, (int) (((float) getMeasuredHeight()) * (1.0f - this.backScaleY)), (int) (((float) getMeasuredWidth()) * this.backScaleX), getMeasuredHeight());
+                    this.backgroundDrawable.setBounds(0, (int) (((float) getMeasuredHeight()) * (1.0f - this.backScaleY)), (int) (((float) getMeasuredWidth()) * this.backScaleX), getMeasuredHeight());
                 } else {
-                    backgroundDrawable.setBounds(0, 0, (int) (((float) getMeasuredWidth()) * this.backScaleX), (int) (((float) getMeasuredHeight()) * this.backScaleY));
+                    this.backgroundDrawable.setBounds(0, 0, (int) (((float) getMeasuredWidth()) * this.backScaleX), (int) (((float) getMeasuredHeight()) * this.backScaleY));
                 }
-                backgroundDrawable.draw(canvas);
+                this.backgroundDrawable.draw(canvas);
             }
         }
 
@@ -246,16 +270,12 @@ public class ActionBarPopupWindow extends PopupWindow {
         }
     }
 
-    public interface OnDispatchKeyEventListener {
-        void onDispatchKeyEvent(KeyEvent keyEvent);
-    }
-
     static {
         boolean z = true;
         if (VERSION.SDK_INT < 18) {
             z = false;
         }
-        animationEnabled = z;
+        allowAnimation = z;
         Field field = null;
         try {
             field = PopupWindow.class.getDeclaredField("mOnScrollChangedListener");
@@ -292,6 +312,10 @@ public class ActionBarPopupWindow extends PopupWindow {
     public ActionBarPopupWindow(View contentView, int width, int height) {
         super(contentView, width, height);
         init();
+    }
+
+    public void setAnimationEnabled(boolean value) {
+        this.animationEnabled = value;
     }
 
     private void init() {
@@ -334,12 +358,12 @@ public class ActionBarPopupWindow extends PopupWindow {
             super.showAsDropDown(anchor, xoff, yoff);
             registerListener(anchor);
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
     }
 
     public void startAnimation() {
-        if (animationEnabled && this.windowAnimatorSet == null) {
+        if (this.animationEnabled && this.windowAnimatorSet == null) {
             ActionBarPopupWindowLayout content = (ActionBarPopupWindowLayout) getContentView();
             content.setTranslationY(0.0f);
             content.setAlpha(1.0f);
@@ -364,7 +388,7 @@ public class ActionBarPopupWindow extends PopupWindow {
             this.windowAnimatorSet = new AnimatorSet();
             this.windowAnimatorSet.playTogether(new Animator[]{ObjectAnimator.ofFloat(content, "backScaleY", new float[]{0.0f, 1.0f}), ObjectAnimator.ofInt(content, "backAlpha", new int[]{0, 255})});
             this.windowAnimatorSet.setDuration((long) ((visibleCount * 16) + 150));
-            this.windowAnimatorSet.addListener(new C07072());
+            this.windowAnimatorSet.addListener(new C08562());
             this.windowAnimatorSet.start();
         }
     }
@@ -390,7 +414,7 @@ public class ActionBarPopupWindow extends PopupWindow {
 
     public void dismiss(boolean animated) {
         setFocusable(false);
-        if (animationEnabled && animated) {
+        if (this.animationEnabled && animated) {
             if (this.windowAnimatorSet != null) {
                 this.windowAnimatorSet.cancel();
             }
@@ -405,7 +429,7 @@ public class ActionBarPopupWindow extends PopupWindow {
             animatorArr[1] = ObjectAnimator.ofFloat(content, "alpha", new float[]{0.0f});
             animatorSet.playTogether(animatorArr);
             this.windowAnimatorSet.setDuration(150);
-            this.windowAnimatorSet.addListener(new C07083());
+            this.windowAnimatorSet.addListener(new C08573());
             this.windowAnimatorSet.start();
             return;
         }

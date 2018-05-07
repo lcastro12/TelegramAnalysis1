@@ -21,9 +21,9 @@ public class RuleSet {
         if (matcher.find()) {
             val = Integer.parseInt(matcher.group(0));
         }
-        Iterator i$ = this.rules.iterator();
-        while (i$.hasNext()) {
-            PhoneRule rule = (PhoneRule) i$.next();
+        Iterator it = this.rules.iterator();
+        while (it.hasNext()) {
+            PhoneRule rule = (PhoneRule) it.next();
             if (val >= rule.minVal && val <= rule.maxVal && str.length() <= rule.maxLen) {
                 if (prefixRequired) {
                     if (((rule.flag12 & 3) == 0 && trunkPrefix == null && intlPrefix == null) || !((trunkPrefix == null || (rule.flag12 & 1) == 0) && (intlPrefix == null || (rule.flag12 & 2) == 0))) {
@@ -38,9 +38,9 @@ public class RuleSet {
             return null;
         }
         if (intlPrefix != null) {
-            i$ = this.rules.iterator();
-            while (i$.hasNext()) {
-                rule = (PhoneRule) i$.next();
+            it = this.rules.iterator();
+            while (it.hasNext()) {
+                rule = (PhoneRule) it.next();
                 if (val >= rule.minVal && val <= rule.maxVal && str.length() <= rule.maxLen) {
                     if (trunkPrefix == null || (rule.flag12 & 1) != 0) {
                         return rule.format(str, intlPrefix, trunkPrefix);
@@ -51,9 +51,9 @@ public class RuleSet {
         } else if (trunkPrefix == null) {
             return null;
         } else {
-            i$ = this.rules.iterator();
-            while (i$.hasNext()) {
-                rule = (PhoneRule) i$.next();
+            it = this.rules.iterator();
+            while (it.hasNext()) {
+                rule = (PhoneRule) it.next();
                 if (val >= rule.minVal && val <= rule.maxVal && str.length() <= rule.maxLen) {
                     if (intlPrefix == null || (rule.flag12 & 2) != 0) {
                         return rule.format(str, intlPrefix, trunkPrefix);
@@ -73,9 +73,9 @@ public class RuleSet {
         if (matcher.find()) {
             val = Integer.parseInt(matcher.group(0));
         }
-        Iterator i$ = this.rules.iterator();
-        while (i$.hasNext()) {
-            PhoneRule rule = (PhoneRule) i$.next();
+        Iterator it = this.rules.iterator();
+        while (it.hasNext()) {
+            PhoneRule rule = (PhoneRule) it.next();
             if (val >= rule.minVal && val <= rule.maxVal && str.length() == rule.maxLen) {
                 if (prefixRequired) {
                     if ((rule.flag12 & 3) == 0 && trunkPrefix == null && intlPrefix == null) {
@@ -101,9 +101,9 @@ public class RuleSet {
         }
         if (!prefixRequired) {
             if (intlPrefix != null && !this.hasRuleWithIntlPrefix) {
-                i$ = this.rules.iterator();
-                while (i$.hasNext()) {
-                    rule = (PhoneRule) i$.next();
+                it = this.rules.iterator();
+                while (it.hasNext()) {
+                    rule = (PhoneRule) it.next();
                     if (val >= rule.minVal && val <= rule.maxVal && str.length() == rule.maxLen) {
                         if (trunkPrefix == null) {
                             return true;
@@ -114,9 +114,9 @@ public class RuleSet {
                     }
                 }
             } else if (!(trunkPrefix == null || this.hasRuleWithTrunkPrefix)) {
-                i$ = this.rules.iterator();
-                while (i$.hasNext()) {
-                    rule = (PhoneRule) i$.next();
+                it = this.rules.iterator();
+                while (it.hasNext()) {
+                    rule = (PhoneRule) it.next();
                     if (val >= rule.minVal && val <= rule.maxVal && str.length() == rule.maxLen) {
                         if (intlPrefix == null) {
                             return true;

@@ -1,30 +1,25 @@
 package org.telegram.ui;
 
-import android.app.AlertDialog.Builder;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.DialogInterface.OnClickListener;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Vibrator;
-import android.text.Editable;
-import android.text.InputFilter;
-import android.text.InputFilter.LengthFilter;
-import android.text.TextWatcher;
-import android.view.KeyEvent;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
+import android.util.SparseArray;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnFocusChangeListener;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.FrameLayout.LayoutParams;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
-import android.widget.TextView;
-import android.widget.TextView.OnEditorActionListener;
-import java.util.concurrent.Semaphore;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
+import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -32,735 +27,881 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationCenter.NotificationCenterDelegate;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
+import org.telegram.messenger.support.widget.LinearLayoutManager;
+import org.telegram.messenger.support.widget.RecyclerView;
+import org.telegram.messenger.support.widget.RecyclerView.LayoutManager;
+import org.telegram.messenger.support.widget.RecyclerView.LayoutParams;
+import org.telegram.messenger.support.widget.RecyclerView.OnScrollListener;
+import org.telegram.messenger.support.widget.RecyclerView.ViewHolder;
+import org.telegram.messenger.support.widget.helper.ItemTouchHelper.Callback;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.TLObject;
+import org.telegram.tgnet.TLRPC.ChannelParticipant;
 import org.telegram.tgnet.TLRPC.Chat;
 import org.telegram.tgnet.TLRPC.ChatFull;
-import org.telegram.tgnet.TLRPC.FileLocation;
-import org.telegram.tgnet.TLRPC.InputFile;
-import org.telegram.tgnet.TLRPC.PhotoSize;
-import org.telegram.tgnet.TLRPC.TL_boolTrue;
-import org.telegram.tgnet.TLRPC.TL_channels_checkUsername;
-import org.telegram.tgnet.TLRPC.TL_chatPhoto;
+import org.telegram.tgnet.TLRPC.ChatParticipant;
+import org.telegram.tgnet.TLRPC.TL_channelAdminRights;
+import org.telegram.tgnet.TLRPC.TL_channelBannedRights;
+import org.telegram.tgnet.TLRPC.TL_channelFull;
+import org.telegram.tgnet.TLRPC.TL_channelParticipant;
+import org.telegram.tgnet.TLRPC.TL_channelParticipantAdmin;
+import org.telegram.tgnet.TLRPC.TL_channelParticipantBanned;
+import org.telegram.tgnet.TLRPC.TL_channelParticipantCreator;
+import org.telegram.tgnet.TLRPC.TL_channelParticipantsRecent;
+import org.telegram.tgnet.TLRPC.TL_channels_channelParticipants;
+import org.telegram.tgnet.TLRPC.TL_channels_getParticipants;
+import org.telegram.tgnet.TLRPC.TL_chatChannelParticipant;
+import org.telegram.tgnet.TLRPC.TL_chatParticipantAdmin;
+import org.telegram.tgnet.TLRPC.TL_chatParticipants;
 import org.telegram.tgnet.TLRPC.TL_error;
+import org.telegram.tgnet.TLRPC.User;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
+import org.telegram.ui.ActionBar.ActionBarMenuItem.ActionBarMenuItemSearchListener;
+import org.telegram.ui.ActionBar.AlertDialog.Builder;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.ActionBar.ThemeDescription.ThemeDescriptionDelegate;
+import org.telegram.ui.Adapters.SearchAdapterHelper;
+import org.telegram.ui.Adapters.SearchAdapterHelper.HashtagObject;
+import org.telegram.ui.Adapters.SearchAdapterHelper.SearchAdapterHelperDelegate;
+import org.telegram.ui.Cells.LoadingCell;
+import org.telegram.ui.Cells.ManageChatTextCell;
+import org.telegram.ui.Cells.ManageChatUserCell;
+import org.telegram.ui.Cells.ManageChatUserCell.ManageChatUserCellDelegate;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
-import org.telegram.ui.Cells.TextSettingsCell;
-import org.telegram.ui.Components.AvatarDrawable;
-import org.telegram.ui.Components.AvatarUpdater;
-import org.telegram.ui.Components.AvatarUpdater.AvatarUpdaterDelegate;
-import org.telegram.ui.Components.BackupImageView;
-import org.telegram.ui.Components.FrameLayoutFixed;
+import org.telegram.ui.ChannelRightsEditActivity.ChannelRightsEditActivityDelegate;
+import org.telegram.ui.Components.EmptyTextProgressView;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.Components.RecyclerListView.Holder;
+import org.telegram.ui.Components.RecyclerListView.OnItemClickListener;
+import org.telegram.ui.Components.RecyclerListView.OnItemLongClickListener;
+import org.telegram.ui.Components.RecyclerListView.SelectionAdapter;
 
-public class ChannelEditActivity extends BaseFragment implements AvatarUpdaterDelegate, NotificationCenterDelegate {
-    private static final int done_button = 1;
-    private boolean allowComments = true;
-    private FileLocation avatar;
-    private AvatarDrawable avatarDrawable = new AvatarDrawable();
-    private BackupImageView avatarImage;
-    private AvatarUpdater avatarUpdater = new AvatarUpdater();
-    private int chatId;
-    private int checkReqId = 0;
-    private Runnable checkRunnable = null;
-    private TextView checkTextView;
-    private boolean createAfterUpload;
+public class ChannelEditActivity extends BaseFragment implements NotificationCenterDelegate {
+    private static final int search_button = 1;
+    private int blockedUsersRow;
+    private int chat_id;
     private Chat currentChat;
-    private EditText descriptionTextView;
-    private View doneButton;
-    private boolean donePressed;
+    private int eventLogRow;
     private ChatFull info;
-    private String lastCheckName = null;
-    private boolean lastNameAvailable = false;
-    private EditText nameTextView;
-    private boolean privateAlertShown;
-    private ProgressDialog progressDialog = null;
-    private InputFile uploadedAvatar;
-    private EditText userNameTextView;
-    private boolean wasPrivate;
+    private int infoRow;
+    private LinearLayoutManager layoutManager;
+    private RecyclerListView listView;
+    private ListAdapter listViewAdapter;
+    private int loadMoreMembersRow;
+    private boolean loadingUsers;
+    private int managementRow;
+    private int membersEndRow;
+    private int membersSection2Row;
+    private int membersSectionRow;
+    private int membersStartRow;
+    private SparseArray<ChatParticipant> participantsMap = new SparseArray();
+    private int permissionsRow;
+    private int rowCount = 0;
+    private SearchAdapter searchListViewAdapter;
+    private boolean searchWas;
+    private boolean searching;
+    private ArrayList<Integer> sortedUsers;
+    private boolean usersEndReached;
 
-    class C08433 implements OnClickListener {
-
-        class C08421 implements DialogInterface.OnClickListener {
-            C08421() {
-            }
-
-            public void onClick(DialogInterface dialogInterface, int i) {
-                if (i == 0) {
-                    ChannelEditActivity.this.avatarUpdater.openCamera();
-                } else if (i == 1) {
-                    ChannelEditActivity.this.avatarUpdater.openGallery();
-                } else if (i == 2) {
-                    ChannelEditActivity.this.avatar = null;
-                    ChannelEditActivity.this.uploadedAvatar = null;
-                    ChannelEditActivity.this.avatarImage.setImage(ChannelEditActivity.this.avatar, "50_50", ChannelEditActivity.this.avatarDrawable);
-                }
-            }
-        }
-
-        C08433() {
-        }
-
-        public void onClick(View view) {
-            if (ChannelEditActivity.this.getParentActivity() != null) {
-                Builder builder = new Builder(ChannelEditActivity.this.getParentActivity());
-                builder.setItems(ChannelEditActivity.this.avatar != null ? new CharSequence[]{LocaleController.getString("FromCamera", C0553R.string.FromCamera), LocaleController.getString("FromGalley", C0553R.string.FromGalley), LocaleController.getString("DeletePhoto", C0553R.string.DeletePhoto)} : new CharSequence[]{LocaleController.getString("FromCamera", C0553R.string.FromCamera), LocaleController.getString("FromGalley", C0553R.string.FromGalley)}, new C08421());
-                ChannelEditActivity.this.showDialog(builder.create());
-            }
-        }
-    }
-
-    class C08444 implements TextWatcher {
-        C08444() {
-        }
-
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        }
-
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-        }
-
-        public void afterTextChanged(Editable s) {
-            String obj;
-            AvatarDrawable access$1500 = ChannelEditActivity.this.avatarDrawable;
-            if (ChannelEditActivity.this.nameTextView.length() > 0) {
-                obj = ChannelEditActivity.this.nameTextView.getText().toString();
-            } else {
-                obj = null;
-            }
-            access$1500.setInfo(5, obj, null, false);
-            ChannelEditActivity.this.avatarImage.invalidate();
-        }
-    }
-
-    class C08455 implements OnEditorActionListener {
-        C08455() {
-        }
-
-        public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-            if (i != 6 || ChannelEditActivity.this.doneButton == null) {
-                return false;
-            }
-            ChannelEditActivity.this.doneButton.performClick();
-            return true;
-        }
-    }
-
-    class C08466 implements TextWatcher {
-        C08466() {
-        }
-
-        public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-        }
-
-        public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-        }
-
-        public void afterTextChanged(Editable editable) {
-        }
-    }
-
-    class C08477 implements OnFocusChangeListener {
-        C08477() {
-        }
-
-        public void onFocusChange(View v, boolean hasFocus) {
-            if (ChannelEditActivity.this.wasPrivate && hasFocus && !ChannelEditActivity.this.privateAlertShown) {
-                Builder builder = new Builder(ChannelEditActivity.this.getParentActivity());
-                builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-                builder.setMessage(LocaleController.getString("ChannelWasPrivateAlert", C0553R.string.ChannelWasPrivateAlert));
-                builder.setPositiveButton(LocaleController.getString("Close", C0553R.string.Close), null);
-                ChannelEditActivity.this.showDialog(builder.create());
-            }
-        }
-    }
-
-    class C08488 implements TextWatcher {
-        C08488() {
-        }
-
-        public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-        }
-
-        public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-            ChannelEditActivity.this.checkUserName(ChannelEditActivity.this.userNameTextView.getText().toString(), false);
-        }
-
-        public void afterTextChanged(Editable editable) {
-        }
-    }
-
-    class C08509 implements OnClickListener {
-
-        class C08491 implements DialogInterface.OnClickListener {
-            C08491() {
-            }
-
-            public void onClick(DialogInterface dialogInterface, int i) {
-                NotificationCenter.getInstance().removeObserver(this, NotificationCenter.closeChats);
-                if (AndroidUtilities.isTablet()) {
-                    NotificationCenter.getInstance().postNotificationName(NotificationCenter.closeChats, Long.valueOf(-((long) ChannelEditActivity.this.chatId)));
-                } else {
-                    NotificationCenter.getInstance().postNotificationName(NotificationCenter.closeChats, new Object[0]);
-                }
-                MessagesController.getInstance().deleteUserFromChat(ChannelEditActivity.this.chatId, MessagesController.getInstance().getUser(Integer.valueOf(UserConfig.getClientUserId())), ChannelEditActivity.this.info);
-                ChannelEditActivity.this.finishFragment();
-            }
-        }
-
-        C08509() {
-        }
-
-        public void onClick(View v) {
-            Builder builder = new Builder(ChannelEditActivity.this.getParentActivity());
-            if (ChannelEditActivity.this.currentChat.megagroup) {
-                builder.setMessage(LocaleController.getString("MegaDeleteAlert", C0553R.string.MegaDeleteAlert));
-            } else {
-                builder.setMessage(LocaleController.getString("ChannelDeleteAlert", C0553R.string.ChannelDeleteAlert));
-            }
-            builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-            builder.setPositiveButton(LocaleController.getString("OK", C0553R.string.OK), new C08491());
-            builder.setNegativeButton(LocaleController.getString("Cancel", C0553R.string.Cancel), null);
-            ChannelEditActivity.this.showDialog(builder.create());
-        }
-    }
-
-    class C15312 extends ActionBarMenuOnItemClick {
-
-        class C08411 implements DialogInterface.OnClickListener {
-            C08411() {
-            }
-
-            public void onClick(DialogInterface dialog, int which) {
-                ChannelEditActivity.this.createAfterUpload = false;
-                ChannelEditActivity.this.progressDialog = null;
-                ChannelEditActivity.this.donePressed = false;
-                try {
-                    dialog.dismiss();
-                } catch (Throwable e) {
-                    FileLog.m611e("tmessages", e);
-                }
-            }
-        }
-
-        C15312() {
+    class C11942 extends ActionBarMenuOnItemClick {
+        C11942() {
         }
 
         public void onItemClick(int id) {
-            boolean currentAllowComments = true;
-            if (id == -1) {
+            if (ChannelEditActivity.this.getParentActivity() != null && id == -1) {
                 ChannelEditActivity.this.finishFragment();
-            } else if (id == 1 && !ChannelEditActivity.this.donePressed) {
-                ChannelEditActivity.this.donePressed = true;
-                Vibrator v;
-                if (ChannelEditActivity.this.nameTextView.length() == 0) {
-                    v = (Vibrator) ChannelEditActivity.this.getParentActivity().getSystemService("vibrator");
-                    if (v != null) {
-                        v.vibrate(200);
+            }
+        }
+    }
+
+    class C11953 extends ActionBarMenuItemSearchListener {
+        C11953() {
+        }
+
+        public void onSearchExpand() {
+            ChannelEditActivity.this.searching = true;
+        }
+
+        public void onSearchCollapse() {
+            ChannelEditActivity.this.searchListViewAdapter.searchDialogs(null);
+            ChannelEditActivity.this.searching = false;
+            ChannelEditActivity.this.searchWas = false;
+            ChannelEditActivity.this.listView.setAdapter(ChannelEditActivity.this.listViewAdapter);
+            ChannelEditActivity.this.listViewAdapter.notifyDataSetChanged();
+            ChannelEditActivity.this.listView.setFastScrollVisible(true);
+            ChannelEditActivity.this.listView.setVerticalScrollBarEnabled(false);
+        }
+
+        public void onTextChanged(EditText editText) {
+            if (ChannelEditActivity.this.searchListViewAdapter != null) {
+                String text = editText.getText().toString();
+                if (text.length() != 0) {
+                    ChannelEditActivity.this.searchWas = true;
+                    if (ChannelEditActivity.this.listView != null) {
+                        ChannelEditActivity.this.listView.setAdapter(ChannelEditActivity.this.searchListViewAdapter);
+                        ChannelEditActivity.this.searchListViewAdapter.notifyDataSetChanged();
+                        ChannelEditActivity.this.listView.setFastScrollVisible(false);
+                        ChannelEditActivity.this.listView.setVerticalScrollBarEnabled(true);
                     }
-                    AndroidUtilities.shakeView(ChannelEditActivity.this.nameTextView, 2.0f, 0);
-                } else if (ChannelEditActivity.this.userNameTextView != null && (((ChannelEditActivity.this.currentChat.username == null && ChannelEditActivity.this.userNameTextView.length() != 0) || (ChannelEditActivity.this.currentChat.username != null && !ChannelEditActivity.this.currentChat.username.equalsIgnoreCase(ChannelEditActivity.this.userNameTextView.getText().toString()))) && ChannelEditActivity.this.userNameTextView.length() != 0 && !ChannelEditActivity.this.lastNameAvailable)) {
-                    v = (Vibrator) ChannelEditActivity.this.getParentActivity().getSystemService("vibrator");
-                    if (v != null) {
-                        v.vibrate(200);
+                }
+                ChannelEditActivity.this.searchListViewAdapter.searchDialogs(text);
+            }
+        }
+    }
+
+    class C11975 implements OnItemClickListener {
+        C11975() {
+        }
+
+        public void onItemClick(View view, int position) {
+            if (ChannelEditActivity.this.getParentActivity() != null) {
+                Bundle args;
+                if (ChannelEditActivity.this.listView.getAdapter() == ChannelEditActivity.this.searchListViewAdapter) {
+                    args = new Bundle();
+                    args.putInt("user_id", ChannelEditActivity.this.searchListViewAdapter.getItem(position).user_id);
+                    ChannelEditActivity.this.presentFragment(new ProfileActivity(args));
+                } else if (position >= ChannelEditActivity.this.membersStartRow && position < ChannelEditActivity.this.membersEndRow) {
+                    int user_id;
+                    if (ChannelEditActivity.this.sortedUsers.isEmpty()) {
+                        user_id = ((ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(position - ChannelEditActivity.this.membersStartRow)).user_id;
+                    } else {
+                        user_id = ((ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(((Integer) ChannelEditActivity.this.sortedUsers.get(position - ChannelEditActivity.this.membersStartRow)).intValue())).user_id;
                     }
-                    AndroidUtilities.shakeView(ChannelEditActivity.this.checkTextView, 2.0f, 0);
-                } else if (ChannelEditActivity.this.avatarUpdater.uploadingAvatar != null) {
-                    ChannelEditActivity.this.createAfterUpload = true;
-                    ChannelEditActivity.this.progressDialog = new ProgressDialog(ChannelEditActivity.this.getParentActivity());
-                    ChannelEditActivity.this.progressDialog.setMessage(LocaleController.getString("Loading", C0553R.string.Loading));
-                    ChannelEditActivity.this.progressDialog.setCanceledOnTouchOutside(false);
-                    ChannelEditActivity.this.progressDialog.setCancelable(false);
-                    ChannelEditActivity.this.progressDialog.setButton(-2, LocaleController.getString("Cancel", C0553R.string.Cancel), new C08411());
-                    ChannelEditActivity.this.progressDialog.show();
-                } else {
-                    if (ChannelEditActivity.this.currentChat.broadcast) {
-                        currentAllowComments = false;
+                    args = new Bundle();
+                    args.putInt("user_id", user_id);
+                    ChannelEditActivity.this.presentFragment(new ProfileActivity(args));
+                } else if (position == ChannelEditActivity.this.blockedUsersRow || position == ChannelEditActivity.this.managementRow) {
+                    args = new Bundle();
+                    args.putInt("chat_id", ChannelEditActivity.this.chat_id);
+                    if (position == ChannelEditActivity.this.blockedUsersRow) {
+                        args.putInt("type", 0);
+                    } else if (position == ChannelEditActivity.this.managementRow) {
+                        args.putInt("type", 1);
                     }
-                    if (ChannelEditActivity.this.allowComments != currentAllowComments) {
-                        MessagesController.getInstance().toogleChannelComments(ChannelEditActivity.this.chatId, ChannelEditActivity.this.allowComments);
-                    }
-                    if (!ChannelEditActivity.this.currentChat.title.equals(ChannelEditActivity.this.nameTextView.getText().toString())) {
-                        MessagesController.getInstance().changeChatTitle(ChannelEditActivity.this.chatId, ChannelEditActivity.this.nameTextView.getText().toString());
-                    }
-                    if (!(ChannelEditActivity.this.info == null || ChannelEditActivity.this.info.about.equals(ChannelEditActivity.this.descriptionTextView.getText().toString()))) {
-                        MessagesController.getInstance().updateChannelAbout(ChannelEditActivity.this.chatId, ChannelEditActivity.this.descriptionTextView.getText().toString(), ChannelEditActivity.this.info);
-                    }
-                    if (ChannelEditActivity.this.userNameTextView != null) {
-                        if (!(ChannelEditActivity.this.currentChat.username != null ? ChannelEditActivity.this.currentChat.username : "").equals(ChannelEditActivity.this.userNameTextView.getText().toString())) {
-                            MessagesController.getInstance().updateChannelUserName(ChannelEditActivity.this.chatId, ChannelEditActivity.this.userNameTextView.getText().toString());
-                        }
-                    }
-                    if (ChannelEditActivity.this.uploadedAvatar != null) {
-                        MessagesController.getInstance().changeChatAvatar(ChannelEditActivity.this.chatId, ChannelEditActivity.this.uploadedAvatar);
-                    } else if (ChannelEditActivity.this.avatar == null && (ChannelEditActivity.this.currentChat.photo instanceof TL_chatPhoto)) {
-                        MessagesController.getInstance().changeChatAvatar(ChannelEditActivity.this.chatId, null);
-                    }
-                    ChannelEditActivity.this.finishFragment();
+                    ChannelEditActivity.this.presentFragment(new ChannelUsersActivity(args));
+                } else if (position == ChannelEditActivity.this.permissionsRow) {
+                    ChannelPermissionsActivity permissions = new ChannelPermissionsActivity(ChannelEditActivity.this.chat_id);
+                    permissions.setInfo(ChannelEditActivity.this.info);
+                    ChannelEditActivity.this.presentFragment(permissions);
+                } else if (position == ChannelEditActivity.this.eventLogRow) {
+                    ChannelEditActivity.this.presentFragment(new ChannelAdminLogActivity(ChannelEditActivity.this.currentChat));
+                } else if (position == ChannelEditActivity.this.infoRow) {
+                    args = new Bundle();
+                    args.putInt("chat_id", ChannelEditActivity.this.chat_id);
+                    ChannelEditInfoActivity fragment = new ChannelEditInfoActivity(args);
+                    fragment.setInfo(ChannelEditActivity.this.info);
+                    ChannelEditActivity.this.presentFragment(fragment);
                 }
             }
+        }
+    }
+
+    class C11986 implements OnItemLongClickListener {
+        C11986() {
+        }
+
+        public boolean onItemClick(View view, int position) {
+            if (position < ChannelEditActivity.this.membersStartRow || position >= ChannelEditActivity.this.membersEndRow) {
+                return false;
+            }
+            if (ChannelEditActivity.this.getParentActivity() == null) {
+                return false;
+            }
+            TL_chatChannelParticipant user;
+            if (ChannelEditActivity.this.sortedUsers.isEmpty()) {
+                user = (TL_chatChannelParticipant) ChannelEditActivity.this.info.participants.participants.get(position - ChannelEditActivity.this.membersStartRow);
+            } else {
+                user = (TL_chatChannelParticipant) ChannelEditActivity.this.info.participants.participants.get(((Integer) ChannelEditActivity.this.sortedUsers.get(position - ChannelEditActivity.this.membersStartRow)).intValue());
+            }
+            return ChannelEditActivity.this.createMenuForParticipant(user, null, false);
+        }
+    }
+
+    class C11997 extends OnScrollListener {
+        C11997() {
+        }
+
+        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+            if (ChannelEditActivity.this.participantsMap != null && ChannelEditActivity.this.loadMoreMembersRow != -1 && ChannelEditActivity.this.layoutManager.findLastVisibleItemPosition() > ChannelEditActivity.this.loadMoreMembersRow - 8) {
+                ChannelEditActivity.this.getChannelParticipants(false);
+            }
+        }
+    }
+
+    private class ListAdapter extends SelectionAdapter {
+        private Context mContext;
+
+        class C12041 implements ManageChatUserCellDelegate {
+            C12041() {
+            }
+
+            public boolean onOptionsButtonCheck(ManageChatUserCell cell, boolean click) {
+                ChatParticipant part;
+                int i = ((Integer) cell.getTag()).intValue();
+                if (ChannelEditActivity.this.sortedUsers.isEmpty()) {
+                    part = (ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(i - ChannelEditActivity.this.membersStartRow);
+                } else {
+                    part = (ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(((Integer) ChannelEditActivity.this.sortedUsers.get(i - ChannelEditActivity.this.membersStartRow)).intValue());
+                }
+                return ChannelEditActivity.this.createMenuForParticipant((TL_chatChannelParticipant) part, null, !click);
+            }
+        }
+
+        public ListAdapter(Context context) {
+            this.mContext = context;
+        }
+
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = null;
+            switch (viewType) {
+                case 0:
+                    view = new ManageChatTextCell(this.mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case 1:
+                    view = new ManageChatUserCell(this.mContext, 8, true);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    ((ManageChatUserCell) view).setDelegate(new C12041());
+                    break;
+                case 2:
+                    view = new ShadowSectionCell(this.mContext);
+                    break;
+                case 3:
+                    view = new LoadingCell(this.mContext);
+                    break;
+            }
+            view.setLayoutParams(new LayoutParams(-1, -2));
+            return new Holder(view);
+        }
+
+        public void onViewRecycled(ViewHolder holder) {
+            if (holder.itemView instanceof ManageChatUserCell) {
+                ((ManageChatUserCell) holder.itemView).recycle();
+            }
+        }
+
+        public void onBindViewHolder(ViewHolder holder, int i) {
+            boolean z = false;
+            String str = null;
+            switch (holder.getItemViewType()) {
+                case 0:
+                    ManageChatTextCell textCell = holder.itemView;
+                    textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+                    textCell.setTag(Theme.key_windowBackgroundWhiteBlackText);
+                    if (i == ChannelEditActivity.this.managementRow) {
+                        textCell.setText(LocaleController.getString("ChannelAdministrators", C0488R.string.ChannelAdministrators), ChannelEditActivity.this.info != null ? String.format("%d", new Object[]{Integer.valueOf(ChannelEditActivity.this.info.admins_count)}) : null, C0488R.drawable.group_admin, ChannelEditActivity.this.blockedUsersRow != -1);
+                        return;
+                    } else if (i == ChannelEditActivity.this.blockedUsersRow) {
+                        String string = LocaleController.getString("ChannelBlacklist", C0488R.string.ChannelBlacklist);
+                        if (ChannelEditActivity.this.info != null) {
+                            str = String.format("%d", new Object[]{Integer.valueOf(ChannelEditActivity.this.info.kicked_count + ChannelEditActivity.this.info.banned_count)});
+                        }
+                        textCell.setText(string, str, C0488R.drawable.group_banned, false);
+                        return;
+                    } else if (i == ChannelEditActivity.this.eventLogRow) {
+                        textCell.setText(LocaleController.getString("EventLog", C0488R.string.EventLog), null, C0488R.drawable.group_log, true);
+                        return;
+                    } else if (i == ChannelEditActivity.this.infoRow) {
+                        textCell.setText(ChannelEditActivity.this.currentChat.megagroup ? LocaleController.getString("EventLogFilterGroupInfo", C0488R.string.EventLogFilterGroupInfo) : LocaleController.getString("EventLogFilterChannelInfo", C0488R.string.EventLogFilterChannelInfo), null, C0488R.drawable.group_edit, true);
+                        return;
+                    } else if (i != ChannelEditActivity.this.permissionsRow) {
+                        return;
+                    } else {
+                        return;
+                    }
+                case 1:
+                    ChatParticipant part;
+                    ManageChatUserCell userCell = holder.itemView;
+                    userCell.setTag(Integer.valueOf(i));
+                    if (ChannelEditActivity.this.sortedUsers.isEmpty()) {
+                        part = (ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(i - ChannelEditActivity.this.membersStartRow);
+                    } else {
+                        part = (ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(((Integer) ChannelEditActivity.this.sortedUsers.get(i - ChannelEditActivity.this.membersStartRow)).intValue());
+                    }
+                    if (part != null) {
+                        if (part instanceof TL_chatChannelParticipant) {
+                            ChannelParticipant channelParticipant = ((TL_chatChannelParticipant) part).channelParticipant;
+                            if ((channelParticipant instanceof TL_channelParticipantCreator) || (channelParticipant instanceof TL_channelParticipantAdmin)) {
+                                z = true;
+                            }
+                            userCell.setIsAdmin(z);
+                        } else {
+                            userCell.setIsAdmin(part instanceof TL_chatParticipantAdmin);
+                        }
+                        userCell.setData(MessagesController.getInstance(ChannelEditActivity.this.currentAccount).getUser(Integer.valueOf(part.user_id)), null, null);
+                        return;
+                    }
+                    return;
+                case 2:
+                    if (i != ChannelEditActivity.this.membersSectionRow || ChannelEditActivity.this.membersStartRow == -1) {
+                        holder.itemView.setBackgroundDrawable(Theme.getThemedDrawable(this.mContext, C0488R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                        return;
+                    } else {
+                        holder.itemView.setBackgroundDrawable(Theme.getThemedDrawable(this.mContext, C0488R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
+                        return;
+                    }
+                default:
+                    return;
+            }
+        }
+
+        public boolean isEnabled(ViewHolder holder) {
+            int type = holder.getItemViewType();
+            if (type == 0 || type == 1) {
+                return true;
+            }
+            return false;
+        }
+
+        public int getItemCount() {
+            return ChannelEditActivity.this.rowCount;
+        }
+
+        public int getItemViewType(int i) {
+            if (i == ChannelEditActivity.this.managementRow || i == ChannelEditActivity.this.blockedUsersRow || i == ChannelEditActivity.this.infoRow || i == ChannelEditActivity.this.eventLogRow || i == ChannelEditActivity.this.permissionsRow) {
+                return 0;
+            }
+            if (i >= ChannelEditActivity.this.membersStartRow && i < ChannelEditActivity.this.membersEndRow) {
+                return 1;
+            }
+            if (i == ChannelEditActivity.this.membersSectionRow || i == ChannelEditActivity.this.membersSection2Row) {
+                return 2;
+            }
+            if (i == ChannelEditActivity.this.loadMoreMembersRow) {
+                return 3;
+            }
+            return 0;
+        }
+    }
+
+    private class SearchAdapter extends SelectionAdapter {
+        private Context mContext;
+        private SearchAdapterHelper searchAdapterHelper = new SearchAdapterHelper(true);
+        private Timer searchTimer;
+
+        class C12084 implements ManageChatUserCellDelegate {
+            C12084() {
+            }
+
+            public boolean onOptionsButtonCheck(ManageChatUserCell cell, boolean click) {
+                return ChannelEditActivity.this.createMenuForParticipant(null, SearchAdapter.this.getItem(((Integer) cell.getTag()).intValue()), !click);
+            }
+        }
+
+        public SearchAdapter(Context context) {
+            this.mContext = context;
+            this.searchAdapterHelper.setDelegate(new SearchAdapterHelperDelegate(ChannelEditActivity.this) {
+                public void onDataSetChanged() {
+                    SearchAdapter.this.notifyDataSetChanged();
+                }
+
+                public void onSetHashtags(ArrayList<HashtagObject> arrayList, HashMap<String, HashtagObject> hashMap) {
+                }
+            });
+        }
+
+        public void searchDialogs(final String query) {
+            try {
+                if (this.searchTimer != null) {
+                    this.searchTimer.cancel();
+                }
+            } catch (Throwable e) {
+                FileLog.m3e(e);
+            }
+            if (query == null) {
+                this.searchAdapterHelper.queryServerSearch(null, false, false, true, true, ChannelEditActivity.this.chat_id, false);
+                notifyDataSetChanged();
+                return;
+            }
+            this.searchTimer = new Timer();
+            this.searchTimer.schedule(new TimerTask() {
+                public void run() {
+                    try {
+                        SearchAdapter.this.searchTimer.cancel();
+                        SearchAdapter.this.searchTimer = null;
+                    } catch (Throwable e) {
+                        FileLog.m3e(e);
+                    }
+                    SearchAdapter.this.processSearch(query);
+                }
+            }, 200, 300);
+        }
+
+        private void processSearch(final String query) {
+            AndroidUtilities.runOnUIThread(new Runnable() {
+                public void run() {
+                    SearchAdapter.this.searchAdapterHelper.queryServerSearch(query, false, false, true, true, ChannelEditActivity.this.chat_id, false);
+                }
+            });
+        }
+
+        public boolean isEnabled(ViewHolder holder) {
+            return holder.getItemViewType() != 1;
+        }
+
+        public int getItemCount() {
+            return this.searchAdapterHelper.getGroupSearch().size();
+        }
+
+        public ChannelParticipant getItem(int i) {
+            return (ChannelParticipant) this.searchAdapterHelper.getGroupSearch().get(i);
+        }
+
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = new ManageChatUserCell(this.mContext, 8, true);
+            view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+            ((ManageChatUserCell) view).setDelegate(new C12084());
+            return new Holder(view);
+        }
+
+        public void onBindViewHolder(ViewHolder holder, int position) {
+            switch (holder.getItemViewType()) {
+                case 0:
+                    User user;
+                    boolean isAdmin;
+                    TLObject object = getItem(position);
+                    if (object instanceof User) {
+                        user = (User) object;
+                        ChatParticipant part = (ChatParticipant) ChannelEditActivity.this.participantsMap.get(user.id);
+                        if (part instanceof TL_chatChannelParticipant) {
+                            ChannelParticipant channelParticipant = ((TL_chatChannelParticipant) part).channelParticipant;
+                            isAdmin = (channelParticipant instanceof TL_channelParticipantCreator) || (channelParticipant instanceof TL_channelParticipantAdmin);
+                        } else {
+                            isAdmin = part instanceof TL_chatParticipantAdmin;
+                        }
+                    } else {
+                        isAdmin = (object instanceof TL_channelParticipantAdmin) || (object instanceof TL_channelParticipantCreator);
+                        user = MessagesController.getInstance(ChannelEditActivity.this.currentAccount).getUser(Integer.valueOf(((ChannelParticipant) object).user_id));
+                    }
+                    CharSequence name = null;
+                    String nameSearch = this.searchAdapterHelper.getLastFoundChannel();
+                    if (nameSearch != null) {
+                        String u = UserObject.getUserName(user);
+                        name = new SpannableStringBuilder(u);
+                        int idx = u.toLowerCase().indexOf(nameSearch);
+                        if (idx != -1) {
+                            ((SpannableStringBuilder) name).setSpan(new ForegroundColorSpan(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4)), idx, nameSearch.length() + idx, 33);
+                        }
+                    }
+                    ManageChatUserCell userCell = holder.itemView;
+                    userCell.setTag(Integer.valueOf(position));
+                    userCell.setIsAdmin(isAdmin);
+                    userCell.setData(user, name, null);
+                    return;
+                default:
+                    return;
+            }
+        }
+
+        public int getItemViewType(int i) {
+            return 0;
         }
     }
 
     public ChannelEditActivity(Bundle args) {
         super(args);
-        this.chatId = args.getInt("chat_id", 0);
     }
 
     public boolean onFragmentCreate() {
-        boolean z;
-        boolean z2 = true;
-        this.currentChat = MessagesController.getInstance().getChat(Integer.valueOf(this.chatId));
+        this.chat_id = getArguments().getInt("chat_id", 0);
+        this.currentChat = MessagesController.getInstance(this.currentAccount).getChat(Integer.valueOf(this.chat_id));
         if (this.currentChat == null) {
-            final Semaphore semaphore = new Semaphore(0);
-            MessagesStorage.getInstance().getStorageQueue().postRunnable(new Runnable() {
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
+            MessagesStorage.getInstance(this.currentAccount).getStorageQueue().postRunnable(new Runnable() {
                 public void run() {
-                    ChannelEditActivity.this.currentChat = MessagesStorage.getInstance().getChat(ChannelEditActivity.this.chatId);
-                    semaphore.release();
+                    ChannelEditActivity.this.currentChat = MessagesStorage.getInstance(ChannelEditActivity.this.currentAccount).getChat(ChannelEditActivity.this.chat_id);
+                    countDownLatch.countDown();
                 }
             });
             try {
-                semaphore.acquire();
+                countDownLatch.await();
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
             if (this.currentChat == null) {
                 return false;
             }
-            MessagesController.getInstance().putChat(this.currentChat, true);
-            if (this.info == null) {
-                MessagesStorage.getInstance().loadChatInfo(this.chatId, semaphore, false, false);
-                try {
-                    semaphore.acquire();
-                } catch (Throwable e2) {
-                    FileLog.m611e("tmessages", e2);
-                }
-                if (this.info == null) {
-                    return false;
-                }
-            }
+            MessagesController.getInstance(this.currentAccount).putChat(this.currentChat, true);
         }
-        if (this.currentChat.username == null || this.currentChat.username.length() == 0) {
-            z = true;
-        } else {
-            z = false;
-        }
-        this.wasPrivate = z;
-        this.avatarUpdater.parentFragment = this;
-        this.avatarUpdater.delegate = this;
-        if (this.currentChat.broadcast) {
-            z2 = false;
-        }
-        this.allowComments = z2;
-        return super.onFragmentCreate();
-    }
-
-    public void setInfo(ChatFull chatFull) {
-        this.info = chatFull;
+        getChannelParticipants(true);
+        NotificationCenter.getInstance(this.currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoaded);
+        NotificationCenter.getInstance(this.currentAccount).addObserver(this, NotificationCenter.closeChats);
+        this.sortedUsers = new ArrayList();
+        updateRowsIds();
+        return true;
     }
 
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        if (this.avatarUpdater != null) {
-            this.avatarUpdater.clear();
+        NotificationCenter.getInstance(this.currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoaded);
+        NotificationCenter.getInstance(this.currentAccount).removeObserver(this, NotificationCenter.closeChats);
+    }
+
+    public View createView(Context context) {
+        Theme.createProfileResources(context);
+        this.searching = false;
+        this.searchWas = false;
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_ab_back);
+        this.actionBar.setAllowOverlayTitle(true);
+        if (this.currentChat.megagroup) {
+            this.actionBar.setTitle(LocaleController.getString("ManageGroup", C0488R.string.ManageGroup));
+        } else {
+            this.actionBar.setTitle(LocaleController.getString("ManageChannel", C0488R.string.ManageChannel));
         }
-        AndroidUtilities.removeAdjustResize(getParentActivity(), this.classGuid);
+        this.actionBar.setActionBarMenuOnItemClick(new C11942());
+        this.searchListViewAdapter = new SearchAdapter(context);
+        this.actionBar.createMenu().addItem(1, (int) C0488R.drawable.ic_ab_search).setIsSearchField(true).setActionBarMenuItemSearchListener(new C11953()).getSearchField().setHint(LocaleController.getString("Search", C0488R.string.Search));
+        this.listViewAdapter = new ListAdapter(context);
+        this.fragmentView = new FrameLayout(context);
+        this.fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
+        FrameLayout frameLayout = this.fragmentView;
+        EmptyTextProgressView emptyView = new EmptyTextProgressView(context);
+        emptyView.setShowAtCenter(true);
+        emptyView.setText(LocaleController.getString("NoResult", C0488R.string.NoResult));
+        emptyView.showTextView();
+        frameLayout.addView(emptyView, LayoutHelper.createFrame(-1, -1.0f));
+        this.listView = new RecyclerListView(context) {
+            public boolean hasOverlappingRendering() {
+                return false;
+            }
+        };
+        this.listView.setVerticalScrollBarEnabled(false);
+        this.listView.setEmptyView(emptyView);
+        RecyclerListView recyclerListView = this.listView;
+        LayoutManager linearLayoutManager = new LinearLayoutManager(context, 1, false);
+        this.layoutManager = linearLayoutManager;
+        recyclerListView.setLayoutManager(linearLayoutManager);
+        frameLayout.addView(this.listView, LayoutHelper.createFrame(-1, -1, 51));
+        this.listView.setAdapter(this.listViewAdapter);
+        this.listView.setOnItemClickListener(new C11975());
+        this.listView.setOnItemLongClickListener(new C11986());
+        this.listView.setOnScrollListener(new C11997());
+        return this.fragmentView;
+    }
+
+    public void didReceivedNotification(int id, int account, Object... args) {
+        boolean loadChannelParticipants = false;
+        if (id == NotificationCenter.chatInfoDidLoaded) {
+            ChatFull chatFull = args[0];
+            if (chatFull.id == this.chat_id) {
+                boolean byChannelUsers = ((Boolean) args[2]).booleanValue();
+                if ((this.info instanceof TL_channelFull) && chatFull.participants == null && this.info != null) {
+                    chatFull.participants = this.info.participants;
+                }
+                if (this.info == null && (chatFull instanceof TL_channelFull)) {
+                    loadChannelParticipants = true;
+                }
+                this.info = chatFull;
+                fetchUsersFromChannelInfo();
+                updateRowsIds();
+                if (this.listViewAdapter != null) {
+                    this.listViewAdapter.notifyDataSetChanged();
+                }
+                Chat newChat = MessagesController.getInstance(this.currentAccount).getChat(Integer.valueOf(this.chat_id));
+                if (newChat != null) {
+                    this.currentChat = newChat;
+                }
+                if (loadChannelParticipants || !byChannelUsers) {
+                    getChannelParticipants(true);
+                }
+            }
+        } else if (id == NotificationCenter.closeChats) {
+            removeSelfFromStack();
+        }
     }
 
     public void onResume() {
         super.onResume();
-        AndroidUtilities.requestAdjustResize(getParentActivity(), this.classGuid);
-    }
-
-    public View createView(Context context) {
-        float f;
-        float f2;
-        View linearLayout;
-        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
-        this.actionBar.setAllowOverlayTitle(true);
-        this.actionBar.setActionBarMenuOnItemClick(new C15312());
-        this.doneButton = this.actionBar.createMenu().addItemWithWidth(1, C0553R.drawable.ic_done, AndroidUtilities.dp(56.0f));
-        this.fragmentView = new ScrollView(context);
-        this.fragmentView.setBackgroundColor(-986896);
-        ScrollView scrollView = (ScrollView) this.fragmentView;
-        scrollView.setFillViewport(true);
-        LinearLayout linearLayout2 = new LinearLayout(context);
-        scrollView.addView(linearLayout2, new LayoutParams(-1, -2));
-        linearLayout2.setOrientation(1);
-        this.actionBar.setTitle(LocaleController.getString("ChannelEdit", C0553R.string.ChannelEdit));
-        LinearLayout linearLayout22 = new LinearLayout(context);
-        linearLayout22.setOrientation(1);
-        linearLayout22.setBackgroundColor(-1);
-        linearLayout2.addView(linearLayout22, LayoutHelper.createLinear(-1, -2));
-        FrameLayout frameLayout = new FrameLayoutFixed(context);
-        linearLayout22.addView(frameLayout, LayoutHelper.createLinear(-1, -2));
-        this.avatarImage = new BackupImageView(context);
-        this.avatarImage.setRoundRadius(AndroidUtilities.dp(32.0f));
-        this.avatarDrawable.setInfo(5, null, null, false);
-        this.avatarDrawable.setDrawPhoto(true);
-        View view = this.avatarImage;
-        int i = (LocaleController.isRTL ? 5 : 3) | 48;
-        if (LocaleController.isRTL) {
-            f = 0.0f;
-        } else {
-            f = 16.0f;
-        }
-        if (LocaleController.isRTL) {
-            f2 = 16.0f;
-        } else {
-            f2 = 0.0f;
-        }
-        frameLayout.addView(view, LayoutHelper.createFrame(64, 64.0f, i, f, 12.0f, f2, 12.0f));
-        this.avatarImage.setOnClickListener(new C08433());
-        this.nameTextView = new EditText(context);
-        if (this.currentChat.megagroup) {
-            this.nameTextView.setHint(LocaleController.getString("GroupName", C0553R.string.GroupName));
-        } else {
-            this.nameTextView.setHint(LocaleController.getString("EnterChannelName", C0553R.string.EnterChannelName));
-        }
-        this.nameTextView.setMaxLines(4);
-        this.nameTextView.setGravity((LocaleController.isRTL ? 5 : 3) | 16);
-        this.nameTextView.setTextSize(1, 16.0f);
-        this.nameTextView.setHintTextColor(-6842473);
-        this.nameTextView.setImeOptions(268435456);
-        this.nameTextView.setInputType(16385);
-        this.nameTextView.setPadding(0, 0, 0, AndroidUtilities.dp(8.0f));
-        this.nameTextView.setFilters(new InputFilter[]{new LengthFilter(100)});
-        AndroidUtilities.clearCursorDrawable(this.nameTextView);
-        this.nameTextView.setTextColor(-14606047);
-        view = this.nameTextView;
-        f = LocaleController.isRTL ? 16.0f : 96.0f;
-        if (LocaleController.isRTL) {
-            f2 = 96.0f;
-        } else {
-            f2 = 16.0f;
-        }
-        frameLayout.addView(view, LayoutHelper.createFrame(-1, -2.0f, 16, f, 0.0f, f2, 0.0f));
-        this.nameTextView.addTextChangedListener(new C08444());
-        linearLayout2.addView(new ShadowSectionCell(context), LayoutHelper.createLinear(-1, -2));
-        linearLayout22 = new LinearLayout(context);
-        linearLayout22.setOrientation(1);
-        linearLayout22.setBackgroundColor(-1);
-        linearLayout2.addView(linearLayout22, LayoutHelper.createLinear(-1, -2));
-        this.descriptionTextView = new EditText(context);
-        this.descriptionTextView.setTextSize(1, 18.0f);
-        this.descriptionTextView.setHintTextColor(-6842473);
-        this.descriptionTextView.setTextColor(-14606047);
-        this.descriptionTextView.setPadding(0, 0, 0, AndroidUtilities.dp(6.0f));
-        this.descriptionTextView.setBackgroundDrawable(null);
-        this.descriptionTextView.setGravity(LocaleController.isRTL ? 5 : 3);
-        this.descriptionTextView.setInputType(180225);
-        this.descriptionTextView.setImeOptions(6);
-        this.descriptionTextView.setFilters(new InputFilter[]{new LengthFilter(120)});
-        this.descriptionTextView.setHint(LocaleController.getString("DescriptionPlaceholder", C0553R.string.DescriptionPlaceholder));
-        AndroidUtilities.clearCursorDrawable(this.descriptionTextView);
-        linearLayout22.addView(this.descriptionTextView, LayoutHelper.createLinear(-1, -2, 17.0f, 12.0f, 17.0f, 6.0f));
-        this.descriptionTextView.setOnEditorActionListener(new C08455());
-        this.descriptionTextView.addTextChangedListener(new C08466());
-        TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
-        if (this.currentChat.megagroup) {
-            infoCell.setText(LocaleController.getString("DescriptionInfoMega", C0553R.string.DescriptionInfoMega));
-        } else {
-            infoCell.setText(LocaleController.getString("DescriptionInfo", C0553R.string.DescriptionInfo));
-        }
-        infoCell.setBackgroundResource(C0553R.drawable.greydivider);
-        linearLayout2.addView(infoCell, LayoutHelper.createLinear(-1, -2));
-        if (!this.currentChat.megagroup) {
-            linearLayout22 = new LinearLayout(context);
-            linearLayout22.setOrientation(1);
-            linearLayout22.setBackgroundColor(-1);
-            linearLayout22.setPadding(0, 0, 0, AndroidUtilities.dp(7.0f));
-            linearLayout2.addView(linearLayout22, LayoutHelper.createLinear(-1, -2));
-            linearLayout = new LinearLayout(context);
-            linearLayout.setOrientation(0);
-            linearLayout22.addView(linearLayout, LayoutHelper.createLinear(-1, 36, 17.0f, 7.0f, 17.0f, 0.0f));
-            EditText editText = new EditText(context);
-            editText.setText("telegram.me/");
-            editText.setTextSize(1, 18.0f);
-            editText.setHintTextColor(-6842473);
-            editText.setTextColor(-14606047);
-            editText.setMaxLines(1);
-            editText.setLines(1);
-            editText.setEnabled(false);
-            editText.setBackgroundDrawable(null);
-            editText.setPadding(0, 0, 0, 0);
-            editText.setSingleLine(true);
-            editText.setInputType(163840);
-            editText.setImeOptions(6);
-            linearLayout.addView(editText, LayoutHelper.createLinear(-2, 36));
-            this.userNameTextView = new EditText(context);
-            this.userNameTextView.setTextSize(1, 18.0f);
-            this.userNameTextView.setHintTextColor(-6842473);
-            this.userNameTextView.setTextColor(-14606047);
-            this.userNameTextView.setMaxLines(1);
-            this.userNameTextView.setLines(1);
-            this.userNameTextView.setBackgroundDrawable(null);
-            this.userNameTextView.setPadding(0, 0, 0, 0);
-            this.userNameTextView.setSingleLine(true);
-            this.userNameTextView.setText(this.currentChat.username);
-            this.userNameTextView.setInputType(163872);
-            this.userNameTextView.setImeOptions(6);
-            this.userNameTextView.setHint(LocaleController.getString("ChannelUsernamePlaceholder", C0553R.string.ChannelUsernamePlaceholder));
-            this.userNameTextView.setOnFocusChangeListener(new C08477());
-            AndroidUtilities.clearCursorDrawable(this.userNameTextView);
-            linearLayout.addView(this.userNameTextView, LayoutHelper.createLinear(-1, 36));
-            this.userNameTextView.addTextChangedListener(new C08488());
-            this.checkTextView = new TextView(context);
-            this.checkTextView.setTextSize(1, 15.0f);
-            this.checkTextView.setGravity(LocaleController.isRTL ? 5 : 3);
-            this.checkTextView.setVisibility(8);
-            linearLayout22.addView(this.checkTextView, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 17, 3, 17, 7));
-            infoCell = new TextInfoPrivacyCell(context);
-            infoCell.setBackgroundResource(C0553R.drawable.greydivider);
-            infoCell.setText(LocaleController.getString("ChannelUsernameHelp", C0553R.string.ChannelUsernameHelp));
-            linearLayout2.addView(infoCell, LayoutHelper.createLinear(-1, -2));
-        }
-        frameLayout = new FrameLayoutFixed(context);
-        frameLayout.setBackgroundColor(-1);
-        linearLayout2.addView(frameLayout, LayoutHelper.createLinear(-1, -2));
-        linearLayout = new TextSettingsCell(context);
-        linearLayout.setTextColor(-1229511);
-        linearLayout.setBackgroundResource(C0553R.drawable.list_selector);
-        if (this.currentChat.megagroup) {
-            linearLayout.setText(LocaleController.getString("DeleteMega", C0553R.string.DeleteMega), false);
-        } else {
-            linearLayout.setText(LocaleController.getString("ChannelDelete", C0553R.string.ChannelDelete), false);
-        }
-        frameLayout.addView(linearLayout, LayoutHelper.createFrame(-1, -2.0f));
-        linearLayout.setOnClickListener(new C08509());
-        infoCell = new TextInfoPrivacyCell(context);
-        infoCell.setBackgroundResource(C0553R.drawable.greydivider_bottom);
-        if (this.currentChat.megagroup) {
-            infoCell.setText(LocaleController.getString("MegaDeleteInfo", C0553R.string.MegaDeleteInfo));
-        } else {
-            infoCell.setText(LocaleController.getString("ChannelDeleteInfo", C0553R.string.ChannelDeleteInfo));
-        }
-        linearLayout2.addView(infoCell, LayoutHelper.createLinear(-1, -2));
-        this.nameTextView.setText(this.currentChat.title);
-        this.nameTextView.setSelection(this.nameTextView.length());
-        if (this.info != null) {
-            this.descriptionTextView.setText(this.info.about);
-        }
-        if (this.currentChat.photo != null) {
-            this.avatar = this.currentChat.photo.photo_small;
-            this.avatarImage.setImage(this.avatar, "50_50", this.avatarDrawable);
-        } else {
-            this.avatarImage.setImageDrawable(this.avatarDrawable);
-        }
-        return this.fragmentView;
-    }
-
-    public void didReceivedNotification(int id, Object... args) {
-        if (id == NotificationCenter.chatInfoDidLoaded) {
-            ChatFull chatFull = args[0];
-            if (chatFull.id == this.chatId) {
-                if (this.info == null) {
-                    this.descriptionTextView.setText(chatFull.about);
-                }
-                this.info = chatFull;
-            }
+        if (this.listViewAdapter != null) {
+            this.listViewAdapter.notifyDataSetChanged();
         }
     }
 
-    public void didUploadedPhoto(final InputFile file, final PhotoSize small, PhotoSize big) {
-        AndroidUtilities.runOnUIThread(new Runnable() {
-            public void run() {
-                ChannelEditActivity.this.uploadedAvatar = file;
-                ChannelEditActivity.this.avatar = small.location;
-                ChannelEditActivity.this.avatarImage.setImage(ChannelEditActivity.this.avatar, "50_50", ChannelEditActivity.this.avatarDrawable);
-                if (ChannelEditActivity.this.createAfterUpload) {
-                    try {
-                        if (ChannelEditActivity.this.progressDialog != null && ChannelEditActivity.this.progressDialog.isShowing()) {
-                            ChannelEditActivity.this.progressDialog.dismiss();
-                            ChannelEditActivity.this.progressDialog = null;
-                        }
-                    } catch (Throwable e) {
-                        FileLog.m611e("tmessages", e);
-                    }
-                    ChannelEditActivity.this.doneButton.performClick();
-                }
-            }
-        });
-    }
-
-    public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
-        this.avatarUpdater.onActivityResult(requestCode, resultCode, data);
-    }
-
-    public void saveSelfArgs(Bundle args) {
-        if (!(this.avatarUpdater == null || this.avatarUpdater.currentPicturePath == null)) {
-            args.putString("path", this.avatarUpdater.currentPicturePath);
-        }
-        if (this.nameTextView != null) {
-            String text = this.nameTextView.getText().toString();
-            if (text != null && text.length() != 0) {
-                args.putString("nameTextView", text);
-            }
-        }
-    }
-
-    public void restoreSelfArgs(Bundle args) {
-        if (this.avatarUpdater != null) {
-            this.avatarUpdater.currentPicturePath = args.getString("path");
-        }
-    }
-
-    private boolean checkUserName(final String name, boolean alert) {
-        if (name == null || name.length() <= 0) {
-            this.checkTextView.setVisibility(8);
-        } else {
-            this.checkTextView.setVisibility(0);
-        }
-        if (alert && name.length() == 0) {
-            return true;
-        }
-        if (this.checkRunnable != null) {
-            AndroidUtilities.cancelRunOnUIThread(this.checkRunnable);
-            this.checkRunnable = null;
-            this.lastCheckName = null;
-            if (this.checkReqId != 0) {
-                ConnectionsManager.getInstance().cancelRequest(this.checkReqId, true);
-            }
-        }
-        this.lastNameAvailable = false;
-        if (name != null) {
-            if (name.startsWith("_") || name.endsWith("_")) {
-                this.checkTextView.setText(LocaleController.getString("LinkInvalid", C0553R.string.LinkInvalid));
-                this.checkTextView.setTextColor(-3198928);
-                return false;
-            }
-            int a = 0;
-            while (a < name.length()) {
-                char ch = name.charAt(a);
-                if (a == 0 && ch >= '0' && ch <= '9') {
-                    if (alert) {
-                        showErrorAlert(LocaleController.getString("LinkInvalidStartNumber", C0553R.string.LinkInvalidStartNumber));
-                    } else {
-                        this.checkTextView.setText(LocaleController.getString("LinkInvalidStartNumber", C0553R.string.LinkInvalidStartNumber));
-                        this.checkTextView.setTextColor(-3198928);
-                    }
-                    return false;
-                } else if ((ch < '0' || ch > '9') && ((ch < 'a' || ch > 'z') && ((ch < 'A' || ch > 'Z') && ch != '_'))) {
-                    if (alert) {
-                        showErrorAlert(LocaleController.getString("LinkInvalid", C0553R.string.LinkInvalid));
-                    } else {
-                        this.checkTextView.setText(LocaleController.getString("LinkInvalid", C0553R.string.LinkInvalid));
-                        this.checkTextView.setTextColor(-3198928);
-                    }
-                    return false;
-                } else {
-                    a++;
-                }
-            }
-        }
-        if (name == null || name.length() < 5) {
-            if (alert) {
-                showErrorAlert(LocaleController.getString("LinkInvalidShort", C0553R.string.LinkInvalidShort));
+    private void getChannelParticipants(boolean reload) {
+        int i = 0;
+        if (!this.loadingUsers && this.participantsMap != null && this.info != null) {
+            int delay;
+            this.loadingUsers = true;
+            if (this.participantsMap.size() == 0 || !reload) {
+                delay = 0;
             } else {
-                this.checkTextView.setText(LocaleController.getString("LinkInvalidShort", C0553R.string.LinkInvalidShort));
-                this.checkTextView.setTextColor(-3198928);
+                delay = 300;
             }
-            return false;
-        } else if (name.length() > 32) {
-            if (alert) {
-                showErrorAlert(LocaleController.getString("LinkInvalidLong", C0553R.string.LinkInvalidLong));
-            } else {
-                this.checkTextView.setText(LocaleController.getString("LinkInvalidLong", C0553R.string.LinkInvalidLong));
-                this.checkTextView.setTextColor(-3198928);
+            final TL_channels_getParticipants req = new TL_channels_getParticipants();
+            req.channel = MessagesController.getInstance(this.currentAccount).getInputChannel(this.chat_id);
+            req.filter = new TL_channelParticipantsRecent();
+            if (!reload) {
+                i = this.participantsMap.size();
             }
-            return false;
-        } else if (alert) {
-            return true;
-        } else {
-            this.checkTextView.setText(LocaleController.getString("LinkChecking", C0553R.string.LinkChecking));
-            this.checkTextView.setTextColor(-9605774);
-            this.lastCheckName = name;
-            this.checkRunnable = new Runnable() {
-
-                class C15301 implements RequestDelegate {
-                    C15301() {
-                    }
-
-                    public void run(final TLObject response, final TL_error error) {
-                        AndroidUtilities.runOnUIThread(new Runnable() {
-                            public void run() {
-                                ChannelEditActivity.this.checkReqId = 0;
-                                if (ChannelEditActivity.this.lastCheckName != null && ChannelEditActivity.this.lastCheckName.equals(name)) {
-                                    if (error == null && (response instanceof TL_boolTrue)) {
-                                        ChannelEditActivity.this.checkTextView.setText(LocaleController.formatString("LinkAvailable", C0553R.string.LinkAvailable, name));
-                                        ChannelEditActivity.this.checkTextView.setTextColor(-14248148);
-                                        ChannelEditActivity.this.lastNameAvailable = true;
-                                        return;
+            req.offset = i;
+            req.limit = Callback.DEFAULT_DRAG_ANIMATION_DURATION;
+            ConnectionsManager.getInstance(this.currentAccount).bindRequestToGuid(ConnectionsManager.getInstance(this.currentAccount).sendRequest(req, new RequestDelegate() {
+                public void run(final TLObject response, final TL_error error) {
+                    AndroidUtilities.runOnUIThread(new Runnable() {
+                        public void run() {
+                            if (error == null) {
+                                TL_channels_channelParticipants res = response;
+                                MessagesController.getInstance(ChannelEditActivity.this.currentAccount).putUsers(res.users, false);
+                                if (res.users.size() < Callback.DEFAULT_DRAG_ANIMATION_DURATION) {
+                                    ChannelEditActivity.this.usersEndReached = true;
+                                }
+                                if (req.offset == 0) {
+                                    ChannelEditActivity.this.participantsMap.clear();
+                                    ChannelEditActivity.this.info.participants = new TL_chatParticipants();
+                                    MessagesStorage.getInstance(ChannelEditActivity.this.currentAccount).putUsersAndChats(res.users, null, true, true);
+                                    MessagesStorage.getInstance(ChannelEditActivity.this.currentAccount).updateChannelUsers(ChannelEditActivity.this.chat_id, res.participants);
+                                }
+                                for (int a = 0; a < res.participants.size(); a++) {
+                                    TL_chatChannelParticipant participant = new TL_chatChannelParticipant();
+                                    participant.channelParticipant = (ChannelParticipant) res.participants.get(a);
+                                    participant.inviter_id = participant.channelParticipant.inviter_id;
+                                    participant.user_id = participant.channelParticipant.user_id;
+                                    participant.date = participant.channelParticipant.date;
+                                    if (ChannelEditActivity.this.participantsMap.indexOfKey(participant.user_id) < 0) {
+                                        ChannelEditActivity.this.info.participants.participants.add(participant);
+                                        ChannelEditActivity.this.participantsMap.put(participant.user_id, participant);
                                     }
-                                    if (error == null || !error.text.equals("CHANNELS_ADMIN_PUBLIC_TOO_MUCH")) {
-                                        ChannelEditActivity.this.checkTextView.setText(LocaleController.getString("LinkInUse", C0553R.string.LinkInUse));
-                                    } else {
-                                        ChannelEditActivity.this.checkTextView.setText(LocaleController.getString("ChannelPublicLimitReached", C0553R.string.ChannelPublicLimitReached));
-                                    }
-                                    ChannelEditActivity.this.checkTextView.setTextColor(-3198928);
-                                    ChannelEditActivity.this.lastNameAvailable = false;
                                 }
                             }
-                        });
-                    }
+                            ChannelEditActivity.this.loadingUsers = false;
+                            NotificationCenter.getInstance(ChannelEditActivity.this.currentAccount).postNotificationName(NotificationCenter.chatInfoDidLoaded, ChannelEditActivity.this.info, Integer.valueOf(0), Boolean.valueOf(true), null);
+                        }
+                    }, (long) delay);
                 }
-
-                public void run() {
-                    TL_channels_checkUsername req = new TL_channels_checkUsername();
-                    req.username = name;
-                    req.channel = MessagesController.getInputChannel(ChannelEditActivity.this.chatId);
-                    ChannelEditActivity.this.checkReqId = ConnectionsManager.getInstance().sendRequest(req, new C15301(), 2);
-                }
-            };
-            AndroidUtilities.runOnUIThread(this.checkRunnable, 300);
-            return true;
+            }), this.classGuid);
         }
     }
 
-    private void showErrorAlert(String error) {
-        if (getParentActivity() != null) {
-            Builder builder = new Builder(getParentActivity());
-            builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-            Object obj = -1;
-            switch (error.hashCode()) {
-                case -141887186:
-                    if (error.equals("USERNAMES_UNAVAILABLE")) {
-                        obj = 2;
-                        break;
-                    }
-                    break;
-                case 288843630:
-                    if (error.equals("USERNAME_INVALID")) {
-                        obj = null;
-                        break;
-                    }
-                    break;
-                case 533175271:
-                    if (error.equals("USERNAME_OCCUPIED")) {
-                        obj = 1;
-                        break;
-                    }
-                    break;
+    public void setInfo(ChatFull chatInfo) {
+        this.info = chatInfo;
+        fetchUsersFromChannelInfo();
+    }
+
+    private void fetchUsersFromChannelInfo() {
+        if ((this.info instanceof TL_channelFull) && this.info.participants != null) {
+            for (int a = 0; a < this.info.participants.participants.size(); a++) {
+                ChatParticipant chatParticipant = (ChatParticipant) this.info.participants.participants.get(a);
+                this.participantsMap.put(chatParticipant.user_id, chatParticipant);
             }
-            switch (obj) {
-                case null:
-                    builder.setMessage(LocaleController.getString("LinkInvalid", C0553R.string.LinkInvalid));
-                    break;
-                case 1:
-                    builder.setMessage(LocaleController.getString("LinkInUse", C0553R.string.LinkInUse));
-                    break;
-                case 2:
-                    builder.setMessage(LocaleController.getString("FeatureUnavailable", C0553R.string.FeatureUnavailable));
-                    break;
-                default:
-                    builder.setMessage(LocaleController.getString("ErrorOccurred", C0553R.string.ErrorOccurred));
-                    break;
-            }
-            builder.setPositiveButton(LocaleController.getString("OK", C0553R.string.OK), null);
-            showDialog(builder.create());
         }
+    }
+
+    private void updateRowsIds() {
+        int i;
+        this.rowCount = 0;
+        if (ChatObject.canEditInfo(this.currentChat)) {
+            i = this.rowCount;
+            this.rowCount = i + 1;
+            this.infoRow = i;
+        } else {
+            this.infoRow = -1;
+        }
+        this.permissionsRow = -1;
+        i = this.rowCount;
+        this.rowCount = i + 1;
+        this.eventLogRow = i;
+        i = this.rowCount;
+        this.rowCount = i + 1;
+        this.managementRow = i;
+        i = this.rowCount;
+        this.rowCount = i + 1;
+        this.blockedUsersRow = i;
+        i = this.rowCount;
+        this.rowCount = i + 1;
+        this.membersSectionRow = i;
+        if (this.info == null || this.info.participants == null || this.info.participants.participants.isEmpty()) {
+            this.membersStartRow = -1;
+            this.membersEndRow = -1;
+            this.loadMoreMembersRow = -1;
+            this.membersSection2Row = -1;
+            return;
+        }
+        this.membersStartRow = this.rowCount;
+        this.rowCount += this.info.participants.participants.size();
+        this.membersEndRow = this.rowCount;
+        i = this.rowCount;
+        this.rowCount = i + 1;
+        this.membersSection2Row = i;
+        if (this.usersEndReached) {
+            this.loadMoreMembersRow = -1;
+            return;
+        }
+        i = this.rowCount;
+        this.rowCount = i + 1;
+        this.loadMoreMembersRow = i;
+    }
+
+    private boolean createMenuForParticipant(TL_chatChannelParticipant user, ChannelParticipant channelParticipant, boolean resultOnly) {
+        if (user == null && channelParticipant == null) {
+            return false;
+        }
+        int uid;
+        ArrayList<String> items;
+        ArrayList<Integer> actions;
+        int currentUserId = UserConfig.getInstance(this.currentAccount).getClientUserId();
+        if (channelParticipant != null) {
+            if (currentUserId == channelParticipant.user_id) {
+                return false;
+            }
+            uid = channelParticipant.user_id;
+            user = (TL_chatChannelParticipant) this.participantsMap.get(channelParticipant.user_id);
+            if (user != null) {
+                channelParticipant = user.channelParticipant;
+            }
+        } else if (user.user_id == UserConfig.getInstance(this.currentAccount).getClientUserId()) {
+            return false;
+        } else {
+            uid = user.user_id;
+            channelParticipant = user.channelParticipant;
+        }
+        User u = MessagesController.getInstance(this.currentAccount).getUser(Integer.valueOf(uid));
+        boolean allowSetAdmin = (channelParticipant instanceof TL_channelParticipant) || (channelParticipant instanceof TL_channelParticipantBanned);
+        boolean canEditAdmin = !((channelParticipant instanceof TL_channelParticipantAdmin) || (channelParticipant instanceof TL_channelParticipantCreator)) || channelParticipant.can_edit;
+        if (resultOnly) {
+            items = null;
+            actions = null;
+        } else {
+            items = new ArrayList();
+            actions = new ArrayList();
+        }
+        if (allowSetAdmin && ChatObject.canAddAdmins(this.currentChat)) {
+            if (resultOnly) {
+                return true;
+            }
+            items.add(LocaleController.getString("SetAsAdmin", C0488R.string.SetAsAdmin));
+            actions.add(Integer.valueOf(0));
+        }
+        if (ChatObject.canBlockUsers(this.currentChat) && canEditAdmin) {
+            if (resultOnly) {
+                return true;
+            }
+            if (this.currentChat.megagroup) {
+                items.add(LocaleController.getString("KickFromSupergroup", C0488R.string.KickFromSupergroup));
+                actions.add(Integer.valueOf(1));
+                items.add(LocaleController.getString("KickFromGroup", C0488R.string.KickFromGroup));
+                actions.add(Integer.valueOf(2));
+            } else {
+                items.add(LocaleController.getString("ChannelRemoveUser", C0488R.string.ChannelRemoveUser));
+                actions.add(Integer.valueOf(2));
+            }
+        }
+        if (items == null || items.isEmpty()) {
+            return false;
+        }
+        final ChannelParticipant channelParticipantFinal = channelParticipant;
+        final TL_chatChannelParticipant userFinal = user;
+        Builder builder = new Builder(getParentActivity());
+        builder.setItems((CharSequence[]) items.toArray(new CharSequence[items.size()]), new OnClickListener() {
+            public void onClick(DialogInterface dialogInterface, final int i) {
+                if (((Integer) actions.get(i)).intValue() == 2) {
+                    MessagesController.getInstance(ChannelEditActivity.this.currentAccount).deleteUserFromChat(ChannelEditActivity.this.chat_id, MessagesController.getInstance(ChannelEditActivity.this.currentAccount).getUser(Integer.valueOf(uid)), ChannelEditActivity.this.info);
+                    return;
+                }
+                ChannelRightsEditActivity fragment = new ChannelRightsEditActivity(channelParticipantFinal.user_id, ChannelEditActivity.this.chat_id, channelParticipantFinal.admin_rights, channelParticipantFinal.banned_rights, ((Integer) actions.get(i)).intValue(), true);
+                fragment.setDelegate(new ChannelRightsEditActivityDelegate() {
+                    public void didSetRights(int rights, TL_channelAdminRights rightsAdmin, TL_channelBannedRights rightsBanned) {
+                        channelParticipantFinal.admin_rights = rightsAdmin;
+                        channelParticipantFinal.banned_rights = rightsBanned;
+                        if (((Integer) actions.get(i)).intValue() == 0) {
+                            if (userFinal != null) {
+                                if (rights == 1) {
+                                    userFinal.channelParticipant = new TL_channelParticipantAdmin();
+                                } else {
+                                    userFinal.channelParticipant = new TL_channelParticipant();
+                                }
+                                userFinal.channelParticipant.inviter_id = UserConfig.getInstance(ChannelEditActivity.this.currentAccount).getClientUserId();
+                                userFinal.channelParticipant.user_id = userFinal.user_id;
+                                userFinal.channelParticipant.date = userFinal.date;
+                            }
+                        } else if (((Integer) actions.get(i)).intValue() == 1 && rights == 0 && ChannelEditActivity.this.currentChat.megagroup && ChannelEditActivity.this.info != null && ChannelEditActivity.this.info.participants != null) {
+                            int a;
+                            boolean changed = false;
+                            for (a = 0; a < ChannelEditActivity.this.info.participants.participants.size(); a++) {
+                                if (((TL_chatChannelParticipant) ChannelEditActivity.this.info.participants.participants.get(a)).channelParticipant.user_id == uid) {
+                                    if (ChannelEditActivity.this.info != null) {
+                                        ChatFull access$1100 = ChannelEditActivity.this.info;
+                                        access$1100.participants_count--;
+                                    }
+                                    ChannelEditActivity.this.info.participants.participants.remove(a);
+                                    changed = true;
+                                    if (ChannelEditActivity.this.info != null && ChannelEditActivity.this.info.participants != null) {
+                                        for (a = 0; a < ChannelEditActivity.this.info.participants.participants.size(); a++) {
+                                            if (((ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(a)).user_id == uid) {
+                                                ChannelEditActivity.this.info.participants.participants.remove(a);
+                                                changed = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (changed) {
+                                        NotificationCenter.getInstance(ChannelEditActivity.this.currentAccount).postNotificationName(NotificationCenter.chatInfoDidLoaded, ChannelEditActivity.this.info, Integer.valueOf(0), Boolean.valueOf(true), null);
+                                    }
+                                }
+                            }
+                            for (a = 0; a < ChannelEditActivity.this.info.participants.participants.size(); a++) {
+                                if (((ChatParticipant) ChannelEditActivity.this.info.participants.participants.get(a)).user_id == uid) {
+                                    ChannelEditActivity.this.info.participants.participants.remove(a);
+                                    changed = true;
+                                    break;
+                                }
+                            }
+                            if (changed) {
+                                NotificationCenter.getInstance(ChannelEditActivity.this.currentAccount).postNotificationName(NotificationCenter.chatInfoDidLoaded, ChannelEditActivity.this.info, Integer.valueOf(0), Boolean.valueOf(true), null);
+                            }
+                        }
+                    }
+                });
+                ChannelEditActivity.this.presentFragment(fragment);
+            }
+        });
+        showDialog(builder.create());
+        return true;
+    }
+
+    public ThemeDescription[] getThemeDescriptions() {
+        ThemeDescriptionDelegate сellDelegate = new ThemeDescriptionDelegate() {
+            public void didSetColor() {
+                if (ChannelEditActivity.this.listView != null) {
+                    int count = ChannelEditActivity.this.listView.getChildCount();
+                    for (int a = 0; a < count; a++) {
+                        View child = ChannelEditActivity.this.listView.getChildAt(a);
+                        if (child instanceof ManageChatUserCell) {
+                            ((ManageChatUserCell) child).update(0);
+                        }
+                    }
+                }
+            }
+        };
+        r10 = new ThemeDescription[30];
+        r10[7] = new ThemeDescription(this.listView, 0, new Class[]{View.class}, Theme.dividerPaint, null, null, Theme.key_divider);
+        r10[8] = new ThemeDescription(this.listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{ShadowSectionCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow);
+        r10[9] = new ThemeDescription(this.listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{ManageChatTextCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        r10[10] = new ThemeDescription(this.listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{ManageChatTextCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGreenText2);
+        r10[11] = new ThemeDescription(this.listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{ManageChatTextCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteRedText5);
+        r10[12] = new ThemeDescription(this.listView, 0, new Class[]{ManageChatTextCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayIcon);
+        r10[13] = new ThemeDescription(this.listView, 0, new Class[]{ManageChatUserCell.class}, new String[]{"nameTextView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        r10[14] = new ThemeDescription(this.listView, 0, new Class[]{ManageChatUserCell.class}, new String[]{"statusColor"}, null, null, сellDelegate, Theme.key_windowBackgroundWhiteGrayText);
+        r10[15] = new ThemeDescription(this.listView, 0, new Class[]{ManageChatUserCell.class}, new String[]{"statusOnlineColor"}, null, null, сellDelegate, Theme.key_windowBackgroundWhiteBlueText);
+        r10[16] = new ThemeDescription(this.listView, 0, new Class[]{ManageChatUserCell.class}, null, new Drawable[]{Theme.avatar_photoDrawable, Theme.avatar_broadcastDrawable, Theme.avatar_savedDrawable}, null, Theme.key_avatar_text);
+        r10[17] = new ThemeDescription(null, 0, null, null, null, сellDelegate, Theme.key_avatar_backgroundRed);
+        r10[18] = new ThemeDescription(null, 0, null, null, null, сellDelegate, Theme.key_avatar_backgroundOrange);
+        r10[19] = new ThemeDescription(null, 0, null, null, null, сellDelegate, Theme.key_avatar_backgroundViolet);
+        r10[20] = new ThemeDescription(null, 0, null, null, null, сellDelegate, Theme.key_avatar_backgroundGreen);
+        r10[21] = new ThemeDescription(null, 0, null, null, null, сellDelegate, Theme.key_avatar_backgroundCyan);
+        r10[22] = new ThemeDescription(null, 0, null, null, null, сellDelegate, Theme.key_avatar_backgroundBlue);
+        r10[23] = new ThemeDescription(null, 0, null, null, null, сellDelegate, Theme.key_avatar_backgroundPink);
+        r10[24] = new ThemeDescription(this.listView, 0, new Class[]{LoadingCell.class}, new String[]{"progressBar"}, null, null, null, Theme.key_progressCircle);
+        r10[25] = new ThemeDescription(this.listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{ShadowSectionCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow);
+        r10[26] = new ThemeDescription(this.listView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{ShadowSectionCell.class}, null, null, null, Theme.key_windowBackgroundGray);
+        r10[27] = new ThemeDescription(this.listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow);
+        r10[28] = new ThemeDescription(this.listView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGray);
+        r10[29] = new ThemeDescription(this.listView, 0, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4);
+        return r10;
     }
 }

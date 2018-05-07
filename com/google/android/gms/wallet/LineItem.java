@@ -2,121 +2,80 @@ package com.google.android.gms.wallet;
 
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
 
-public class LineItem implements SafeParcelable {
-    public static final Creator<LineItem> CREATOR = new C0258e();
+public final class LineItem extends AbstractSafeParcelable {
+    public static final Creator<LineItem> CREATOR = new zzt();
     String description;
-    private final int iM;
-    String tD;
-    String tE;
-    String tQ;
-    String tR;
-    int tS;
+    String zzan;
+    String zzao;
+    String zzca;
+    String zzcb;
+    int zzcc;
 
     public final class Builder {
-        final /* synthetic */ LineItem tT;
+        private final /* synthetic */ LineItem zzcd;
 
         private Builder(LineItem lineItem) {
-            this.tT = lineItem;
+            this.zzcd = lineItem;
         }
 
-        public LineItem build() {
-            return this.tT;
+        public final LineItem build() {
+            return this.zzcd;
         }
 
-        public Builder setCurrencyCode(String currencyCode) {
-            this.tT.tE = currencyCode;
+        public final Builder setCurrencyCode(String str) {
+            this.zzcd.zzao = str;
             return this;
         }
 
-        public Builder setDescription(String description) {
-            this.tT.description = description;
+        public final Builder setDescription(String str) {
+            this.zzcd.description = str;
             return this;
         }
 
-        public Builder setQuantity(String quantity) {
-            this.tT.tQ = quantity;
+        public final Builder setQuantity(String str) {
+            this.zzcd.zzca = str;
             return this;
         }
 
-        public Builder setRole(int role) {
-            this.tT.tS = role;
+        public final Builder setTotalPrice(String str) {
+            this.zzcd.zzan = str;
             return this;
         }
 
-        public Builder setTotalPrice(String totalPrice) {
-            this.tT.tD = totalPrice;
-            return this;
-        }
-
-        public Builder setUnitPrice(String unitPrice) {
-            this.tT.tR = unitPrice;
+        public final Builder setUnitPrice(String str) {
+            this.zzcd.zzcb = str;
             return this;
         }
     }
 
-    public interface Role {
-        public static final int REGULAR = 0;
-        public static final int SHIPPING = 2;
-        public static final int TAX = 1;
+    LineItem() {
+        this.zzcc = 0;
     }
 
-    public LineItem() {
-        this.tS = 0;
-        this.iM = 1;
-    }
-
-    LineItem(int versionCode, String description, String quantity, String unitPrice, String totalPrice, int role, String currencyCode) {
-        this.tS = 0;
-        this.iM = versionCode;
-        this.description = description;
-        this.tQ = quantity;
-        this.tR = unitPrice;
-        this.tD = totalPrice;
-        this.tS = role;
-        this.tE = currencyCode;
+    LineItem(String str, String str2, String str3, String str4, int i, String str5) {
+        this.description = str;
+        this.zzca = str2;
+        this.zzcb = str3;
+        this.zzan = str4;
+        this.zzcc = i;
+        this.zzao = str5;
     }
 
     public static Builder newBuilder() {
-        LineItem lineItem = new LineItem();
-        lineItem.getClass();
         return new Builder();
     }
 
-    public int describeContents() {
-        return 0;
-    }
-
-    public String getCurrencyCode() {
-        return this.tE;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public String getQuantity() {
-        return this.tQ;
-    }
-
-    public int getRole() {
-        return this.tS;
-    }
-
-    public String getTotalPrice() {
-        return this.tD;
-    }
-
-    public String getUnitPrice() {
-        return this.tR;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
-    }
-
-    public void writeToParcel(Parcel dest, int flags) {
-        C0258e.m784a(this, dest, flags);
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeString(parcel, 2, this.description, false);
+        SafeParcelWriter.writeString(parcel, 3, this.zzca, false);
+        SafeParcelWriter.writeString(parcel, 4, this.zzcb, false);
+        SafeParcelWriter.writeString(parcel, 5, this.zzan, false);
+        SafeParcelWriter.writeInt(parcel, 6, this.zzcc);
+        SafeParcelWriter.writeString(parcel, 7, this.zzao, false);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

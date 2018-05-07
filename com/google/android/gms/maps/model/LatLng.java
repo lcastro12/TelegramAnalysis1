@@ -1,64 +1,52 @@
 package com.google.android.gms.maps.model;
 
 import android.os.Parcel;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.android.gms.maps.internal.C0215q;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.ReflectedParcelable;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
 
-public final class LatLng implements SafeParcelable {
-    public static final LatLngCreator CREATOR = new LatLngCreator();
-    private final int ab;
+public final class LatLng extends AbstractSafeParcelable implements ReflectedParcelable {
+    public static final Creator<LatLng> CREATOR = new zzf();
     public final double latitude;
     public final double longitude;
 
-    public LatLng(double latitude, double longitude) {
-        this(1, latitude, longitude);
-    }
-
-    LatLng(int versionCode, double latitude, double longitude) {
-        this.ab = versionCode;
-        if (-180.0d > longitude || longitude >= 180.0d) {
-            this.longitude = ((((longitude - 180.0d) % 360.0d) + 360.0d) % 360.0d) - 180.0d;
+    public LatLng(double d, double d2) {
+        if (-180.0d > d2 || d2 >= 180.0d) {
+            this.longitude = ((((d2 - 180.0d) % 360.0d) + 360.0d) % 360.0d) - 180.0d;
         } else {
-            this.longitude = longitude;
+            this.longitude = d2;
         }
-        this.latitude = Math.max(-90.0d, Math.min(90.0d, latitude));
+        this.latitude = Math.max(-90.0d, Math.min(90.0d, d));
     }
 
-    public int describeContents() {
-        return 0;
-    }
-
-    public boolean equals(Object o) {
-        if (this == o) {
+    public final boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (!(o instanceof LatLng)) {
+        if (!(obj instanceof LatLng)) {
             return false;
         }
-        LatLng latLng = (LatLng) o;
+        LatLng latLng = (LatLng) obj;
         return Double.doubleToLongBits(this.latitude) == Double.doubleToLongBits(latLng.latitude) && Double.doubleToLongBits(this.longitude) == Double.doubleToLongBits(latLng.longitude);
     }
 
-    public int hashCode() {
+    public final int hashCode() {
         long doubleToLongBits = Double.doubleToLongBits(this.latitude);
         int i = ((int) (doubleToLongBits ^ (doubleToLongBits >>> 32))) + 31;
         long doubleToLongBits2 = Double.doubleToLongBits(this.longitude);
         return (i * 31) + ((int) (doubleToLongBits2 ^ (doubleToLongBits2 >>> 32)));
     }
 
-    int m1088i() {
-        return this.ab;
+    public final String toString() {
+        double d = this.latitude;
+        return "lat/lng: (" + d + "," + this.longitude + ")";
     }
 
-    public String toString() {
-        return "lat/lng: (" + this.latitude + "," + this.longitude + ")";
-    }
-
-    public void writeToParcel(Parcel out, int flags) {
-        if (C0215q.bn()) {
-            C0220e.m578a(this, out, flags);
-        } else {
-            LatLngCreator.m567a(this, out, flags);
-        }
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeDouble(parcel, 2, this.latitude);
+        SafeParcelWriter.writeDouble(parcel, 3, this.longitude);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

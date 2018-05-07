@@ -1,6 +1,7 @@
 package net.hockeyapp.android.tasks;
 
-import android.app.AlertDialog.Builder;
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -9,7 +10,9 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build.VERSION;
-import android.os.Environment;
+import android.os.StrictMode;
+import android.os.StrictMode.VmPolicy;
+import android.os.StrictMode.VmPolicy.Builder;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,97 +23,188 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.UUID;
-import net.hockeyapp.android.Strings;
+import net.hockeyapp.android.C0051R;
 import net.hockeyapp.android.listeners.DownloadFileListener;
+import net.hockeyapp.android.utils.HockeyLog;
+import org.telegram.messenger.exoplayer2.util.MimeTypes;
 
+@SuppressLint({"StaticFieldLeak"})
 public class DownloadFileTask extends AsyncTask<Void, Integer, Long> {
-    protected static final int MAX_REDIRECTS = 6;
-    protected Context context;
-    private String downloadErrorMessage;
-    protected String filePath = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/Download");
-    protected String filename = (UUID.randomUUID() + ".apk");
-    protected DownloadFileListener notifier;
-    protected ProgressDialog progressDialog;
-    protected String urlString;
+    protected Context mContext;
+    protected File mDirectory;
+    private String mDownloadErrorMessage;
+    protected String mFilename = (UUID.randomUUID() + ".apk");
+    protected DownloadFileListener mNotifier;
+    protected ProgressDialog mProgressDialog;
+    protected String mUrlString;
 
-    class C02801 implements OnClickListener {
-        C02801() {
+    class C00591 implements OnClickListener {
+        C00591() {
         }
 
         public void onClick(DialogInterface dialog, int which) {
-            DownloadFileTask.this.notifier.downloadFailed(DownloadFileTask.this, Boolean.valueOf(false));
+            DownloadFileTask.this.mNotifier.downloadFailed(DownloadFileTask.this, Boolean.valueOf(false));
         }
     }
 
-    class C02812 implements OnClickListener {
-        C02812() {
+    class C00602 implements OnClickListener {
+        C00602() {
         }
 
         public void onClick(DialogInterface dialog, int which) {
-            DownloadFileTask.this.notifier.downloadFailed(DownloadFileTask.this, Boolean.valueOf(true));
+            DownloadFileTask.this.mNotifier.downloadFailed(DownloadFileTask.this, Boolean.valueOf(true));
         }
     }
 
     public DownloadFileTask(Context context, String urlString, DownloadFileListener notifier) {
-        this.context = context;
-        this.urlString = urlString;
-        this.notifier = notifier;
-        this.downloadErrorMessage = null;
-    }
-
-    public void attach(Context context) {
-        this.context = context;
-    }
-
-    public void detach() {
-        this.context = null;
-        this.progressDialog = null;
+        this.mContext = context;
+        this.mUrlString = urlString;
+        this.mDirectory = new File(context.getExternalFilesDir(null), "Download");
+        this.mNotifier = notifier;
+        this.mDownloadErrorMessage = null;
     }
 
     protected Long doInBackground(Void... args) {
-        try {
-            URLConnection connection = createConnection(new URL(getURLString()), 6);
-            connection.connect();
-            int lengthOfFile = connection.getContentLength();
-            String contentType = connection.getContentType();
-            if (contentType == null || !contentType.contains("text")) {
-                File dir = new File(this.filePath);
-                if (dir.mkdirs() || dir.exists()) {
-                    File file = new File(dir, this.filename);
-                    InputStream input = new BufferedInputStream(connection.getInputStream());
-                    OutputStream output = new FileOutputStream(file);
-                    byte[] data = new byte[1024];
-                    long total = 0;
-                    while (true) {
-                        int count = input.read(data);
-                        if (count != -1) {
-                            total += (long) count;
-                            publishProgress(new Integer[]{Integer.valueOf(Math.round((((float) total) * 100.0f) / ((float) lengthOfFile)))});
-                            output.write(data, 0, count);
-                        } else {
-                            output.flush();
-                            output.close();
-                            input.close();
-                            return Long.valueOf(total);
+        Long valueOf;
+        Throwable e;
+        Throwable th;
+        InputStream input = null;
+        OutputStream output = null;
+        URLConnection connection = createConnection(new URL(getURLString()), 6);
+        connection.connect();
+        int lengthOfFile = connection.getContentLength();
+        String contentType = connection.getContentType();
+        if (contentType == null || !contentType.contains(MimeTypes.BASE_TYPE_TEXT)) {
+            try {
+                if (this.mDirectory.mkdirs() || this.mDirectory.exists()) {
+                    File file = new File(this.mDirectory, this.mFilename);
+                    InputStream input2 = new BufferedInputStream(connection.getInputStream());
+                    try {
+                        OutputStream output2 = new FileOutputStream(file);
+                        try {
+                            byte[] data = new byte[1024];
+                            long total = 0;
+                            while (true) {
+                                int count = input2.read(data);
+                                if (count == -1) {
+                                    break;
+                                }
+                                total += (long) count;
+                                publishProgress(new Integer[]{Integer.valueOf(Math.round((((float) total) * 100.0f) / ((float) lengthOfFile)))});
+                                output2.write(data, 0, count);
+                            }
+                            output2.flush();
+                            valueOf = Long.valueOf(total);
+                            if (output2 != null) {
+                                try {
+                                    output2.close();
+                                } catch (IOException e2) {
+                                }
+                            }
+                            if (input2 != null) {
+                                input2.close();
+                            }
+                            output = output2;
+                            input = input2;
+                        } catch (IOException e3) {
+                            e = e3;
+                            output = output2;
+                            input = input2;
+                            try {
+                                HockeyLog.error("Failed to download " + this.mUrlString, e);
+                                valueOf = Long.valueOf(0);
+                                if (output != null) {
+                                    try {
+                                        output.close();
+                                    } catch (IOException e4) {
+                                    }
+                                }
+                                if (input != null) {
+                                    input.close();
+                                }
+                                return valueOf;
+                            } catch (Throwable th2) {
+                                th = th2;
+                                if (output != null) {
+                                    try {
+                                        output.close();
+                                    } catch (IOException e5) {
+                                        throw th;
+                                    }
+                                }
+                                if (input != null) {
+                                    input.close();
+                                }
+                                throw th;
+                            }
+                        } catch (Throwable th3) {
+                            th = th3;
+                            output = output2;
+                            input = input2;
+                            if (output != null) {
+                                output.close();
+                            }
+                            if (input != null) {
+                                input.close();
+                            }
+                            throw th;
                         }
+                    } catch (IOException e6) {
+                        e = e6;
+                        input = input2;
+                        HockeyLog.error("Failed to download " + this.mUrlString, e);
+                        valueOf = Long.valueOf(0);
+                        if (output != null) {
+                            output.close();
+                        }
+                        if (input != null) {
+                            input.close();
+                        }
+                        return valueOf;
+                    } catch (Throwable th4) {
+                        th = th4;
+                        input = input2;
+                        if (output != null) {
+                            output.close();
+                        }
+                        if (input != null) {
+                            input.close();
+                        }
+                        throw th;
                     }
+                    return valueOf;
                 }
-                throw new IOException("Could not create the dir(s):" + dir.getAbsolutePath());
+                throw new IOException("Could not create the dir(s):" + this.mDirectory.getAbsolutePath());
+            } catch (IOException e7) {
+                e = e7;
+                HockeyLog.error("Failed to download " + this.mUrlString, e);
+                valueOf = Long.valueOf(0);
+                if (output != null) {
+                    output.close();
+                }
+                if (input != null) {
+                    input.close();
+                }
+                return valueOf;
             }
-            this.downloadErrorMessage = "The requested download does not appear to be a file.";
-            return Long.valueOf(0);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Long.valueOf(0);
         }
+        this.mDownloadErrorMessage = "The requested download does not appear to be a file.";
+        valueOf = Long.valueOf(0);
+        if (output != null) {
+            try {
+                output.close();
+            } catch (IOException e8) {
+            }
+        }
+        if (input != null) {
+            input.close();
+        }
+        return valueOf;
     }
 
     protected void setConnectionProperties(HttpURLConnection connection) {
-        connection.addRequestProperty("User-Agent", "HockeySDK/Android");
+        connection.addRequestProperty("User-Agent", "HockeySDK/Android 5.0.4");
         connection.setInstanceFollowRedirects(true);
-        if (VERSION.SDK_INT <= 9) {
-            connection.setRequestProperty("connection", "close");
-        }
     }
 
     protected URLConnection createConnection(URL url, int remainingRedirects) throws IOException {
@@ -130,51 +224,60 @@ public class DownloadFileTask extends AsyncTask<Void, Integer, Long> {
 
     protected void onProgressUpdate(Integer... args) {
         try {
-            if (this.progressDialog == null) {
-                this.progressDialog = new ProgressDialog(this.context);
-                this.progressDialog.setProgressStyle(1);
-                this.progressDialog.setMessage("Loading...");
-                this.progressDialog.setCancelable(false);
-                this.progressDialog.show();
+            if (this.mProgressDialog == null) {
+                this.mProgressDialog = new ProgressDialog(this.mContext);
+                this.mProgressDialog.setProgressStyle(1);
+                this.mProgressDialog.setMessage(this.mContext.getString(C0051R.string.hockeyapp_update_loading));
+                this.mProgressDialog.setCancelable(false);
+                this.mProgressDialog.show();
             }
-            this.progressDialog.setProgress(args[0].intValue());
+            this.mProgressDialog.setProgress(args[0].intValue());
         } catch (Exception e) {
         }
     }
 
     protected void onPostExecute(Long result) {
-        if (this.progressDialog != null) {
+        if (this.mProgressDialog != null) {
             try {
-                this.progressDialog.dismiss();
+                this.mProgressDialog.dismiss();
             } catch (Exception e) {
             }
         }
         if (result.longValue() > 0) {
-            this.notifier.downloadSuccessful(this);
-            Intent intent = new Intent("android.intent.action.VIEW");
-            intent.setDataAndType(Uri.fromFile(new File(this.filePath, this.filename)), "application/vnd.android.package-archive");
+            this.mNotifier.downloadSuccessful(this);
+            Intent intent = new Intent("android.intent.action.INSTALL_PACKAGE");
+            intent.setDataAndType(Uri.fromFile(new File(this.mDirectory, this.mFilename)), "application/vnd.android.package-archive");
             intent.setFlags(268435456);
-            this.context.startActivity(intent);
+            VmPolicy oldVmPolicy = null;
+            if (VERSION.SDK_INT >= 24) {
+                oldVmPolicy = StrictMode.getVmPolicy();
+                StrictMode.setVmPolicy(new Builder().penaltyLog().build());
+            }
+            this.mContext.startActivity(intent);
+            if (oldVmPolicy != null) {
+                StrictMode.setVmPolicy(oldVmPolicy);
+                return;
+            }
             return;
         }
         try {
             String message;
-            Builder builder = new Builder(this.context);
-            builder.setTitle(Strings.get(this.notifier, 256));
-            if (this.downloadErrorMessage == null) {
-                message = Strings.get(this.notifier, 257);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this.mContext);
+            builder.setTitle(C0051R.string.hockeyapp_download_failed_dialog_title);
+            if (this.mDownloadErrorMessage == null) {
+                message = this.mContext.getString(C0051R.string.hockeyapp_download_failed_dialog_message);
             } else {
-                message = this.downloadErrorMessage;
+                message = this.mDownloadErrorMessage;
             }
             builder.setMessage(message);
-            builder.setNegativeButton(Strings.get(this.notifier, Strings.DOWNLOAD_FAILED_DIALOG_NEGATIVE_BUTTON_ID), new C02801());
-            builder.setPositiveButton(Strings.get(this.notifier, Strings.DOWNLOAD_FAILED_DIALOG_POSITIVE_BUTTON_ID), new C02812());
+            builder.setNegativeButton(C0051R.string.hockeyapp_download_failed_dialog_negative_button, new C00591());
+            builder.setPositiveButton(C0051R.string.hockeyapp_download_failed_dialog_positive_button, new C00602());
             builder.create().show();
         } catch (Exception e2) {
         }
     }
 
     protected String getURLString() {
-        return this.urlString + "&type=apk";
+        return this.mUrlString + "&type=apk";
     }
 }

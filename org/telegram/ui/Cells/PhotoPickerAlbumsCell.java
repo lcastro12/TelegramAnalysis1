@@ -7,25 +7,25 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.MeasureSpec;
 import android.view.View.OnClickListener;
+import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.MediaController.AlbumEntry;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BackupImageView;
-import org.telegram.ui.Components.FrameLayoutFixed;
 import org.telegram.ui.Components.LayoutHelper;
 
-public class PhotoPickerAlbumsCell extends FrameLayoutFixed {
+public class PhotoPickerAlbumsCell extends FrameLayout {
     private AlbumEntry[] albumEntries = new AlbumEntry[4];
     private AlbumView[] albumViews = new AlbumView[4];
     private int albumsCount;
     private PhotoPickerAlbumsCellDelegate delegate;
 
-    class C07851 implements OnClickListener {
-        C07851() {
+    class C10731 implements OnClickListener {
+        C10731() {
         }
 
         public void onClick(View v) {
@@ -35,11 +35,7 @@ public class PhotoPickerAlbumsCell extends FrameLayoutFixed {
         }
     }
 
-    public interface PhotoPickerAlbumsCellDelegate {
-        void didSelectAlbum(AlbumEntry albumEntry);
-    }
-
-    private class AlbumView extends FrameLayoutFixed {
+    private class AlbumView extends FrameLayout {
         private TextView countTextView;
         private BackupImageView imageView;
         private TextView nameTextView;
@@ -48,10 +44,10 @@ public class PhotoPickerAlbumsCell extends FrameLayoutFixed {
         public AlbumView(Context context) {
             super(context);
             this.imageView = new BackupImageView(context);
-            addView(this.imageView, LayoutHelper.createFrame(-1, GroundOverlayOptions.NO_DIMENSION));
+            addView(this.imageView, LayoutHelper.createFrame(-1, -1.0f));
             LinearLayout linearLayout = new LinearLayout(context);
             linearLayout.setOrientation(0);
-            linearLayout.setBackgroundColor(2130706432);
+            linearLayout.setBackgroundColor(Theme.ACTION_BAR_PHOTO_VIEWER_COLOR);
             addView(linearLayout, LayoutHelper.createFrame(-1, 28, 83));
             this.nameTextView = new TextView(context);
             this.nameTextView.setTextSize(1, 13.0f);
@@ -70,8 +66,8 @@ public class PhotoPickerAlbumsCell extends FrameLayoutFixed {
             this.countTextView.setGravity(16);
             linearLayout.addView(this.countTextView, LayoutHelper.createLinear(-2, -1, 4.0f, 0.0f, 4.0f, 0.0f));
             this.selector = new View(context);
-            this.selector.setBackgroundResource(C0553R.drawable.list_selector);
-            addView(this.selector, LayoutHelper.createFrame(-1, GroundOverlayOptions.NO_DIMENSION));
+            this.selector.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+            addView(this.selector, LayoutHelper.createFrame(-1, -1.0f));
         }
 
         public boolean onTouchEvent(MotionEvent event) {
@@ -82,6 +78,10 @@ public class PhotoPickerAlbumsCell extends FrameLayoutFixed {
         }
     }
 
+    public interface PhotoPickerAlbumsCellDelegate {
+        void didSelectAlbum(AlbumEntry albumEntry);
+    }
+
     public PhotoPickerAlbumsCell(Context context) {
         super(context);
         for (int a = 0; a < 4; a++) {
@@ -89,7 +89,7 @@ public class PhotoPickerAlbumsCell extends FrameLayoutFixed {
             addView(this.albumViews[a]);
             this.albumViews[a].setVisibility(4);
             this.albumViews[a].setTag(Integer.valueOf(a));
-            this.albumViews[a].setOnClickListener(new C07851());
+            this.albumViews[a].setOnClickListener(new C10731());
         }
     }
 
@@ -112,13 +112,13 @@ public class PhotoPickerAlbumsCell extends FrameLayoutFixed {
             AlbumView albumView = this.albumViews[a];
             albumView.imageView.setOrientation(0, true);
             if (albumEntry.coverPhoto == null || albumEntry.coverPhoto.path == null) {
-                albumView.imageView.setImageResource(C0553R.drawable.nophotos);
+                albumView.imageView.setImageResource(C0488R.drawable.nophotos);
             } else {
                 albumView.imageView.setOrientation(albumEntry.coverPhoto.orientation, true);
                 if (albumEntry.coverPhoto.isVideo) {
-                    albumView.imageView.setImage("vthumb://" + albumEntry.coverPhoto.imageId + ":" + albumEntry.coverPhoto.path, null, getContext().getResources().getDrawable(C0553R.drawable.nophotos));
+                    albumView.imageView.setImage("vthumb://" + albumEntry.coverPhoto.imageId + ":" + albumEntry.coverPhoto.path, null, getContext().getResources().getDrawable(C0488R.drawable.nophotos));
                 } else {
-                    albumView.imageView.setImage("thumb://" + albumEntry.coverPhoto.imageId + ":" + albumEntry.coverPhoto.path, null, getContext().getResources().getDrawable(C0553R.drawable.nophotos));
+                    albumView.imageView.setImage("thumb://" + albumEntry.coverPhoto.imageId + ":" + albumEntry.coverPhoto.path, null, getContext().getResources().getDrawable(C0488R.drawable.nophotos));
                 }
             }
             albumView.nameTextView.setText(albumEntry.bucketName);

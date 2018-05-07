@@ -9,6 +9,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.net.Uri.Builder;
+import android.os.Build.VERSION;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
@@ -21,15 +22,8 @@ import java.util.Map.Entry;
 import org.xmlpull.v1.XmlPullParserException;
 
 public class FileProvider extends ContentProvider {
-    private static final String ATTR_NAME = "name";
-    private static final String ATTR_PATH = "path";
     private static final String[] COLUMNS = new String[]{"_display_name", "_size"};
     private static final File DEVICE_ROOT = new File("/");
-    private static final String META_DATA_FILE_PROVIDER_PATHS = "android.support.FILE_PROVIDER_PATHS";
-    private static final String TAG_CACHE_PATH = "cache-path";
-    private static final String TAG_EXTERNAL = "external-path";
-    private static final String TAG_FILES_PATH = "files-path";
-    private static final String TAG_ROOT_PATH = "root-path";
     private static HashMap<String, PathStrategy> sCache = new HashMap();
     private PathStrategy mStrategy;
 
@@ -43,11 +37,11 @@ public class FileProvider extends ContentProvider {
         private final String mAuthority;
         private final HashMap<String, File> mRoots = new HashMap();
 
-        public SimplePathStrategy(String authority) {
+        SimplePathStrategy(String authority) {
             this.mAuthority = authority;
         }
 
-        public void addRoot(String name, File root) {
+        void addRoot(String name, File root) {
             if (TextUtils.isEmpty(name)) {
                 throw new IllegalArgumentException("Name must not be empty");
             }
@@ -132,29 +126,28 @@ public class FileProvider extends ContentProvider {
         }
         String[] cols = new String[projection.length];
         Object[] values = new Object[projection.length];
-        String[] arr$ = projection;
-        int len$ = arr$.length;
-        int i$ = 0;
+        int length = projection.length;
         int i = 0;
-        while (i$ < len$) {
-            int i2;
-            String col = arr$[i$];
+        int i2 = 0;
+        while (i < length) {
+            int i3;
+            String col = projection[i];
             if ("_display_name".equals(col)) {
-                cols[i] = "_display_name";
-                i2 = i + 1;
-                values[i] = file.getName();
+                cols[i2] = "_display_name";
+                i3 = i2 + 1;
+                values[i2] = file.getName();
             } else if ("_size".equals(col)) {
-                cols[i] = "_size";
-                i2 = i + 1;
-                values[i] = Long.valueOf(file.length());
+                cols[i2] = "_size";
+                i3 = i2 + 1;
+                values[i2] = Long.valueOf(file.length());
             } else {
-                i2 = i;
+                i3 = i2;
             }
-            i$++;
-            i = i2;
+            i++;
+            i2 = i3;
         }
-        cols = copyOf(cols, i);
-        values = copyOf(values, i);
+        cols = copyOf(cols, i2);
+        values = copyOf(values, i2);
         MatrixCursor cursor = new MatrixCursor(cols, 1);
         cursor.addRow(values);
         return cursor;
@@ -208,7 +201,7 @@ public class FileProvider extends ContentProvider {
 
     private static PathStrategy parsePathStrategy(Context context, String authority) throws IOException, XmlPullParserException {
         SimplePathStrategy strat = new SimplePathStrategy(authority);
-        XmlResourceParser in = context.getPackageManager().resolveContentProvider(authority, 128).loadXmlMetaData(context.getPackageManager(), META_DATA_FILE_PROVIDER_PATHS);
+        XmlResourceParser in = context.getPackageManager().resolveContentProvider(authority, 128).loadXmlMetaData(context.getPackageManager(), "android.support.FILE_PROVIDER_PATHS");
         if (in == null) {
             throw new IllegalArgumentException("Missing android.support.FILE_PROVIDER_PATHS meta-data");
         }
@@ -219,20 +212,35 @@ public class FileProvider extends ContentProvider {
             }
             if (type == 2) {
                 String tag = in.getName();
-                String name = in.getAttributeValue(null, ATTR_NAME);
-                String path = in.getAttributeValue(null, ATTR_PATH);
+                String name = in.getAttributeValue(null, "name");
+                String path = in.getAttributeValue(null, "path");
                 File target = null;
-                if (TAG_ROOT_PATH.equals(tag)) {
-                    target = buildPath(DEVICE_ROOT, path);
-                } else if (TAG_FILES_PATH.equals(tag)) {
-                    target = buildPath(context.getFilesDir(), path);
-                } else if (TAG_CACHE_PATH.equals(tag)) {
-                    target = buildPath(context.getCacheDir(), path);
-                } else if (TAG_EXTERNAL.equals(tag)) {
-                    target = buildPath(Environment.getExternalStorageDirectory(), path);
+                if ("root-path".equals(tag)) {
+                    target = DEVICE_ROOT;
+                } else if ("files-path".equals(tag)) {
+                    target = context.getFilesDir();
+                } else if ("cache-path".equals(tag)) {
+                    target = context.getCacheDir();
+                } else if ("external-path".equals(tag)) {
+                    target = Environment.getExternalStorageDirectory();
+                } else if ("external-files-path".equals(tag)) {
+                    File[] externalFilesDirs = ContextCompat.getExternalFilesDirs(context, null);
+                    if (externalFilesDirs.length > 0) {
+                        target = externalFilesDirs[0];
+                    }
+                } else if ("external-cache-path".equals(tag)) {
+                    File[] externalCacheDirs = ContextCompat.getExternalCacheDirs(context);
+                    if (externalCacheDirs.length > 0) {
+                        target = externalCacheDirs[0];
+                    }
+                } else if (VERSION.SDK_INT >= 21 && "external-media-path".equals(tag)) {
+                    File[] externalMediaDirs = context.getExternalMediaDirs();
+                    if (externalMediaDirs.length > 0) {
+                        target = externalMediaDirs[0];
+                    }
                 }
                 if (target != null) {
-                    strat.addRoot(name, target);
+                    strat.addRoot(name, buildPath(target, path));
                 }
             }
         }
@@ -259,18 +267,17 @@ public class FileProvider extends ContentProvider {
 
     private static File buildPath(File base, String... segments) {
         File cur = base;
-        String[] arr$ = segments;
-        int len$ = arr$.length;
-        int i$ = 0;
+        int length = segments.length;
+        int i = 0;
         File cur2 = cur;
-        while (i$ < len$) {
-            String segment = arr$[i$];
+        while (i < length) {
+            String segment = segments[i];
             if (segment != null) {
                 cur = new File(cur2, segment);
             } else {
                 cur = cur2;
             }
-            i$++;
+            i++;
             cur2 = cur;
         }
         return cur2;

@@ -1,94 +1,51 @@
 package android.support.v4.app;
 
-import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.Build.VERSION;
 import android.os.Bundle;
-import android.support.v4.util.Pair;
-import android.view.View;
 
 public class ActivityOptionsCompat {
 
-    private static class ActivityOptionsImpl21 extends ActivityOptionsCompat {
-        private final ActivityOptionsCompat21 mImpl;
+    private static class ActivityOptionsCompatApi16Impl extends ActivityOptionsCompat {
+        protected final ActivityOptions mActivityOptions;
 
-        ActivityOptionsImpl21(ActivityOptionsCompat21 impl) {
-            this.mImpl = impl;
+        ActivityOptionsCompatApi16Impl(ActivityOptions activityOptions) {
+            this.mActivityOptions = activityOptions;
         }
 
         public Bundle toBundle() {
-            return this.mImpl.toBundle();
-        }
-
-        public void update(ActivityOptionsCompat otherOptions) {
-            if (otherOptions instanceof ActivityOptionsImpl21) {
-                this.mImpl.update(((ActivityOptionsImpl21) otherOptions).mImpl);
-            }
+            return this.mActivityOptions.toBundle();
         }
     }
 
-    private static class ActivityOptionsImplJB extends ActivityOptionsCompat {
-        private final ActivityOptionsCompatJB mImpl;
-
-        ActivityOptionsImplJB(ActivityOptionsCompatJB impl) {
-            this.mImpl = impl;
+    private static class ActivityOptionsCompatApi23Impl extends ActivityOptionsCompatApi16Impl {
+        ActivityOptionsCompatApi23Impl(ActivityOptions activityOptions) {
+            super(activityOptions);
         }
+    }
 
-        public Bundle toBundle() {
-            return this.mImpl.toBundle();
-        }
-
-        public void update(ActivityOptionsCompat otherOptions) {
-            if (otherOptions instanceof ActivityOptionsImplJB) {
-                this.mImpl.update(((ActivityOptionsImplJB) otherOptions).mImpl);
-            }
+    private static class ActivityOptionsCompatApi24Impl extends ActivityOptionsCompatApi23Impl {
+        ActivityOptionsCompatApi24Impl(ActivityOptions activityOptions) {
+            super(activityOptions);
         }
     }
 
     public static ActivityOptionsCompat makeCustomAnimation(Context context, int enterResId, int exitResId) {
         if (VERSION.SDK_INT >= 16) {
-            return new ActivityOptionsImplJB(ActivityOptionsCompatJB.makeCustomAnimation(context, enterResId, exitResId));
+            return createImpl(ActivityOptions.makeCustomAnimation(context, enterResId, exitResId));
         }
         return new ActivityOptionsCompat();
     }
 
-    public static ActivityOptionsCompat makeScaleUpAnimation(View source, int startX, int startY, int startWidth, int startHeight) {
-        if (VERSION.SDK_INT >= 16) {
-            return new ActivityOptionsImplJB(ActivityOptionsCompatJB.makeScaleUpAnimation(source, startX, startY, startWidth, startHeight));
+    private static ActivityOptionsCompat createImpl(ActivityOptions options) {
+        if (VERSION.SDK_INT >= 24) {
+            return new ActivityOptionsCompatApi24Impl(options);
         }
-        return new ActivityOptionsCompat();
-    }
-
-    public static ActivityOptionsCompat makeThumbnailScaleUpAnimation(View source, Bitmap thumbnail, int startX, int startY) {
-        if (VERSION.SDK_INT >= 16) {
-            return new ActivityOptionsImplJB(ActivityOptionsCompatJB.makeThumbnailScaleUpAnimation(source, thumbnail, startX, startY));
+        if (VERSION.SDK_INT >= 23) {
+            return new ActivityOptionsCompatApi23Impl(options);
         }
-        return new ActivityOptionsCompat();
-    }
-
-    public static ActivityOptionsCompat makeSceneTransitionAnimation(Activity activity, View sharedElement, String sharedElementName) {
-        if (VERSION.SDK_INT >= 21) {
-            return new ActivityOptionsImpl21(ActivityOptionsCompat21.makeSceneTransitionAnimation(activity, sharedElement, sharedElementName));
-        }
-        return new ActivityOptionsCompat();
-    }
-
-    public static ActivityOptionsCompat makeSceneTransitionAnimation(Activity activity, Pair<View, String>... sharedElements) {
-        if (VERSION.SDK_INT < 21) {
-            return new ActivityOptionsCompat();
-        }
-        View[] views = null;
-        String[] names = null;
-        if (sharedElements != null) {
-            views = new View[sharedElements.length];
-            names = new String[sharedElements.length];
-            for (int i = 0; i < sharedElements.length; i++) {
-                views[i] = (View) sharedElements[i].first;
-                names[i] = (String) sharedElements[i].second;
-            }
-        }
-        return new ActivityOptionsImpl21(ActivityOptionsCompat21.makeSceneTransitionAnimation(activity, views, names));
+        return new ActivityOptionsCompatApi16Impl(options);
     }
 
     protected ActivityOptionsCompat() {
@@ -96,8 +53,5 @@ public class ActivityOptionsCompat {
 
     public Bundle toBundle() {
         return null;
-    }
-
-    public void update(ActivityOptionsCompat otherOptions) {
     }
 }

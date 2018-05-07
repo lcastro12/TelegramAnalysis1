@@ -4,50 +4,33 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Feedback implements Serializable {
-    private static final long serialVersionUID = 2590172806951065320L;
-    private String createdAt;
-    private String email;
-    private int id;
-    private ArrayList<FeedbackMessage> messages;
-    private String name;
-
-    public String getName() {
-        return this.name;
-    }
+    private String mCreatedAt;
+    private String mEmail;
+    private int mId;
+    private ArrayList<FeedbackMessage> mMessages;
+    private String mName;
 
     public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getEmail() {
-        return this.email;
+        this.mName = name;
     }
 
     public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public int getId() {
-        return this.id;
+        this.mEmail = email;
     }
 
     public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getCreatedAt() {
-        return this.createdAt;
+        this.mId = id;
     }
 
     public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
+        this.mCreatedAt = createdAt;
     }
 
     public ArrayList<FeedbackMessage> getMessages() {
-        return this.messages;
+        return this.mMessages;
     }
 
     public void setMessages(ArrayList<FeedbackMessage> messages) {
-        this.messages = messages;
+        this.mMessages = messages;
     }
 }

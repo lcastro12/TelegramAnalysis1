@@ -1,20 +1,16 @@
 package org.telegram.ui;
 
-import android.app.AlertDialog.Builder;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.CompressFormat;
-import android.graphics.Point;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build.VERSION;
 import android.os.Bundle;
-import android.support.v4.view.ViewCompat;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -22,22 +18,16 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-import android.widget.ProgressBar;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationCenter.NotificationCenterDelegate;
@@ -56,37 +46,57 @@ import org.telegram.tgnet.TLRPC.Vector;
 import org.telegram.tgnet.TLRPC.WallPaper;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.WallpaperCell;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.Components.RecyclerListView.Holder;
 import org.telegram.ui.Components.RecyclerListView.OnItemClickListener;
+import org.telegram.ui.Components.RecyclerListView.SelectionAdapter;
+import org.telegram.ui.Components.WallpaperUpdater;
+import org.telegram.ui.Components.WallpaperUpdater.WallpaperUpdaterDelegate;
 
 public class WallpapersActivity extends BaseFragment implements NotificationCenterDelegate {
     private static final int done_button = 1;
     private ImageView backgroundImage;
-    private String currentPicturePath;
     private View doneButton;
     private ListAdapter listAdapter;
+    private RecyclerListView listView;
     private String loadingFile = null;
     private File loadingFileObject = null;
     private PhotoSize loadingSize = null;
-    private ProgressBar progressBar;
+    private boolean overrideThemeWallpaper;
+    private FrameLayout progressView;
+    private View progressViewBackground;
     private int selectedBackground;
     private int selectedColor;
+    private Drawable themedWallpaper;
+    private WallpaperUpdater updater;
     private ArrayList<WallPaper> wallPapers = new ArrayList();
-    private HashMap<Integer, WallPaper> wallpappersByIds = new HashMap();
+    private File wallpaperFile;
+    private SparseArray<WallPaper> wallpappersByIds = new SparseArray();
 
-    class C12532 implements OnTouchListener {
-        C12532() {
+    class C23581 implements WallpaperUpdaterDelegate {
+        C23581() {
         }
 
-        public boolean onTouch(View v, MotionEvent event) {
-            return true;
+        public void didSelectWallpaper(File file, Bitmap bitmap) {
+            WallpapersActivity.this.selectedBackground = -1;
+            WallpapersActivity.this.overrideThemeWallpaper = true;
+            WallpapersActivity.this.selectedColor = 0;
+            WallpapersActivity.this.wallpaperFile = file;
+            Drawable drawable = WallpapersActivity.this.backgroundImage.getDrawable();
+            WallpapersActivity.this.backgroundImage.setImageBitmap(bitmap);
+        }
+
+        public void needOpenColorPicker() {
         }
     }
 
-    class C16841 extends ActionBarMenuOnItemClick {
-        C16841() {
+    class C23592 extends ActionBarMenuOnItemClick {
+        C23592() {
         }
 
         public void onItemClick(int id) {
@@ -94,7 +104,7 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
                 WallpapersActivity.this.finishFragment();
             } else if (id == 1) {
                 boolean done;
-                WallPaper wallPaper = (WallPaper) WallpapersActivity.this.wallpappersByIds.get(Integer.valueOf(WallpapersActivity.this.selectedBackground));
+                WallPaper wallPaper = (WallPaper) WallpapersActivity.this.wallpappersByIds.get(WallpapersActivity.this.selectedBackground);
                 if (wallPaper != null && wallPaper.id != 1000001 && (wallPaper instanceof TL_wallPaper)) {
                     int width = AndroidUtilities.displaySize.x;
                     int height = AndroidUtilities.displaySize.y;
@@ -105,75 +115,74 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
                     }
                     PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(wallPaper.sizes, Math.min(width, height));
                     try {
-                        done = AndroidUtilities.copyFile(new File(FileLoader.getInstance().getDirectory(4), size.location.volume_id + "_" + size.location.local_id + ".jpg"), new File(ApplicationLoader.getFilesDirFixed(), "wallpaper.jpg"));
+                        done = AndroidUtilities.copyFile(new File(FileLoader.getDirectory(4), size.location.volume_id + "_" + size.location.local_id + ".jpg"), new File(ApplicationLoader.getFilesDirFixed(), "wallpaper.jpg"));
                     } catch (Throwable e) {
                         done = false;
-                        FileLog.m611e("tmessages", e);
+                        FileLog.m3e(e);
                     }
                 } else if (WallpapersActivity.this.selectedBackground == -1) {
-                    done = new File(ApplicationLoader.getFilesDirFixed(), "wallpaper-temp.jpg").renameTo(new File(ApplicationLoader.getFilesDirFixed(), "wallpaper.jpg"));
+                    try {
+                        done = AndroidUtilities.copyFile(WallpapersActivity.this.updater.getCurrentWallpaperPath(), new File(ApplicationLoader.getFilesDirFixed(), "wallpaper.jpg"));
+                    } catch (Throwable e2) {
+                        done = false;
+                        FileLog.m3e(e2);
+                    }
                 } else {
                     done = true;
                 }
                 if (done) {
-                    Editor editor = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", 0).edit();
+                    Editor editor = MessagesController.getGlobalMainSettings().edit();
                     editor.putInt("selectedBackground", WallpapersActivity.this.selectedBackground);
                     editor.putInt("selectedColor", WallpapersActivity.this.selectedColor);
+                    String str = "overrideThemeWallpaper";
+                    boolean z = Theme.hasWallpaperFromTheme() && WallpapersActivity.this.overrideThemeWallpaper;
+                    editor.putBoolean(str, z);
                     editor.commit();
-                    ApplicationLoader.reloadWallpaper();
+                    Theme.reloadWallpaper();
                 }
                 WallpapersActivity.this.finishFragment();
             }
         }
     }
 
-    class C16853 implements OnItemClickListener {
-
-        class C12541 implements OnClickListener {
-            C12541() {
-            }
-
-            public void onClick(DialogInterface dialogInterface, int i) {
-                if (i == 0) {
-                    try {
-                        Intent takePictureIntent = new Intent("android.media.action.IMAGE_CAPTURE");
-                        File image = AndroidUtilities.generatePicturePath();
-                        if (image != null) {
-                            takePictureIntent.putExtra("output", Uri.fromFile(image));
-                            WallpapersActivity.this.currentPicturePath = image.getAbsolutePath();
-                        }
-                        WallpapersActivity.this.startActivityForResult(takePictureIntent, 10);
-                    } catch (Throwable e) {
-                        FileLog.m611e("tmessages", e);
-                    }
-                } else if (i == 1) {
-                    Intent photoPickerIntent = new Intent("android.intent.action.PICK");
-                    photoPickerIntent.setType("image/*");
-                    WallpapersActivity.this.startActivityForResult(photoPickerIntent, 11);
-                }
-            }
+    class C23603 implements OnTouchListener {
+        C23603() {
         }
 
-        C16853() {
+        public boolean onTouch(View v, MotionEvent event) {
+            return true;
+        }
+    }
+
+    class C23614 implements OnItemClickListener {
+        C23614() {
         }
 
         public void onItemClick(View view, int position) {
             if (position == 0) {
-                if (WallpapersActivity.this.getParentActivity() != null) {
-                    Builder builder = new Builder(WallpapersActivity.this.getParentActivity());
-                    builder.setItems(new CharSequence[]{LocaleController.getString("FromCamera", C0553R.string.FromCamera), LocaleController.getString("FromGalley", C0553R.string.FromGalley), LocaleController.getString("Cancel", C0553R.string.Cancel)}, new C12541());
-                    WallpapersActivity.this.showDialog(builder.create());
-                }
-            } else if (position - 1 >= 0 && position - 1 < WallpapersActivity.this.wallPapers.size()) {
-                WallpapersActivity.this.selectedBackground = ((WallPaper) WallpapersActivity.this.wallPapers.get(position - 1)).id;
+                WallpapersActivity.this.updater.showAlert(false);
+                return;
+            }
+            if (!Theme.hasWallpaperFromTheme()) {
+                position--;
+            } else if (position == 1) {
+                WallpapersActivity.this.selectedBackground = -2;
+                WallpapersActivity.this.overrideThemeWallpaper = false;
                 WallpapersActivity.this.listAdapter.notifyDataSetChanged();
                 WallpapersActivity.this.processSelectedBackground();
+                return;
+            } else {
+                position -= 2;
             }
+            WallpapersActivity.this.selectedBackground = ((WallPaper) WallpapersActivity.this.wallPapers.get(position)).id;
+            WallpapersActivity.this.overrideThemeWallpaper = true;
+            WallpapersActivity.this.listAdapter.notifyDataSetChanged();
+            WallpapersActivity.this.processSelectedBackground();
         }
     }
 
-    class C16864 implements RequestDelegate {
-        C16864() {
+    class C23635 implements RequestDelegate {
+        C23635() {
         }
 
         public void run(final TLObject response, TL_error error) {
@@ -183,11 +192,11 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
                         WallpapersActivity.this.wallPapers.clear();
                         Vector res = response;
                         WallpapersActivity.this.wallpappersByIds.clear();
-                        Iterator i$ = res.objects.iterator();
-                        while (i$.hasNext()) {
-                            Object obj = i$.next();
+                        Iterator it = res.objects.iterator();
+                        while (it.hasNext()) {
+                            Object obj = it.next();
                             WallpapersActivity.this.wallPapers.add((WallPaper) obj);
-                            WallpapersActivity.this.wallpappersByIds.put(Integer.valueOf(((WallPaper) obj).id), (WallPaper) obj);
+                            WallpapersActivity.this.wallpappersByIds.put(((WallPaper) obj).id, (WallPaper) obj);
                         }
                         if (WallpapersActivity.this.listAdapter != null) {
                             WallpapersActivity.this.listAdapter.notifyDataSetChanged();
@@ -195,28 +204,30 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
                         if (WallpapersActivity.this.backgroundImage != null) {
                             WallpapersActivity.this.processSelectedBackground();
                         }
-                        MessagesStorage.getInstance().putWallpapers(WallpapersActivity.this.wallPapers);
+                        MessagesStorage.getInstance(WallpapersActivity.this.currentAccount).putWallpapers(WallpapersActivity.this.wallPapers);
                     }
                 });
             }
         }
     }
 
-    private class ListAdapter extends Adapter {
+    private class ListAdapter extends SelectionAdapter {
         private Context mContext;
-
-        private class Holder extends ViewHolder {
-            public Holder(View itemView) {
-                super(itemView);
-            }
-        }
 
         public ListAdapter(Context context) {
             this.mContext = context;
         }
 
+        public boolean isEnabled(ViewHolder holder) {
+            return true;
+        }
+
         public int getItemCount() {
-            return WallpapersActivity.this.wallPapers.size() + 1;
+            int count = WallpapersActivity.this.wallPapers.size() + 1;
+            if (Theme.hasWallpaperFromTheme()) {
+                return count + 1;
+            }
+            return count;
         }
 
         public long getItemId(int i) {
@@ -228,242 +239,204 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
         }
 
         public void onBindViewHolder(ViewHolder viewHolder, int i) {
-            ((WallpaperCell) viewHolder.itemView).setWallpaper(i == 0 ? null : (WallPaper) WallpapersActivity.this.wallPapers.get(i - 1), WallpapersActivity.this.selectedBackground);
+            int i2 = -2;
+            WallpaperCell wallpaperCell = viewHolder.itemView;
+            if (i == 0) {
+                int access$000;
+                if (!Theme.hasWallpaperFromTheme() || WallpapersActivity.this.overrideThemeWallpaper) {
+                    access$000 = WallpapersActivity.this.selectedBackground;
+                } else {
+                    access$000 = -2;
+                }
+                wallpaperCell.setWallpaper(null, access$000, null, false);
+                return;
+            }
+            if (!Theme.hasWallpaperFromTheme()) {
+                i--;
+            } else if (i == 1) {
+                if (WallpapersActivity.this.overrideThemeWallpaper) {
+                    i2 = -1;
+                }
+                wallpaperCell.setWallpaper(null, i2, WallpapersActivity.this.themedWallpaper, true);
+                return;
+            } else {
+                i -= 2;
+            }
+            WallPaper wallPaper = (WallPaper) WallpapersActivity.this.wallPapers.get(i);
+            if (!Theme.hasWallpaperFromTheme() || WallpapersActivity.this.overrideThemeWallpaper) {
+                i2 = WallpapersActivity.this.selectedBackground;
+            }
+            wallpaperCell.setWallpaper(wallPaper, i2, null, false);
         }
     }
 
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.FileDidFailedLoad);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.FileDidLoaded);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.FileLoadProgressChanged);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.wallpapersDidLoaded);
-        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", 0);
+        NotificationCenter.getInstance(this.currentAccount).addObserver(this, NotificationCenter.FileDidFailedLoad);
+        NotificationCenter.getInstance(this.currentAccount).addObserver(this, NotificationCenter.FileDidLoaded);
+        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.wallpapersDidLoaded);
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         this.selectedBackground = preferences.getInt("selectedBackground", 1000001);
+        this.overrideThemeWallpaper = preferences.getBoolean("overrideThemeWallpaper", false);
         this.selectedColor = preferences.getInt("selectedColor", 0);
-        MessagesStorage.getInstance().getWallpapers();
-        new File(ApplicationLoader.getFilesDirFixed(), "wallpaper-temp.jpg").delete();
+        MessagesStorage.getInstance(this.currentAccount).getWallpapers();
         return true;
     }
 
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.FileDidFailedLoad);
-        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.FileDidLoaded);
-        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.FileLoadProgressChanged);
-        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.wallpapersDidLoaded);
+        this.updater.cleanup();
+        NotificationCenter.getInstance(this.currentAccount).removeObserver(this, NotificationCenter.FileDidFailedLoad);
+        NotificationCenter.getInstance(this.currentAccount).removeObserver(this, NotificationCenter.FileDidLoaded);
+        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.wallpapersDidLoaded);
     }
 
     public View createView(Context context) {
-        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
+        this.themedWallpaper = Theme.getThemedWallpaper(true);
+        this.updater = new WallpaperUpdater(getParentActivity(), new C23581());
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_ab_back);
         this.actionBar.setAllowOverlayTitle(true);
-        this.actionBar.setTitle(LocaleController.getString("ChatBackground", C0553R.string.ChatBackground));
-        this.actionBar.setActionBarMenuOnItemClick(new C16841());
-        this.doneButton = this.actionBar.createMenu().addItemWithWidth(1, C0553R.drawable.ic_done, AndroidUtilities.dp(56.0f));
+        this.actionBar.setTitle(LocaleController.getString("ChatBackground", C0488R.string.ChatBackground));
+        this.actionBar.setActionBarMenuOnItemClick(new C23592());
+        this.doneButton = this.actionBar.createMenu().addItemWithWidth(1, C0488R.drawable.ic_done, AndroidUtilities.dp(56.0f));
         FrameLayout frameLayout = new FrameLayout(context);
         this.fragmentView = frameLayout;
         this.backgroundImage = new ImageView(context);
         this.backgroundImage.setScaleType(ScaleType.CENTER_CROP);
-        frameLayout.addView(this.backgroundImage, LayoutHelper.createFrame(-1, GroundOverlayOptions.NO_DIMENSION));
-        this.backgroundImage.setOnTouchListener(new C12532());
-        this.progressBar = new ProgressBar(context);
-        this.progressBar.setPadding(AndroidUtilities.dp(6.0f), AndroidUtilities.dp(6.0f), AndroidUtilities.dp(6.0f), AndroidUtilities.dp(6.0f));
-        frameLayout.addView(this.progressBar, LayoutHelper.createFrame(60, BitmapDescriptorFactory.HUE_YELLOW, 17, 0.0f, 0.0f, 0.0f, 52.0f));
-        RecyclerListView listView = new RecyclerListView(context);
-        listView.setClipToPadding(false);
-        listView.setPadding(AndroidUtilities.dp(40.0f), 0, AndroidUtilities.dp(40.0f), 0);
+        frameLayout.addView(this.backgroundImage, LayoutHelper.createFrame(-1, -1.0f));
+        this.backgroundImage.setOnTouchListener(new C23603());
+        this.progressView = new FrameLayout(context);
+        this.progressView.setVisibility(4);
+        frameLayout.addView(this.progressView, LayoutHelper.createFrame(-1, -1.0f, 51, 0.0f, 0.0f, 0.0f, 52.0f));
+        this.progressViewBackground = new View(context);
+        this.progressViewBackground.setBackgroundResource(C0488R.drawable.system_loader);
+        this.progressView.addView(this.progressViewBackground, LayoutHelper.createFrame(36, 36, 17));
+        RadialProgressView progressBar = new RadialProgressView(context);
+        progressBar.setSize(AndroidUtilities.dp(28.0f));
+        progressBar.setProgressColor(-1);
+        this.progressView.addView(progressBar, LayoutHelper.createFrame(32, 32, 17));
+        this.listView = new RecyclerListView(context);
+        this.listView.setClipToPadding(false);
+        this.listView.setTag(Integer.valueOf(8));
+        this.listView.setPadding(AndroidUtilities.dp(40.0f), 0, AndroidUtilities.dp(40.0f), 0);
         LinearLayoutManager layoutManager = new LinearLayoutManager(context);
         layoutManager.setOrientation(0);
-        listView.setLayoutManager(layoutManager);
-        listView.setClipToPadding(false);
-        listView.setDisallowInterceptTouchEvents(true);
-        if (VERSION.SDK_INT >= 9) {
-            listView.setOverScrollMode(2);
-        }
+        this.listView.setLayoutManager(layoutManager);
+        this.listView.setDisallowInterceptTouchEvents(true);
+        this.listView.setOverScrollMode(2);
+        RecyclerListView recyclerListView = this.listView;
         Adapter listAdapter = new ListAdapter(context);
         this.listAdapter = listAdapter;
-        listView.setAdapter(listAdapter);
-        frameLayout.addView(listView, LayoutHelper.createFrame(-1, LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY, 83));
-        listView.setOnItemClickListener(new C16853());
+        recyclerListView.setAdapter(listAdapter);
+        frameLayout.addView(this.listView, LayoutHelper.createFrame(-1, 102, 83));
+        this.listView.setOnItemClickListener(new C23614());
         processSelectedBackground();
         return this.fragmentView;
     }
 
     public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
-        Throwable e;
-        Throwable th;
-        if (resultCode != -1) {
-            return;
-        }
-        Point screenSize;
-        Bitmap bitmap;
-        Drawable drawable;
-        if (requestCode == 10) {
-            AndroidUtilities.addMediaToGallery(this.currentPicturePath);
-            FileOutputStream stream = null;
-            try {
-                screenSize = AndroidUtilities.getRealScreenSize();
-                bitmap = ImageLoader.loadBitmap(this.currentPicturePath, null, (float) screenSize.x, (float) screenSize.y, true);
-                FileOutputStream stream2 = new FileOutputStream(new File(ApplicationLoader.getFilesDirFixed(), "wallpaper-temp.jpg"));
-                try {
-                    bitmap.compress(CompressFormat.JPEG, 87, stream2);
-                    this.selectedBackground = -1;
-                    this.selectedColor = 0;
-                    drawable = this.backgroundImage.getDrawable();
-                    this.backgroundImage.setImageBitmap(bitmap);
-                    if (stream2 != null) {
-                        try {
-                            stream2.close();
-                        } catch (Throwable e2) {
-                            FileLog.m611e("tmessages", e2);
-                            stream = stream2;
-                        }
-                    }
-                    stream = stream2;
-                } catch (Exception e3) {
-                    e2 = e3;
-                    stream = stream2;
-                    try {
-                        FileLog.m611e("tmessages", e2);
-                        if (stream != null) {
-                            try {
-                                stream.close();
-                            } catch (Throwable e22) {
-                                FileLog.m611e("tmessages", e22);
-                            }
-                        }
-                        this.currentPicturePath = null;
-                    } catch (Throwable th2) {
-                        th = th2;
-                        if (stream != null) {
-                            try {
-                                stream.close();
-                            } catch (Throwable e222) {
-                                FileLog.m611e("tmessages", e222);
-                            }
-                        }
-                        throw th;
-                    }
-                } catch (Throwable th3) {
-                    th = th3;
-                    stream = stream2;
-                    if (stream != null) {
-                        stream.close();
-                    }
-                    throw th;
-                }
-            } catch (Exception e4) {
-                e222 = e4;
-                FileLog.m611e("tmessages", e222);
-                if (stream != null) {
-                    stream.close();
-                }
-                this.currentPicturePath = null;
-            }
-            this.currentPicturePath = null;
-        } else if (requestCode == 11 && data != null && data.getData() != null) {
-            try {
-                screenSize = AndroidUtilities.getRealScreenSize();
-                bitmap = ImageLoader.loadBitmap(null, data.getData(), (float) screenSize.x, (float) screenSize.y, true);
-                bitmap.compress(CompressFormat.JPEG, 87, new FileOutputStream(new File(ApplicationLoader.getFilesDirFixed(), "wallpaper-temp.jpg")));
-                this.selectedBackground = -1;
-                this.selectedColor = 0;
-                drawable = this.backgroundImage.getDrawable();
-                this.backgroundImage.setImageBitmap(bitmap);
-            } catch (Throwable e2222) {
-                FileLog.m611e("tmessages", e2222);
-            }
-        }
+        this.updater.onActivityResult(requestCode, resultCode, data);
     }
 
     public void saveSelfArgs(Bundle args) {
-        if (this.currentPicturePath != null) {
-            args.putString("path", this.currentPicturePath);
+        String currentPicturePath = this.updater.getCurrentPicturePath();
+        if (currentPicturePath != null) {
+            args.putString("path", currentPicturePath);
         }
     }
 
     public void restoreSelfArgs(Bundle args) {
-        this.currentPicturePath = args.getString("path");
+        this.updater.setCurrentPicturePath(args.getString("path"));
     }
 
     private void processSelectedBackground() {
-        WallPaper wallPaper = (WallPaper) this.wallpappersByIds.get(Integer.valueOf(this.selectedBackground));
-        if (this.selectedBackground == -1 || this.selectedBackground == 1000001 || wallPaper == null || !(wallPaper instanceof TL_wallPaper)) {
-            if (this.loadingFile != null) {
-                FileLoader.getInstance().cancelLoadFile(this.loadingSize);
-            }
-            if (this.selectedBackground == 1000001) {
-                this.backgroundImage.setImageResource(C0553R.drawable.background_hd);
-                this.backgroundImage.setBackgroundColor(0);
-                this.selectedColor = 0;
-            } else if (this.selectedBackground == -1) {
-                File toFile = new File(ApplicationLoader.getFilesDirFixed(), "wallpaper-temp.jpg");
-                if (!toFile.exists()) {
-                    toFile = new File(ApplicationLoader.getFilesDirFixed(), "wallpaper.jpg");
+        if (!Theme.hasWallpaperFromTheme() || this.overrideThemeWallpaper) {
+            WallPaper wallPaper = (WallPaper) this.wallpappersByIds.get(this.selectedBackground);
+            if (this.selectedBackground == -1 || this.selectedBackground == 1000001 || wallPaper == null || !(wallPaper instanceof TL_wallPaper)) {
+                if (this.loadingFile != null) {
+                    FileLoader.getInstance(this.currentAccount).cancelLoadFile(this.loadingSize);
                 }
-                if (toFile.exists()) {
-                    this.backgroundImage.setImageURI(Uri.fromFile(toFile));
+                if (this.selectedBackground == 1000001) {
+                    this.backgroundImage.setImageResource(C0488R.drawable.background_hd);
+                    this.backgroundImage.setBackgroundColor(0);
+                    this.selectedColor = 0;
+                } else if (this.selectedBackground == -1) {
+                    File toFile;
+                    if (this.wallpaperFile != null) {
+                        toFile = this.wallpaperFile;
+                    } else {
+                        toFile = new File(ApplicationLoader.getFilesDirFixed(), "wallpaper.jpg");
+                    }
+                    if (toFile.exists()) {
+                        this.backgroundImage.setImageURI(Uri.fromFile(toFile));
+                    } else {
+                        this.selectedBackground = 1000001;
+                        this.overrideThemeWallpaper = true;
+                        processSelectedBackground();
+                    }
+                } else if (wallPaper == null) {
+                    return;
                 } else {
-                    this.selectedBackground = 1000001;
-                    processSelectedBackground();
+                    if (wallPaper instanceof TL_wallPaperSolid) {
+                        Drawable drawable = this.backgroundImage.getDrawable();
+                        this.backgroundImage.setImageBitmap(null);
+                        this.selectedColor = Theme.ACTION_BAR_VIDEO_EDIT_COLOR | wallPaper.bg_color;
+                        this.backgroundImage.setBackgroundColor(this.selectedColor);
+                    }
                 }
-            } else if (wallPaper == null) {
+                this.loadingFileObject = null;
+                this.loadingFile = null;
+                this.loadingSize = null;
+                this.doneButton.setEnabled(true);
+                this.progressView.setVisibility(8);
                 return;
-            } else {
-                if (wallPaper instanceof TL_wallPaperSolid) {
-                    Drawable drawable = this.backgroundImage.getDrawable();
-                    this.backgroundImage.setImageBitmap(null);
-                    this.selectedColor = ViewCompat.MEASURED_STATE_MASK | wallPaper.bg_color;
-                    this.backgroundImage.setBackgroundColor(this.selectedColor);
+            }
+            int width = AndroidUtilities.displaySize.x;
+            int height = AndroidUtilities.displaySize.y;
+            if (width > height) {
+                int temp = width;
+                width = height;
+                height = temp;
+            }
+            PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(wallPaper.sizes, Math.min(width, height));
+            if (size != null) {
+                String fileName = size.location.volume_id + "_" + size.location.local_id + ".jpg";
+                File f = new File(FileLoader.getDirectory(4), fileName);
+                if (f.exists()) {
+                    if (this.loadingFile != null) {
+                        FileLoader.getInstance(this.currentAccount).cancelLoadFile(this.loadingSize);
+                    }
+                    this.loadingFileObject = null;
+                    this.loadingFile = null;
+                    this.loadingSize = null;
+                    try {
+                        this.backgroundImage.setImageURI(Uri.fromFile(f));
+                    } catch (Throwable e) {
+                        FileLog.m3e(e);
+                    }
+                    this.backgroundImage.setBackgroundColor(0);
+                    this.selectedColor = 0;
+                    this.doneButton.setEnabled(true);
+                    this.progressView.setVisibility(8);
+                    return;
                 }
+                this.progressViewBackground.getBackground().setColorFilter(new PorterDuffColorFilter(AndroidUtilities.calcDrawableColor(this.backgroundImage.getDrawable())[0], Mode.MULTIPLY));
+                this.loadingFile = fileName;
+                this.loadingFileObject = f;
+                this.doneButton.setEnabled(false);
+                this.progressView.setVisibility(0);
+                this.loadingSize = size;
+                this.selectedColor = 0;
+                FileLoader.getInstance(this.currentAccount).loadFile(size, null, 1);
+                this.backgroundImage.setBackgroundColor(0);
+                return;
             }
-            this.loadingFileObject = null;
-            this.loadingFile = null;
-            this.loadingSize = null;
-            this.doneButton.setEnabled(true);
-            this.progressBar.setVisibility(8);
             return;
         }
-        int width = AndroidUtilities.displaySize.x;
-        int height = AndroidUtilities.displaySize.y;
-        if (width > height) {
-            int temp = width;
-            width = height;
-            height = temp;
-        }
-        PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(wallPaper.sizes, Math.min(width, height));
-        String fileName = size.location.volume_id + "_" + size.location.local_id + ".jpg";
-        File f = new File(FileLoader.getInstance().getDirectory(4), fileName);
-        if (f.exists()) {
-            if (this.loadingFile != null) {
-                FileLoader.getInstance().cancelLoadFile(this.loadingSize);
-            }
-            this.loadingFileObject = null;
-            this.loadingFile = null;
-            this.loadingSize = null;
-            try {
-                this.backgroundImage.setImageURI(Uri.fromFile(f));
-            } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
-            }
-            this.backgroundImage.setBackgroundColor(0);
-            this.selectedColor = 0;
-            this.doneButton.setEnabled(true);
-            this.progressBar.setVisibility(8);
-            return;
-        }
-        this.progressBar.setProgress(0);
-        this.loadingFile = fileName;
-        this.loadingFileObject = f;
-        this.doneButton.setEnabled(false);
-        this.progressBar.setVisibility(0);
-        this.loadingSize = size;
-        this.selectedColor = 0;
-        FileLoader.getInstance().loadFile(size, null, true);
-        this.backgroundImage.setBackgroundColor(0);
+        this.backgroundImage.setImageDrawable(Theme.getThemedWallpaper(false));
     }
 
-    public void didReceivedNotification(int id, Object... args) {
+    public void didReceivedNotification(int id, int account, Object... args) {
         String location;
         if (id == NotificationCenter.FileDidFailedLoad) {
             location = args[0];
@@ -471,32 +444,27 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
                 this.loadingFileObject = null;
                 this.loadingFile = null;
                 this.loadingSize = null;
-                this.progressBar.setVisibility(8);
+                this.progressView.setVisibility(8);
                 this.doneButton.setEnabled(false);
             }
         } else if (id == NotificationCenter.FileDidLoaded) {
             location = (String) args[0];
             if (this.loadingFile != null && this.loadingFile.equals(location)) {
                 this.backgroundImage.setImageURI(Uri.fromFile(this.loadingFileObject));
-                this.progressBar.setVisibility(8);
+                this.progressView.setVisibility(8);
                 this.backgroundImage.setBackgroundColor(0);
                 this.doneButton.setEnabled(true);
                 this.loadingFileObject = null;
                 this.loadingFile = null;
                 this.loadingSize = null;
             }
-        } else if (id == NotificationCenter.FileLoadProgressChanged) {
-            location = (String) args[0];
-            if (this.loadingFile != null && this.loadingFile.equals(location)) {
-                this.progressBar.setProgress((int) (args[1].floatValue() * 100.0f));
-            }
         } else if (id == NotificationCenter.wallpapersDidLoaded) {
             this.wallPapers = (ArrayList) args[0];
             this.wallpappersByIds.clear();
-            Iterator i$ = this.wallPapers.iterator();
-            while (i$.hasNext()) {
-                WallPaper wallPaper = (WallPaper) i$.next();
-                this.wallpappersByIds.put(Integer.valueOf(wallPaper.id), wallPaper);
+            Iterator it = this.wallPapers.iterator();
+            while (it.hasNext()) {
+                WallPaper wallPaper = (WallPaper) it.next();
+                this.wallpappersByIds.put(wallPaper.id, wallPaper);
             }
             if (this.listAdapter != null) {
                 this.listAdapter.notifyDataSetChanged();
@@ -509,7 +477,7 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
     }
 
     private void loadWallpapers() {
-        ConnectionsManager.getInstance().bindRequestToGuid(ConnectionsManager.getInstance().sendRequest(new TL_account_getWallPapers(), new C16864()), this.classGuid);
+        ConnectionsManager.getInstance(this.currentAccount).bindRequestToGuid(ConnectionsManager.getInstance(this.currentAccount).sendRequest(new TL_account_getWallPapers(), new C23635()), this.classGuid);
     }
 
     public void onResume() {
@@ -518,5 +486,17 @@ public class WallpapersActivity extends BaseFragment implements NotificationCent
             this.listAdapter.notifyDataSetChanged();
         }
         processSelectedBackground();
+    }
+
+    public ThemeDescription[] getThemeDescriptions() {
+        ThemeDescription[] themeDescriptionArr = new ThemeDescription[7];
+        themeDescriptionArr[0] = new ThemeDescription(this.fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite);
+        themeDescriptionArr[1] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault);
+        themeDescriptionArr[2] = new ThemeDescription(this.listView, ThemeDescription.FLAG_LISTGLOWCOLOR, null, null, null, null, Theme.key_actionBarDefault);
+        themeDescriptionArr[3] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_actionBarDefaultIcon);
+        themeDescriptionArr[4] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_actionBarDefaultTitle);
+        themeDescriptionArr[5] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_actionBarDefaultSelector);
+        themeDescriptionArr[6] = new ThemeDescription(this.listView, ThemeDescription.FLAG_SELECTOR, null, null, null, null, Theme.key_listSelector);
+        return themeDescriptionArr;
     }
 }

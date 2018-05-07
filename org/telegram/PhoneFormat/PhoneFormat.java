@@ -60,6 +60,9 @@ public class PhoneFormat {
     }
 
     public static String stripExceptNumbers(String str, boolean includePlus) {
+        if (str == null) {
+            return null;
+        }
         StringBuilder res = new StringBuilder(str);
         String phoneChars = "0123456789";
         if (includePlus) {
@@ -109,14 +112,14 @@ public class PhoneFormat {
                     try {
                         bos.close();
                     } catch (Throwable e2) {
-                        FileLog.m611e("tmessages", e2);
+                        FileLog.m3e(e2);
                     }
                 }
                 if (stream != null) {
                     try {
                         stream.close();
                     } catch (Throwable e22) {
-                        FileLog.m611e("tmessages", e22);
+                        FileLog.m3e(e22);
                     }
                 }
                 if (countryCode == null || countryCode.length() == 0) {
@@ -140,14 +143,14 @@ public class PhoneFormat {
                         try {
                             byteArrayOutputStream.close();
                         } catch (Throwable e222) {
-                            FileLog.m611e("tmessages", e222);
+                            FileLog.m3e(e222);
                         }
                     }
                     if (stream != null) {
                         try {
                             stream.close();
                         } catch (Throwable e2222) {
-                            FileLog.m611e("tmessages", e2222);
+                            FileLog.m3e(e2222);
                         }
                     }
                 } catch (Throwable th2) {
@@ -156,14 +159,14 @@ public class PhoneFormat {
                         try {
                             byteArrayOutputStream.close();
                         } catch (Throwable e22222) {
-                            FileLog.m611e("tmessages", e22222);
+                            FileLog.m3e(e22222);
                         }
                     }
                     if (stream != null) {
                         try {
                             stream.close();
                         } catch (Throwable e222222) {
-                            FileLog.m611e("tmessages", e222222);
+                            FileLog.m3e(e222222);
                         }
                     }
                     throw th;
@@ -223,35 +226,40 @@ public class PhoneFormat {
         if (!this.initialzed) {
             return orig;
         }
-        String str = strip(orig);
-        String rest;
-        CallingCodeInfo info;
-        if (str.startsWith("+")) {
-            rest = str.substring(1);
-            info = findCallingCodeInfo(rest);
+        try {
+            String str = strip(orig);
+            String rest;
+            CallingCodeInfo info;
+            if (str.startsWith("+")) {
+                rest = str.substring(1);
+                info = findCallingCodeInfo(rest);
+                if (info == null) {
+                    return orig;
+                }
+                return "+" + info.format(rest);
+            }
+            info = callingCodeInfo(this.defaultCallingCode);
             if (info == null) {
                 return orig;
             }
-            return "+" + info.format(rest);
-        }
-        info = callingCodeInfo(this.defaultCallingCode);
-        if (info == null) {
+            String accessCode = info.matchingAccessCode(str);
+            if (accessCode == null) {
+                return info.format(str);
+            }
+            rest = str.substring(accessCode.length());
+            String phone = rest;
+            CallingCodeInfo info2 = findCallingCodeInfo(rest);
+            if (info2 != null) {
+                phone = info2.format(rest);
+            }
+            if (phone.length() == 0) {
+                return accessCode;
+            }
+            return String.format("%s %s", new Object[]{accessCode, phone});
+        } catch (Throwable e) {
+            FileLog.m3e(e);
             return orig;
         }
-        String accessCode = info.matchingAccessCode(str);
-        if (accessCode == null) {
-            return info.format(str);
-        }
-        rest = str.substring(accessCode.length());
-        String phone = rest;
-        CallingCodeInfo info2 = findCallingCodeInfo(rest);
-        if (info2 != null) {
-            phone = info2.format(rest);
-        }
-        if (phone.length() == 0) {
-            return accessCode;
-        }
-        return String.format("%s %s", new Object[]{accessCode, phone});
     }
 
     public boolean isPhoneNumberValid(String phoneNumber) {
@@ -310,16 +318,16 @@ public class PhoneFormat {
                 if (this.data[a] != (byte) 0) {
                     a++;
                 } else if (offset == a - offset) {
-                    return "";
+                    return TtmlNode.ANONYMOUS_REGION_ID;
                 } else {
                     return new String(this.data, offset, a - offset);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return "";
+                return TtmlNode.ANONYMOUS_REGION_ID;
             }
         }
-        return "";
+        return TtmlNode.ANONYMOUS_REGION_ID;
     }
 
     public CallingCodeInfo callingCodeInfo(String callingCode) {

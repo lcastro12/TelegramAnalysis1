@@ -1,88 +1,74 @@
 package net.hockeyapp.android.utils;
 
-import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.Notification;
 import android.app.Notification.Builder;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build.VERSION;
 import android.text.TextUtils;
 import android.util.Patterns;
-import java.io.UnsupportedEncodingException;
-import java.lang.ref.WeakReference;
+import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityManager;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.hockeyapp.android.C0051R;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.exoplayer2.C0600C;
 
 public class Util {
-    public static final int APP_IDENTIFIER_LENGTH = 32;
-    public static final String APP_IDENTIFIER_PATTERN = "[0-9a-f]+";
-    public static final String LOG_IDENTIFIER = "HockeyApp";
-    public static final String PREFS_FEEDBACK_TOKEN = "net.hockeyapp.android.prefs_feedback_token";
-    public static final String PREFS_KEY_FEEDBACK_TOKEN = "net.hockeyapp.android.prefs_key_feedback_token";
-    public static final String PREFS_KEY_NAME_EMAIL_SUBJECT = "net.hockeyapp.android.prefs_key_name_email";
-    public static final String PREFS_NAME_EMAIL_SUBJECT = "net.hockeyapp.android.prefs_name_email";
-    private static final Pattern appIdentifierPattern = Pattern.compile(APP_IDENTIFIER_PATTERN, 2);
+    private static final ThreadLocal<DateFormat> DATE_FORMAT_THREAD_LOCAL = new C00651();
+    private static final Pattern appIdentifierPattern = Pattern.compile("[0-9a-f]+", 2);
+
+    static class C00651 extends ThreadLocal<DateFormat> {
+        C00651() {
+        }
+
+        protected DateFormat initialValue() {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return dateFormat;
+        }
+    }
 
     public static String encodeParam(String param) {
         try {
-            return URLEncoder.encode(param, HttpURLConnectionBuilder.DEFAULT_CHARSET);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return "";
+            return URLEncoder.encode(param, C0600C.UTF8_NAME);
+        } catch (Throwable e) {
+            HockeyLog.error("Failed to encode param " + param, e);
+            return TtmlNode.ANONYMOUS_REGION_ID;
         }
     }
 
-    @TargetApi(8)
-    public static final boolean isValidEmail(String value) {
-        if (VERSION.SDK_INT >= 8) {
-            if (TextUtils.isEmpty(value) || !Patterns.EMAIL_ADDRESS.matcher(value).matches()) {
-                return false;
-            }
-            return true;
-        } else if (TextUtils.isEmpty(value)) {
-            return false;
-        } else {
-            return true;
-        }
+    public static boolean isValidEmail(String value) {
+        return !TextUtils.isEmpty(value) && Patterns.EMAIL_ADDRESS.matcher(value).matches();
     }
 
-    @SuppressLint({"NewApi"})
-    public static Boolean fragmentsSupported() {
-        try {
-            boolean z;
-            if (VERSION.SDK_INT < 11 || !classExists("android.app.Fragment")) {
-                z = false;
-            } else {
-                z = true;
-            }
-            return Boolean.valueOf(z);
-        } catch (NoClassDefFoundError e) {
+    public static Boolean runsOnTablet(Context context) {
+        boolean z = false;
+        if (context == null) {
             return Boolean.valueOf(false);
         }
-    }
-
-    public static Boolean runsOnTablet(WeakReference<Activity> weakActivity) {
-        boolean z = false;
-        if (weakActivity != null) {
-            Activity activity = (Activity) weakActivity.get();
-            if (activity != null) {
-                Configuration configuration = activity.getResources().getConfiguration();
-                if ((configuration.screenLayout & 15) == 3 || (configuration.screenLayout & 15) == 4) {
-                    z = true;
-                }
-                return Boolean.valueOf(z);
-            }
+        Configuration configuration = context.getResources().getConfiguration();
+        if ((configuration.screenLayout & 15) == 3 || (configuration.screenLayout & 15) == 4) {
+            z = true;
         }
-        return Boolean.valueOf(false);
+        return Boolean.valueOf(z);
     }
 
     public static String sanitizeAppIdentifier(String appIdentifier) throws IllegalArgumentException {
@@ -100,62 +86,144 @@ public class Util {
         }
     }
 
-    public static String getFormString(Map<String, String> params) throws UnsupportedEncodingException {
-        List<String> protoList = new ArrayList();
-        for (String key : params.keySet()) {
-            String value = (String) params.get(key);
-            String key2 = URLEncoder.encode(key2, HttpURLConnectionBuilder.DEFAULT_CHARSET);
-            protoList.add(key2 + "=" + URLEncoder.encode(value, HttpURLConnectionBuilder.DEFAULT_CHARSET));
+    public static Notification createNotification(Context context, PendingIntent pendingIntent, String title, String text, int iconId, String channelId) {
+        Builder builder;
+        if (VERSION.SDK_INT >= 26) {
+            builder = new Builder(context, channelId);
+        } else {
+            builder = new Builder(context);
         }
-        return TextUtils.join("&", protoList);
+        builder.setContentTitle(title).setContentText(text).setContentIntent(pendingIntent).setSmallIcon(iconId);
+        if (VERSION.SDK_INT >= 16) {
+            return builder.build();
+        }
+        return builder.getNotification();
     }
 
-    public static boolean classExists(String className) {
-        try {
-            return Class.forName(className) != null;
-        } catch (ClassNotFoundException e) {
-            return false;
+    public static void sendNotification(Context context, int id, Notification notification, String channelId, CharSequence channelName) {
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService("notification");
+        if (VERSION.SDK_INT >= 26) {
+            notificationManager.createNotificationChannel(new NotificationChannel(channelId, channelName, 3));
         }
+        notificationManager.notify(id, notification);
     }
 
-    public static boolean isNotificationBuilderSupported() {
-        return VERSION.SDK_INT >= 11 && classExists("android.app.Notification.Builder");
+    public static void cancelNotification(Context context, int id) {
+        ((NotificationManager) context.getSystemService("notification")).cancel(id);
     }
 
-    public static Notification createNotification(Context context, PendingIntent pendingIntent, String title, String text, int iconId) {
-        if (isNotificationBuilderSupported()) {
-            return buildNotificationWithBuilder(context, pendingIntent, title, text, iconId);
+    public static void announceForAccessibility(View view, CharSequence text) {
+        AccessibilityManager manager = (AccessibilityManager) view.getContext().getSystemService("accessibility");
+        if (manager.isEnabled()) {
+            int eventType;
+            if (VERSION.SDK_INT < 16) {
+                eventType = 8;
+            } else {
+                eventType = MessagesController.UPDATE_MASK_CHAT_ADMINS;
+            }
+            AccessibilityEvent event = AccessibilityEvent.obtain(eventType);
+            event.getText().add(text);
+            event.setSource(view);
+            event.setEnabled(view.isEnabled());
+            event.setClassName(view.getClass().getName());
+            event.setPackageName(view.getContext().getPackageName());
+            manager.sendAccessibilityEvent(event);
         }
-        return buildNotificationPreHoneycomb(context, pendingIntent, title, text, iconId);
-    }
-
-    private static Notification buildNotificationPreHoneycomb(Context context, PendingIntent pendingIntent, String title, String text, int iconId) {
-        Notification notification = new Notification(iconId, "", System.currentTimeMillis());
-        try {
-            notification.getClass().getMethod("setLatestEventInfo", new Class[]{Context.class, CharSequence.class, CharSequence.class, PendingIntent.class}).invoke(notification, new Object[]{context, title, text, pendingIntent});
-        } catch (Exception e) {
-        }
-        return notification;
-    }
-
-    @TargetApi(11)
-    private static Notification buildNotificationWithBuilder(Context context, PendingIntent pendingIntent, String title, String text, int iconId) {
-        Builder builder = new Builder(context).setContentTitle(title).setContentText(text).setContentIntent(pendingIntent).setSmallIcon(iconId);
-        if (VERSION.SDK_INT < 16) {
-            return builder.getNotification();
-        }
-        return builder.build();
     }
 
     public static boolean isConnectedToNetwork(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService("connectivity");
-        if (connectivityManager == null) {
+        try {
+            ConnectivityManager connectivityManager = (ConnectivityManager) context.getApplicationContext().getSystemService("connectivity");
+            if (connectivityManager == null) {
+                return false;
+            }
+            NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+            if (activeNetwork == null || !activeNetwork.isConnected()) {
+                return false;
+            }
+            return true;
+        } catch (Throwable e) {
+            HockeyLog.error("Exception thrown when check network is connected", e);
             return false;
         }
-        NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-        if (activeNetwork == null || !activeNetwork.isConnected()) {
-            return false;
+    }
+
+    public static String getAppName(Context context) {
+        PackageManager packageManager = context.getPackageManager();
+        ApplicationInfo applicationInfo = null;
+        try {
+            applicationInfo = packageManager.getApplicationInfo(context.getApplicationInfo().packageName, 0);
+        } catch (NameNotFoundException e) {
         }
-        return true;
+        if (applicationInfo != null) {
+            return (String) packageManager.getApplicationLabel(applicationInfo);
+        }
+        return context.getString(C0051R.string.hockeyapp_crash_dialog_app_name_fallback);
+    }
+
+    /* JADX WARNING: inconsistent code. */
+    /* Code decompiled incorrectly, please refer to instructions dump. */
+    public static java.lang.String convertStreamToString(java.io.InputStream r6) {
+        /*
+        r2 = new java.io.BufferedReader;
+        r4 = new java.io.InputStreamReader;
+        r4.<init>(r6);
+        r5 = 1024; // 0x400 float:1.435E-42 double:5.06E-321;
+        r2.<init>(r4, r5);
+        r3 = new java.lang.StringBuilder;
+        r3.<init>();
+    L_0x0011:
+        r1 = r2.readLine();	 Catch:{ IOException -> 0x0021 }
+        if (r1 == 0) goto L_0x0030;
+    L_0x0017:
+        r4 = r3.append(r1);	 Catch:{ IOException -> 0x0021 }
+        r5 = 10;
+        r4.append(r5);	 Catch:{ IOException -> 0x0021 }
+        goto L_0x0011;
+    L_0x0021:
+        r0 = move-exception;
+        r4 = "Failed to convert stream to string";
+        net.hockeyapp.android.utils.HockeyLog.error(r4, r0);	 Catch:{ all -> 0x0036 }
+        r6.close();	 Catch:{ IOException -> 0x003b }
+    L_0x002b:
+        r4 = r3.toString();
+        return r4;
+    L_0x0030:
+        r6.close();	 Catch:{ IOException -> 0x0034 }
+        goto L_0x002b;
+    L_0x0034:
+        r4 = move-exception;
+        goto L_0x002b;
+    L_0x0036:
+        r4 = move-exception;
+        r6.close();	 Catch:{ IOException -> 0x003d }
+    L_0x003a:
+        throw r4;
+    L_0x003b:
+        r4 = move-exception;
+        goto L_0x002b;
+    L_0x003d:
+        r5 = move-exception;
+        goto L_0x003a;
+        */
+        throw new UnsupportedOperationException("Method not decompiled: net.hockeyapp.android.utils.Util.convertStreamToString(java.io.InputStream):java.lang.String");
+    }
+
+    public static byte[] hash(byte[] bytes, String algorithm) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
+        digest.update(bytes);
+        return digest.digest();
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte aMessageDigest : bytes) {
+            String h = Integer.toHexString(aMessageDigest & 255);
+            while (h.length() < 2) {
+                h = "0" + h;
+            }
+            hexString.append(h);
+        }
+        return hexString.toString();
     }
 }

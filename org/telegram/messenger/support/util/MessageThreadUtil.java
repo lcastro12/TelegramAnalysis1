@@ -1,10 +1,11 @@
 package org.telegram.messenger.support.util;
 
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.telegram.messenger.support.util.ThreadUtil.BackgroundCallback;
 import org.telegram.messenger.support.util.ThreadUtil.MainThreadCallback;
 import org.telegram.messenger.support.util.TileList.Tile;
@@ -135,19 +136,19 @@ class MessageThreadUtil<T> implements ThreadUtil<T> {
 
     public MainThreadCallback<T> getMainThreadProxy(final MainThreadCallback<T> callback) {
         return new MainThreadCallback<T>() {
-            private static final int ADD_TILE = 2;
-            private static final int REMOVE_TILE = 3;
-            private static final int UPDATE_ITEM_COUNT = 1;
+            static final int ADD_TILE = 2;
+            static final int REMOVE_TILE = 3;
+            static final int UPDATE_ITEM_COUNT = 1;
             private final Handler mMainThreadHandler = new Handler(Looper.getMainLooper());
-            private Runnable mMainThreadRunnable = new C06531();
-            private final MessageQueue mQueue = new MessageQueue();
+            private Runnable mMainThreadRunnable = new C07381();
+            final MessageQueue mQueue = new MessageQueue();
 
-            class C06531 implements Runnable {
-                C06531() {
+            class C07381 implements Runnable {
+                C07381() {
                 }
 
                 public void run() {
-                    SyncQueueItem msg = C14801.this.mQueue.next();
+                    SyncQueueItem msg = C07391.this.mQueue.next();
                     while (msg != null) {
                         switch (msg.what) {
                             case 1:
@@ -163,7 +164,7 @@ class MessageThreadUtil<T> implements ThreadUtil<T> {
                                 Log.e("ThreadUtil", "Unsupported message, what=" + msg.what);
                                 break;
                         }
-                        msg = C14801.this.mQueue.next();
+                        msg = C07391.this.mQueue.next();
                     }
                 }
             }
@@ -189,41 +190,46 @@ class MessageThreadUtil<T> implements ThreadUtil<T> {
 
     public BackgroundCallback<T> getBackgroundProxy(final BackgroundCallback<T> callback) {
         return new BackgroundCallback<T>() {
-            private static final int LOAD_TILE = 3;
-            private static final int RECYCLE_TILE = 4;
-            private static final int REFRESH = 1;
-            private static final int UPDATE_RANGE = 2;
-            private Runnable mBackgroundRunnable = new C06541();
-            private final Executor mExecutor = Executors.newSingleThreadExecutor();
-            private final MessageQueue mQueue = new MessageQueue();
+            static final int LOAD_TILE = 3;
+            static final int RECYCLE_TILE = 4;
+            static final int REFRESH = 1;
+            static final int UPDATE_RANGE = 2;
+            private Runnable mBackgroundRunnable = new C07401();
+            AtomicBoolean mBackgroundRunning = new AtomicBoolean(false);
+            private final Executor mExecutor = AsyncTask.THREAD_POOL_EXECUTOR;
+            final MessageQueue mQueue = new MessageQueue();
 
-            class C06541 implements Runnable {
-                C06541() {
+            class C07401 implements Runnable {
+                C07401() {
                 }
 
                 public void run() {
-                    SyncQueueItem msg = C14812.this.mQueue.next();
-                    if (msg != null) {
-                        switch (msg.what) {
-                            case 1:
-                                C14812.this.mQueue.removeMessages(1);
-                                callback.refresh(msg.arg1);
-                                return;
-                            case 2:
-                                C14812.this.mQueue.removeMessages(2);
-                                C14812.this.mQueue.removeMessages(3);
-                                callback.updateRange(msg.arg1, msg.arg2, msg.arg3, msg.arg4, msg.arg5);
-                                return;
-                            case 3:
-                                callback.loadTile(msg.arg1, msg.arg2);
-                                return;
-                            case 4:
-                                callback.recycleTile((Tile) msg.data);
-                                return;
-                            default:
-                                Log.e("ThreadUtil", "Unsupported message, what=" + msg.what);
-                                return;
+                    while (true) {
+                        SyncQueueItem msg = C07412.this.mQueue.next();
+                        if (msg != null) {
+                            switch (msg.what) {
+                                case 1:
+                                    C07412.this.mQueue.removeMessages(1);
+                                    callback.refresh(msg.arg1);
+                                    break;
+                                case 2:
+                                    C07412.this.mQueue.removeMessages(2);
+                                    C07412.this.mQueue.removeMessages(3);
+                                    callback.updateRange(msg.arg1, msg.arg2, msg.arg3, msg.arg4, msg.arg5);
+                                    break;
+                                case 3:
+                                    callback.loadTile(msg.arg1, msg.arg2);
+                                    break;
+                                case 4:
+                                    callback.recycleTile((Tile) msg.data);
+                                    break;
+                                default:
+                                    Log.e("ThreadUtil", "Unsupported message, what=" + msg.what);
+                                    break;
+                            }
                         }
+                        C07412.this.mBackgroundRunning.set(false);
+                        return;
                     }
                 }
             }
@@ -246,12 +252,18 @@ class MessageThreadUtil<T> implements ThreadUtil<T> {
 
             private void sendMessage(SyncQueueItem msg) {
                 this.mQueue.sendMessage(msg);
-                this.mExecutor.execute(this.mBackgroundRunnable);
+                maybeExecuteBackgroundRunnable();
             }
 
             private void sendMessageAtFrontOfQueue(SyncQueueItem msg) {
                 this.mQueue.sendMessageAtFrontOfQueue(msg);
-                this.mExecutor.execute(this.mBackgroundRunnable);
+                maybeExecuteBackgroundRunnable();
+            }
+
+            private void maybeExecuteBackgroundRunnable() {
+                if (this.mBackgroundRunning.compareAndSet(false, true)) {
+                    this.mExecutor.execute(this.mBackgroundRunnable);
+                }
             }
         };
     }

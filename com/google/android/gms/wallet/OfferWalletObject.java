@@ -2,41 +2,41 @@ package com.google.android.gms.wallet;
 
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
+import com.google.android.gms.wallet.wobs.CommonWalletObject;
 
-public class OfferWalletObject implements SafeParcelable {
-    public static final Creator<OfferWalletObject> CREATOR = new C0263j();
-    private final int iM;
-    String tU;
-    String ul;
+public final class OfferWalletObject extends AbstractSafeParcelable {
+    public static final Creator<OfferWalletObject> CREATOR = new zzab();
+    private final int versionCode;
+    CommonWalletObject zzbj;
+    String zzce;
+    String zzdq;
 
-    public OfferWalletObject() {
-        this.iM = 2;
+    OfferWalletObject() {
+        this.versionCode = 3;
     }
 
-    OfferWalletObject(int versionCode, String id, String redemptionCode) {
-        this.iM = versionCode;
-        this.tU = id;
-        this.ul = redemptionCode;
+    OfferWalletObject(int i, String str, String str2, CommonWalletObject commonWalletObject) {
+        this.versionCode = i;
+        this.zzdq = str2;
+        if (i < 3) {
+            this.zzbj = CommonWalletObject.zze().zza(str).zzf();
+        } else {
+            this.zzbj = commonWalletObject;
+        }
     }
 
-    public int describeContents() {
-        return 0;
+    public final int getVersionCode() {
+        return this.versionCode;
     }
 
-    public String getId() {
-        return this.tU;
-    }
-
-    public String getRedemptionCode() {
-        return this.ul;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
-    }
-
-    public void writeToParcel(Parcel dest, int flags) {
-        C0263j.m794a(this, dest, flags);
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeInt(parcel, 1, getVersionCode());
+        SafeParcelWriter.writeString(parcel, 2, this.zzce, false);
+        SafeParcelWriter.writeString(parcel, 3, this.zzdq, false);
+        SafeParcelWriter.writeParcelable(parcel, 4, this.zzbj, i, false);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

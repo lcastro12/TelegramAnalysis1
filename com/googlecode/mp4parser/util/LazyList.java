@@ -10,10 +10,10 @@ public class LazyList<E> extends AbstractList<E> {
     Iterator<E> elementSource;
     List<E> underlying;
 
-    class C02461 implements Iterator<E> {
+    class C00301 implements Iterator<E> {
         int pos = 0;
 
-        C02461() {
+        C00301() {
         }
 
         public boolean hasNext() {
@@ -41,10 +41,6 @@ public class LazyList<E> extends AbstractList<E> {
         this.elementSource = elementSource;
     }
 
-    public List<E> getUnderlying() {
-        return this.underlying;
-    }
-
     private void blowup() {
         LOG.logDebug("blowup running");
         while (this.elementSource.hasNext()) {
@@ -64,7 +60,7 @@ public class LazyList<E> extends AbstractList<E> {
     }
 
     public Iterator<E> iterator() {
-        return new C02461();
+        return new C00301();
     }
 
     public int size() {

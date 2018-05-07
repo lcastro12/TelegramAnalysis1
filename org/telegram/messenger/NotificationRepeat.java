@@ -4,21 +4,18 @@ import android.app.IntentService;
 import android.content.Intent;
 
 public class NotificationRepeat extends IntentService {
-
-    class C05351 implements Runnable {
-        C05351() {
-        }
-
-        public void run() {
-            NotificationsController.getInstance().repeatNotificationMaybe();
-        }
-    }
-
     public NotificationRepeat() {
         super("NotificationRepeat");
     }
 
     protected void onHandleIntent(Intent intent) {
-        AndroidUtilities.runOnUIThread(new C05351());
+        if (intent != null) {
+            final int currentAccount = intent.getIntExtra("currentAccount", UserConfig.selectedAccount);
+            AndroidUtilities.runOnUIThread(new Runnable() {
+                public void run() {
+                    NotificationsController.getInstance(currentAccount).repeatNotificationMaybe();
+                }
+            });
+        }
     }
 }

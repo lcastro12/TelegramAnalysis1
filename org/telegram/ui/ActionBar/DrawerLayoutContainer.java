@@ -1,12 +1,18 @@
 package org.telegram.ui.ActionBar;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
+import android.support.annotation.Keep;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -19,13 +25,9 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import android.widget.ListView;
-import com.google.android.gms.location.LocationStatusCodes;
-import net.hockeyapp.android.Strings;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.AnimationCompat.AnimatorListenerAdapterProxy;
-import org.telegram.messenger.AnimationCompat.AnimatorSetProxy;
-import org.telegram.messenger.AnimationCompat.ObjectAnimatorProxy;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.BuildVars;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.FileLog;
 
 public class DrawerLayoutContainer extends FrameLayout {
@@ -33,57 +35,56 @@ public class DrawerLayoutContainer extends FrameLayout {
     private boolean allowDrawContent = true;
     private boolean allowOpenDrawer;
     private boolean beginTrackingSent;
-    private AnimatorSetProxy currentAnimation = null;
+    private AnimatorSet currentAnimation;
     private ViewGroup drawerLayout;
-    private boolean drawerOpened = false;
-    private float drawerPosition = 0.0f;
+    private boolean drawerOpened;
+    private float drawerPosition;
     private boolean inLayout;
     private Object lastInsets;
-    private boolean maybeStartTracking = false;
+    private boolean maybeStartTracking;
     private int minDrawerMargin = ((int) ((64.0f * AndroidUtilities.density) + 0.5f));
+    private int paddingTop;
     private ActionBarLayout parentActionBarLayout;
+    private Rect rect = new Rect();
     private float scrimOpacity;
     private Paint scrimPaint = new Paint();
     private Drawable shadowLeft;
-    private boolean startedTracking = false;
+    private boolean startedTracking;
     private int startedTrackingPointerId;
     private int startedTrackingX;
     private int startedTrackingY;
-    private VelocityTracker velocityTracker = null;
+    private VelocityTracker velocityTracker;
 
-    @SuppressLint({"NewApi"})
-    private class InsetsListener implements OnApplyWindowInsetsListener {
-        private InsetsListener() {
+    class C08821 implements OnApplyWindowInsetsListener {
+        C08821() {
         }
 
+        @SuppressLint({"NewApi"})
         public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-            ((DrawerLayoutContainer) v).setChildInsets(insets, insets.getSystemWindowInsetTop() > 0);
+            DrawerLayoutContainer drawerLayout = (DrawerLayoutContainer) v;
+            AndroidUtilities.statusBarHeight = insets.getSystemWindowInsetTop();
+            DrawerLayoutContainer.this.lastInsets = insets;
+            boolean z = insets.getSystemWindowInsetTop() <= 0 && DrawerLayoutContainer.this.getBackground() == null;
+            drawerLayout.setWillNotDraw(z);
+            drawerLayout.requestLayout();
             return insets.consumeSystemWindowInsets();
         }
     }
 
-    class C14981 extends AnimatorListenerAdapterProxy {
-        C14981() {
+    class C08832 extends AnimatorListenerAdapter {
+        C08832() {
         }
 
-        public void onAnimationEnd(Object animator) {
-            DrawerLayoutContainer.this.onDrawerAnimationEnd(true);
-        }
-
-        public void onAnimationCancel(Object animator) {
+        public void onAnimationEnd(Animator animator) {
             DrawerLayoutContainer.this.onDrawerAnimationEnd(true);
         }
     }
 
-    class C14992 extends AnimatorListenerAdapterProxy {
-        C14992() {
+    class C08843 extends AnimatorListenerAdapter {
+        C08843() {
         }
 
-        public void onAnimationEnd(Object animator) {
-            DrawerLayoutContainer.this.onDrawerAnimationEnd(false);
-        }
-
-        public void onAnimationCancel(Object animator) {
+        public void onAnimationEnd(Animator animator) {
             DrawerLayoutContainer.this.onDrawerAnimationEnd(false);
         }
     }
@@ -94,10 +95,10 @@ public class DrawerLayoutContainer extends FrameLayout {
         setFocusableInTouchMode(true);
         if (VERSION.SDK_INT >= 21) {
             setFitsSystemWindows(true);
-            setOnApplyWindowInsetsListener(new InsetsListener());
-            setSystemUiVisibility(Strings.LOGIN_HEADLINE_TEXT_ID);
+            setOnApplyWindowInsetsListener(new C08821());
+            setSystemUiVisibility(1280);
         }
-        this.shadowLeft = getResources().getDrawable(C0553R.drawable.menu_shadow);
+        this.shadowLeft = getResources().getDrawable(C0488R.drawable.menu_shadow);
     }
 
     @SuppressLint({"NewApi"})
@@ -136,13 +137,6 @@ public class DrawerLayoutContainer extends FrameLayout {
         return ((WindowInsets) insets).getSystemWindowInsetTop();
     }
 
-    private void setChildInsets(Object insets, boolean draw) {
-        this.lastInsets = insets;
-        boolean z = !draw && getBackground() == null;
-        setWillNotDraw(z);
-        requestLayout();
-    }
-
     public void setDrawerLayout(ViewGroup layout) {
         this.drawerLayout = layout;
         addView(this.drawerLayout);
@@ -155,6 +149,7 @@ public class DrawerLayoutContainer extends FrameLayout {
         setDrawerPosition(this.drawerPosition + dx);
     }
 
+    @Keep
     public void setDrawerPosition(float value) {
         this.drawerPosition = value;
         if (this.drawerPosition > ((float) this.drawerLayout.getMeasuredWidth())) {
@@ -162,7 +157,7 @@ public class DrawerLayoutContainer extends FrameLayout {
         } else if (this.drawerPosition < 0.0f) {
             this.drawerPosition = 0.0f;
         }
-        requestLayout();
+        this.drawerLayout.setTranslationX(this.drawerPosition);
         int newVisibility = this.drawerPosition > 0.0f ? 0 : 8;
         if (this.drawerLayout.getVisibility() != newVisibility) {
             this.drawerLayout.setVisibility(newVisibility);
@@ -187,17 +182,17 @@ public class DrawerLayoutContainer extends FrameLayout {
                 AndroidUtilities.hideKeyboard(this.parentActionBarLayout.parentActivity.getCurrentFocus());
             }
             cancelCurrentAnimation();
-            AnimatorSetProxy animatorSet = new AnimatorSetProxy();
-            Object[] objArr = new Object[1];
-            objArr[0] = ObjectAnimatorProxy.ofFloat(this, "drawerPosition", (float) this.drawerLayout.getMeasuredWidth());
-            animatorSet.playTogether(objArr);
+            AnimatorSet animatorSet = new AnimatorSet();
+            Animator[] animatorArr = new Animator[1];
+            animatorArr[0] = ObjectAnimator.ofFloat(this, "drawerPosition", new float[]{(float) this.drawerLayout.getMeasuredWidth()});
+            animatorSet.playTogether(animatorArr);
             animatorSet.setInterpolator(new DecelerateInterpolator());
             if (fast) {
                 animatorSet.setDuration((long) Math.max((int) ((200.0f / ((float) this.drawerLayout.getMeasuredWidth())) * (((float) this.drawerLayout.getMeasuredWidth()) - this.drawerPosition)), 50));
             } else {
                 animatorSet.setDuration(300);
             }
-            animatorSet.addListener(new C14981());
+            animatorSet.addListener(new C08832());
             animatorSet.start();
             this.currentAnimation = animatorSet;
         }
@@ -205,17 +200,17 @@ public class DrawerLayoutContainer extends FrameLayout {
 
     public void closeDrawer(boolean fast) {
         cancelCurrentAnimation();
-        AnimatorSetProxy animatorSet = new AnimatorSetProxy();
-        Object[] objArr = new Object[1];
-        objArr[0] = ObjectAnimatorProxy.ofFloat(this, "drawerPosition", 0.0f);
-        animatorSet.playTogether(objArr);
+        AnimatorSet animatorSet = new AnimatorSet();
+        Animator[] animatorArr = new Animator[1];
+        animatorArr[0] = ObjectAnimator.ofFloat(this, "drawerPosition", new float[]{0.0f});
+        animatorSet.playTogether(animatorArr);
         animatorSet.setInterpolator(new DecelerateInterpolator());
         if (fast) {
             animatorSet.setDuration((long) Math.max((int) ((200.0f / ((float) this.drawerLayout.getMeasuredWidth())) * this.drawerPosition), 50));
         } else {
             animatorSet.setDuration(300);
         }
-        animatorSet.addListener(new C14992());
+        animatorSet.addListener(new C08843());
         animatorSet.start();
     }
 
@@ -285,13 +280,16 @@ public class DrawerLayoutContainer extends FrameLayout {
         if (!this.drawerOpened || ev == null || ev.getX() <= this.drawerPosition || this.startedTracking) {
             if (this.allowOpenDrawer && this.parentActionBarLayout.fragmentsStack.size() == 1) {
                 if (ev != null && ((ev.getAction() == 0 || ev.getAction() == 2) && !this.startedTracking && !this.maybeStartTracking)) {
-                    this.startedTrackingPointerId = ev.getPointerId(0);
-                    this.maybeStartTracking = true;
+                    this.parentActionBarLayout.getHitRect(this.rect);
                     this.startedTrackingX = (int) ev.getX();
                     this.startedTrackingY = (int) ev.getY();
-                    cancelCurrentAnimation();
-                    if (this.velocityTracker != null) {
-                        this.velocityTracker.clear();
+                    if (this.rect.contains(this.startedTrackingX, this.startedTrackingY)) {
+                        this.startedTrackingPointerId = ev.getPointerId(0);
+                        this.maybeStartTracking = true;
+                        cancelCurrentAnimation();
+                        if (this.velocityTracker != null) {
+                            this.velocityTracker.clear();
+                        }
                     }
                 } else if (ev != null && ev.getAction() == 2 && ev.getPointerId(0) == this.startedTrackingPointerId) {
                     if (this.velocityTracker == null) {
@@ -318,7 +316,7 @@ public class DrawerLayoutContainer extends FrameLayout {
                     if (this.velocityTracker == null) {
                         this.velocityTracker = VelocityTracker.obtain();
                     }
-                    this.velocityTracker.computeCurrentVelocity(LocationStatusCodes.GEOFENCE_NOT_AVAILABLE);
+                    this.velocityTracker.computeCurrentVelocity(1000);
                     if (this.startedTracking || !(this.drawerPosition == 0.0f || this.drawerPosition == ((float) this.drawerLayout.getMeasuredWidth()))) {
                         boolean backAnimation;
                         float velX = this.velocityTracker.getXVelocity();
@@ -342,11 +340,9 @@ public class DrawerLayoutContainer extends FrameLayout {
                             }
                             openDrawer(z2);
                         }
-                        this.startedTracking = false;
-                    } else {
-                        this.maybeStartTracking = false;
-                        this.startedTracking = false;
                     }
+                    this.startedTracking = false;
+                    this.maybeStartTracking = false;
                     if (this.velocityTracker != null) {
                         this.velocityTracker.recycle();
                         this.velocityTracker = null;
@@ -380,14 +376,20 @@ public class DrawerLayoutContainer extends FrameLayout {
             View child = getChildAt(i);
             if (child.getVisibility() != 8) {
                 LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                try {
-                    if (this.drawerLayout != child) {
-                        child.layout(lp.leftMargin, lp.topMargin, lp.leftMargin + child.getMeasuredWidth(), lp.topMargin + child.getMeasuredHeight());
-                    } else {
-                        child.layout((-child.getMeasuredWidth()) + ((int) this.drawerPosition), lp.topMargin, (int) this.drawerPosition, lp.topMargin + child.getMeasuredHeight());
+                if (!BuildVars.DEBUG_VERSION) {
+                    try {
+                        if (this.drawerLayout != child) {
+                            child.layout(lp.leftMargin, lp.topMargin + getPaddingTop(), lp.leftMargin + child.getMeasuredWidth(), (lp.topMargin + child.getMeasuredHeight()) + getPaddingTop());
+                        } else {
+                            child.layout(-child.getMeasuredWidth(), lp.topMargin + getPaddingTop(), 0, (lp.topMargin + child.getMeasuredHeight()) + getPaddingTop());
+                        }
+                    } catch (Throwable e) {
+                        FileLog.m3e(e);
                     }
-                } catch (Throwable e) {
-                    FileLog.m611e("tmessages", e);
+                } else if (this.drawerLayout != child) {
+                    child.layout(lp.leftMargin, lp.topMargin + getPaddingTop(), lp.leftMargin + child.getMeasuredWidth(), (lp.topMargin + child.getMeasuredHeight()) + getPaddingTop());
+                } else {
+                    child.layout(-child.getMeasuredWidth(), lp.topMargin + getPaddingTop(), 0, (lp.topMargin + child.getMeasuredHeight()) + getPaddingTop());
                 }
             }
         }
@@ -405,6 +407,18 @@ public class DrawerLayoutContainer extends FrameLayout {
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(widthSize, heightSize);
+        if (VERSION.SDK_INT < 21) {
+            this.inLayout = true;
+            if (heightSize == AndroidUtilities.displaySize.y + AndroidUtilities.statusBarHeight) {
+                if (getLayoutParams() instanceof MarginLayoutParams) {
+                    setPadding(0, AndroidUtilities.statusBarHeight, 0, 0);
+                }
+                heightSize = AndroidUtilities.displaySize.y;
+            } else if (getLayoutParams() instanceof MarginLayoutParams) {
+                setPadding(0, 0, 0, 0);
+            }
+            this.inLayout = false;
+        }
         boolean applyInsets = this.lastInsets != null && VERSION.SDK_INT >= 21;
         int childCount = getChildCount();
         for (int i = 0; i < childCount; i++) {

@@ -5,17 +5,17 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
+import android.os.Build.VERSION;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import org.telegram.messenger.AndroidUtilities;
 
 public class PhotoFilterBlurControl extends FrameLayout {
     private static final float BlurInsetProximity = ((float) AndroidUtilities.dp(20.0f));
     private static final float BlurMinimumDifference = 0.02f;
     private static final float BlurMinimumFalloff = 0.1f;
-    private static final float BlurViewCenterInset = ((float) AndroidUtilities.dp(BitmapDescriptorFactory.HUE_ORANGE));
-    private static final float BlurViewRadiusInset = ((float) AndroidUtilities.dp(BitmapDescriptorFactory.HUE_ORANGE));
+    private static final float BlurViewCenterInset = ((float) AndroidUtilities.dp(30.0f));
+    private static final float BlurViewRadiusInset = ((float) AndroidUtilities.dp(30.0f));
     private final int GestureStateBegan = 1;
     private final int GestureStateCancelled = 4;
     private final int GestureStateChanged = 2;
@@ -27,7 +27,7 @@ public class PhotoFilterBlurControl extends FrameLayout {
     private Paint arcPaint = new Paint(1);
     private RectF arcRect = new RectF();
     private Point centerPoint = new Point(0.5f, 0.5f);
-    private boolean checkForMoving;
+    private boolean checkForMoving = true;
     private boolean checkForZooming;
     private PhotoFilterLinearBlurControlDelegate delegate;
     private float falloff = 0.15f;
@@ -68,6 +68,7 @@ public class PhotoFilterBlurControl extends FrameLayout {
 
     public void setType(int blurType) {
         this.type = blurType;
+        invalidate();
     }
 
     public void setDelegate(PhotoFilterLinearBlurControlDelegate delegate) {
@@ -76,7 +77,7 @@ public class PhotoFilterBlurControl extends FrameLayout {
 
     private float getDistance(MotionEvent event) {
         if (event.getPointerCount() != 2) {
-            return 0.0f;
+            return BlurInsetProximity;
         }
         float x1 = event.getX(0);
         float y1 = event.getY(0);
@@ -86,7 +87,7 @@ public class PhotoFilterBlurControl extends FrameLayout {
     }
 
     private float degreesToRadians(float degrees) {
-        return (3.1415927f * degrees) / BitmapDescriptorFactory.HUE_CYAN;
+        return (3.1415927f * degrees) / 180.0f;
     }
 
     public boolean onTouchEvent(MotionEvent event) {
@@ -98,15 +99,15 @@ public class PhotoFilterBlurControl extends FrameLayout {
                         float locationX = event.getX();
                         float locationY = event.getY();
                         Point centerPoint = getActualCenterPoint();
-                        Point delta = new Point(locationX - centerPoint.f58x, locationY - centerPoint.f59y);
-                        float radialDistance = (float) Math.sqrt((double) ((delta.f58x * delta.f58x) + (delta.f59y * delta.f59y)));
+                        Point delta = new Point(locationX - centerPoint.f54x, locationY - centerPoint.f55y);
+                        float radialDistance = (float) Math.sqrt((double) ((delta.f54x * delta.f54x) + (delta.f55y * delta.f55y)));
                         float innerRadius = getActualInnerRadius();
                         float outerRadius = getActualOuterRadius();
                         boolean close = Math.abs(outerRadius - innerRadius) < BlurInsetProximity;
-                        float innerRadiusOuterInset = close ? 0.0f : BlurViewRadiusInset;
-                        float outerRadiusInnerInset = close ? 0.0f : BlurViewRadiusInset;
+                        float innerRadiusOuterInset = close ? BlurInsetProximity : BlurViewRadiusInset;
+                        float outerRadiusInnerInset = close ? BlurInsetProximity : BlurViewRadiusInset;
                         if (this.type == 0) {
-                            float distance = (float) Math.abs((((double) delta.f58x) * Math.cos(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)) + (((double) delta.f59y) * Math.sin(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)));
+                            float distance = (float) Math.abs((((double) delta.f54x) * Math.cos(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)) + (((double) delta.f55y) * Math.sin(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)));
                             if (radialDistance < BlurViewCenterInset) {
                                 this.isMoving = true;
                             } else if (distance > innerRadius - BlurViewRadiusInset && distance < innerRadius + innerRadiusOuterInset) {
@@ -180,19 +181,19 @@ public class PhotoFilterBlurControl extends FrameLayout {
         float locationX = event.getX();
         float locationY = event.getY();
         Point actualCenterPoint = getActualCenterPoint();
-        Point delta = new Point(locationX - actualCenterPoint.f58x, locationY - actualCenterPoint.f59y);
-        float radialDistance = (float) Math.sqrt((double) ((delta.f58x * delta.f58x) + (delta.f59y * delta.f59y)));
+        Point delta = new Point(locationX - actualCenterPoint.f54x, locationY - actualCenterPoint.f55y);
+        float radialDistance = (float) Math.sqrt((double) ((delta.f54x * delta.f54x) + (delta.f55y * delta.f55y)));
         float shorterSide = this.actualAreaSize.width > this.actualAreaSize.height ? this.actualAreaSize.height : this.actualAreaSize.width;
         float innerRadius = shorterSide * this.falloff;
         float outerRadius = shorterSide * this.size;
-        float distance = (float) Math.abs((((double) delta.f58x) * Math.cos(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)) + (((double) delta.f59y) * Math.sin(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)));
+        float distance = (float) Math.abs((((double) delta.f54x) * Math.cos(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)) + (((double) delta.f55y) * Math.sin(((double) degreesToRadians(this.angle)) + 1.5707963267948966d)));
         switch (state) {
             case 1:
                 this.pointerStartX = event.getX();
                 this.pointerStartY = event.getY();
                 boolean close = Math.abs(outerRadius - innerRadius) < BlurInsetProximity;
-                float innerRadiusOuterInset = close ? 0.0f : BlurViewRadiusInset;
-                float outerRadiusInnerInset = close ? 0.0f : BlurViewRadiusInset;
+                float innerRadiusOuterInset = close ? BlurInsetProximity : BlurViewRadiusInset;
+                float outerRadiusInnerInset = close ? BlurInsetProximity : BlurViewRadiusInset;
                 if (this.type == 0) {
                     if (radialDistance < BlurViewCenterInset) {
                         this.activeControl = BlurViewActiveControl.BlurViewActiveControlCenter;
@@ -236,11 +237,11 @@ public class PhotoFilterBlurControl extends FrameLayout {
                                 translationX = locationX - this.pointerStartX;
                                 translationY = locationY - this.pointerStartY;
                                 actualArea = new Rect((((float) getWidth()) - this.actualAreaSize.width) / 2.0f, (((float) getHeight()) - this.actualAreaSize.height) / 2.0f, this.actualAreaSize.width, this.actualAreaSize.height);
-                                point = new Point(Math.max(actualArea.f60x, Math.min(actualArea.f60x + actualArea.width, this.startCenterPoint.f58x + translationX)), Math.max(actualArea.f61y, Math.min(actualArea.f61y + actualArea.height, this.startCenterPoint.f59y + translationY)));
-                                this.centerPoint = new Point((point.f58x - actualArea.f60x) / this.actualAreaSize.width, ((point.f59y - actualArea.f61y) + ((this.actualAreaSize.width - this.actualAreaSize.height) / 2.0f)) / this.actualAreaSize.width);
+                                point = new Point(Math.max(actualArea.f56x, Math.min(actualArea.f56x + actualArea.width, this.startCenterPoint.f54x + translationX)), Math.max(actualArea.f57y, Math.min(actualArea.f57y + actualArea.height, this.startCenterPoint.f55y + translationY)));
+                                this.centerPoint = new Point((point.f54x - actualArea.f56x) / this.actualAreaSize.width, ((point.f55y - actualArea.f57y) + ((this.actualAreaSize.width - this.actualAreaSize.height) / 2.0f)) / this.actualAreaSize.width);
                                 break;
                             case BlurViewActiveControlInnerRadius:
-                                this.falloff = Math.min(Math.max(BlurMinimumFalloff, (this.startRadius + (radialDistance - this.startDistance)) / shorterSide), this.size - BlurMinimumDifference);
+                                this.falloff = Math.min(Math.max(0.1f, (this.startRadius + (radialDistance - this.startDistance)) / shorterSide), this.size - BlurMinimumDifference);
                                 break;
                             case BlurViewActiveControlOuterRadius:
                                 this.size = Math.max(this.falloff + BlurMinimumDifference, (this.startRadius + (radialDistance - this.startDistance)) / shorterSide);
@@ -255,11 +256,11 @@ public class PhotoFilterBlurControl extends FrameLayout {
                         translationX = locationX - this.pointerStartX;
                         translationY = locationY - this.pointerStartY;
                         actualArea = new Rect((((float) getWidth()) - this.actualAreaSize.width) / 2.0f, (((float) getHeight()) - this.actualAreaSize.height) / 2.0f, this.actualAreaSize.width, this.actualAreaSize.height);
-                        point = new Point(Math.max(actualArea.f60x, Math.min(actualArea.f60x + actualArea.width, this.startCenterPoint.f58x + translationX)), Math.max(actualArea.f61y, Math.min(actualArea.f61y + actualArea.height, this.startCenterPoint.f59y + translationY)));
-                        this.centerPoint = new Point((point.f58x - actualArea.f60x) / this.actualAreaSize.width, ((point.f59y - actualArea.f61y) + ((this.actualAreaSize.width - this.actualAreaSize.height) / 2.0f)) / this.actualAreaSize.width);
+                        point = new Point(Math.max(actualArea.f56x, Math.min(actualArea.f56x + actualArea.width, this.startCenterPoint.f54x + translationX)), Math.max(actualArea.f57y, Math.min(actualArea.f57y + actualArea.height, this.startCenterPoint.f55y + translationY)));
+                        this.centerPoint = new Point((point.f54x - actualArea.f56x) / this.actualAreaSize.width, ((point.f55y - actualArea.f57y) + ((this.actualAreaSize.width - this.actualAreaSize.height) / 2.0f)) / this.actualAreaSize.width);
                         break;
                     case BlurViewActiveControlInnerRadius:
-                        this.falloff = Math.min(Math.max(BlurMinimumFalloff, (this.startRadius + (distance - this.startDistance)) / shorterSide), this.size - BlurMinimumDifference);
+                        this.falloff = Math.min(Math.max(0.1f, (this.startRadius + (distance - this.startDistance)) / shorterSide), this.size - BlurMinimumDifference);
                         break;
                     case BlurViewActiveControlOuterRadius:
                         this.size = Math.max(this.falloff + BlurMinimumDifference, (this.startRadius + (distance - this.startDistance)) / shorterSide);
@@ -268,37 +269,37 @@ public class PhotoFilterBlurControl extends FrameLayout {
                         translationX = locationX - this.pointerStartX;
                         translationY = locationY - this.pointerStartY;
                         boolean clockwise = false;
-                        boolean right = locationX > actualCenterPoint.f58x;
-                        boolean bottom = locationY > actualCenterPoint.f59y;
+                        boolean right = locationX > actualCenterPoint.f54x;
+                        boolean bottom = locationY > actualCenterPoint.f55y;
                         if (right || bottom) {
                             if (!right || bottom) {
                                 if (right && bottom) {
                                     if (Math.abs(translationY) > Math.abs(translationX)) {
-                                        if (translationY > 0.0f) {
+                                        if (translationY > BlurInsetProximity) {
                                             clockwise = true;
                                         }
-                                    } else if (translationX < 0.0f) {
+                                    } else if (translationX < BlurInsetProximity) {
                                         clockwise = true;
                                     }
                                 } else if (Math.abs(translationY) > Math.abs(translationX)) {
-                                    if (translationY < 0.0f) {
+                                    if (translationY < BlurInsetProximity) {
                                         clockwise = true;
                                     }
-                                } else if (translationX < 0.0f) {
+                                } else if (translationX < BlurInsetProximity) {
                                     clockwise = true;
                                 }
                             } else if (Math.abs(translationY) > Math.abs(translationX)) {
-                                if (translationY > 0.0f) {
+                                if (translationY > BlurInsetProximity) {
                                     clockwise = true;
                                 }
-                            } else if (translationX > 0.0f) {
+                            } else if (translationX > BlurInsetProximity) {
                                 clockwise = true;
                             }
                         } else if (Math.abs(translationY) > Math.abs(translationX)) {
-                            if (translationY < 0.0f) {
+                            if (translationY < BlurInsetProximity) {
                                 clockwise = true;
                             }
-                        } else if (translationX > 0.0f) {
+                        } else if (translationX > BlurInsetProximity) {
                             clockwise = true;
                         }
                         this.angle = (((((float) (((clockwise ? 1 : 0) * 2) - 1)) * ((float) Math.sqrt((double) ((translationX * translationX) + (translationY * translationY))))) / 3.1415927f) / 1.15f) + this.angle;
@@ -344,7 +345,7 @@ public class PhotoFilterBlurControl extends FrameLayout {
         }
         float newDistance = getDistance(event);
         this.pointerScale += ((newDistance - this.startPointerDistance) / AndroidUtilities.density) * 0.01f;
-        this.falloff = Math.max(BlurMinimumFalloff, this.falloff * this.pointerScale);
+        this.falloff = Math.max(0.1f, this.falloff * this.pointerScale);
         this.size = Math.max(this.falloff + BlurMinimumDifference, this.size * this.pointerScale);
         this.pointerScale = 1.0f;
         this.startPointerDistance = newDistance;
@@ -367,7 +368,7 @@ public class PhotoFilterBlurControl extends FrameLayout {
         Point centerPoint = getActualCenterPoint();
         float innerRadius = getActualInnerRadius();
         float outerRadius = getActualOuterRadius();
-        canvas.translate(centerPoint.f58x, centerPoint.f59y);
+        canvas.translate(centerPoint.f54x, centerPoint.f55y);
         int i;
         Canvas canvas2;
         if (this.type == 0) {
@@ -407,11 +408,11 @@ public class PhotoFilterBlurControl extends FrameLayout {
                 canvas2.drawArc(this.arcRect, (2.02f + 3.6f) * ((float) i), 3.6f, false, this.arcPaint);
             }
         }
-        canvas.drawCircle(0.0f, 0.0f, (float) AndroidUtilities.dp(8.0f), this.paint);
+        canvas.drawCircle(BlurInsetProximity, BlurInsetProximity, (float) AndroidUtilities.dp(8.0f), this.paint);
     }
 
     private Point getActualCenterPoint() {
-        return new Point(((((float) getWidth()) - this.actualAreaSize.width) / 2.0f) + (this.centerPoint.f58x * this.actualAreaSize.width), (((((float) getHeight()) - this.actualAreaSize.height) / 2.0f) - ((this.actualAreaSize.width - this.actualAreaSize.height) / 2.0f)) + (this.centerPoint.f59y * this.actualAreaSize.width));
+        return new Point((this.centerPoint.f54x * this.actualAreaSize.width) + ((((float) getWidth()) - this.actualAreaSize.width) / 2.0f), ((((float) (VERSION.SDK_INT >= 21 ? AndroidUtilities.statusBarHeight : 0)) + ((((float) getHeight()) - this.actualAreaSize.height) / 2.0f)) - ((this.actualAreaSize.width - this.actualAreaSize.height) / 2.0f)) + (this.centerPoint.f55y * this.actualAreaSize.width));
     }
 
     private float getActualInnerRadius() {

@@ -3,32 +3,31 @@ package net.hockeyapp.android.objects;
 import java.io.Serializable;
 
 public class FeedbackResponse implements Serializable {
-    private static final long serialVersionUID = -1093570359639034766L;
-    private Feedback feedback;
-    private String status;
-    private String token;
+    private Feedback mFeedback;
+    private String mStatus;
+    private String mToken;
 
     public String getStatus() {
-        return this.status;
+        return this.mStatus;
     }
 
     public void setStatus(String status) {
-        this.status = status;
+        this.mStatus = status;
     }
 
     public Feedback getFeedback() {
-        return this.feedback;
+        return this.mFeedback;
     }
 
     public void setFeedback(Feedback feedback) {
-        this.feedback = feedback;
+        this.mFeedback = feedback;
     }
 
     public String getToken() {
-        return this.token;
+        return this.mToken;
     }
 
     public void setToken(String token) {
-        this.token = token;
+        this.mToken = token;
     }
 }

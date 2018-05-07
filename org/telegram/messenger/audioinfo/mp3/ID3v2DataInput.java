@@ -1,6 +1,5 @@
 package org.telegram.messenger.audioinfo.mp3;
 
-import android.support.v4.media.TransportMediator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,6 +54,6 @@ public class ID3v2DataInput {
     }
 
     public int readSyncsafeInt() throws IOException {
-        return ((((readByte() & TransportMediator.KEYCODE_MEDIA_PAUSE) << 21) | ((readByte() & TransportMediator.KEYCODE_MEDIA_PAUSE) << 14)) | ((readByte() & TransportMediator.KEYCODE_MEDIA_PAUSE) << 7)) | (readByte() & TransportMediator.KEYCODE_MEDIA_PAUSE);
+        return ((((readByte() & 127) << 21) | ((readByte() & 127) << 14)) | ((readByte() & 127) << 7)) | (readByte() & 127);
     }
 }

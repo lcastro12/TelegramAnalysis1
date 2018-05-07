@@ -1,13 +1,15 @@
 package org.telegram.ui.Cells;
 
 import android.content.Context;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffColorFilter;
 import android.view.View;
 import android.view.View.MeasureSpec;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
@@ -17,98 +19,101 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC.Chat;
 import org.telegram.tgnet.TLRPC.FileLocation;
 import org.telegram.tgnet.TLRPC.User;
+import org.telegram.ui.ActionBar.SimpleTextView;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CheckBox;
 import org.telegram.ui.Components.CheckBoxSquare;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.SimpleTextView;
 
 public class UserCell extends FrameLayout {
+    private ImageView adminImage;
     private AvatarDrawable avatarDrawable = new AvatarDrawable();
     private BackupImageView avatarImageView;
     private CheckBox checkBox;
     private CheckBoxSquare checkBoxBig;
+    private int currentAccount = UserConfig.selectedAccount;
     private int currentDrawable;
     private CharSequence currentName;
-    private TLObject currentObject = null;
+    private TLObject currentObject;
     private CharSequence currrntStatus;
     private ImageView imageView;
-    private FileLocation lastAvatar = null;
-    private String lastName = null;
-    private int lastStatus = 0;
+    private FileLocation lastAvatar;
+    private String lastName;
+    private int lastStatus;
     private SimpleTextView nameTextView;
-    private int statusColor = -5723992;
-    private int statusOnlineColor = -12876608;
+    private int statusColor = Theme.getColor(Theme.key_windowBackgroundWhiteGrayText);
+    private int statusOnlineColor = Theme.getColor(Theme.key_windowBackgroundWhiteBlueText);
     private SimpleTextView statusTextView;
 
-    public UserCell(Context context, int padding, int checkbox) {
-        int i;
-        int i2;
-        int i3 = 5;
-        int i4 = 3;
+    public UserCell(Context context, int padding, int checkbox, boolean admin) {
+        float f;
+        float f2;
         super(context);
         this.avatarImageView = new BackupImageView(context);
         this.avatarImageView.setRoundRadius(AndroidUtilities.dp(24.0f));
         addView(this.avatarImageView, LayoutHelper.createFrame(48, 48.0f, (LocaleController.isRTL ? 5 : 3) | 48, LocaleController.isRTL ? 0.0f : (float) (padding + 7), 8.0f, LocaleController.isRTL ? (float) (padding + 7) : 0.0f, 0.0f));
         this.nameTextView = new SimpleTextView(context);
-        this.nameTextView.setTextColor(-14606047);
+        this.nameTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
         this.nameTextView.setTextSize(17);
-        SimpleTextView simpleTextView = this.nameTextView;
-        if (LocaleController.isRTL) {
-            i = 5;
-        } else {
-            i = 3;
-        }
-        simpleTextView.setGravity(i | 48);
+        this.nameTextView.setGravity((LocaleController.isRTL ? 5 : 3) | 48);
         View view = this.nameTextView;
+        int i = (LocaleController.isRTL ? 5 : 3) | 48;
         if (LocaleController.isRTL) {
-            i2 = 5;
+            f = (float) ((checkbox == 2 ? 18 : 0) + 28);
         } else {
-            i2 = 3;
+            f = (float) (padding + 68);
         }
-        addView(view, LayoutHelper.createFrame(-1, 20.0f, i2 | 48, LocaleController.isRTL ? 28.0f : (float) (padding + 68), 11.5f, LocaleController.isRTL ? (float) (padding + 68) : 28.0f, 0.0f));
+        if (LocaleController.isRTL) {
+            f2 = (float) (padding + 68);
+        } else {
+            f2 = (float) ((checkbox == 2 ? 18 : 0) + 28);
+        }
+        addView(view, LayoutHelper.createFrame(-1, 20.0f, i, f, 11.5f, f2, 0.0f));
         this.statusTextView = new SimpleTextView(context);
         this.statusTextView.setTextSize(14);
-        simpleTextView = this.statusTextView;
-        if (LocaleController.isRTL) {
-            i = 5;
-        } else {
-            i = 3;
-        }
-        simpleTextView.setGravity(i | 48);
-        view = this.statusTextView;
-        if (LocaleController.isRTL) {
-            i2 = 5;
-        } else {
-            i2 = 3;
-        }
-        addView(view, LayoutHelper.createFrame(-1, 20.0f, i2 | 48, LocaleController.isRTL ? 28.0f : (float) (padding + 68), 34.5f, LocaleController.isRTL ? (float) (padding + 68) : 28.0f, 0.0f));
+        this.statusTextView.setGravity((LocaleController.isRTL ? 5 : 3) | 48);
+        addView(this.statusTextView, LayoutHelper.createFrame(-1, 20.0f, (LocaleController.isRTL ? 5 : 3) | 48, LocaleController.isRTL ? 28.0f : (float) (padding + 68), 34.5f, LocaleController.isRTL ? (float) (padding + 68) : 28.0f, 0.0f));
         this.imageView = new ImageView(context);
         this.imageView.setScaleType(ScaleType.CENTER);
         this.imageView.setVisibility(8);
-        View view2 = this.imageView;
-        if (LocaleController.isRTL) {
-            i = 5;
-        } else {
-            i = 3;
-        }
-        addView(view2, LayoutHelper.createFrame(-2, -2.0f, i | 16, LocaleController.isRTL ? 0.0f : 16.0f, 0.0f, LocaleController.isRTL ? 16.0f : 0.0f, 0.0f));
+        addView(this.imageView, LayoutHelper.createFrame(-2, -2.0f, (LocaleController.isRTL ? 5 : 3) | 16, LocaleController.isRTL ? 0.0f : 16.0f, 0.0f, LocaleController.isRTL ? 16.0f : 0.0f, 0.0f));
         if (checkbox == 2) {
-            this.checkBoxBig = new CheckBoxSquare(context);
-            View view3 = this.checkBoxBig;
-            if (!LocaleController.isRTL) {
-                i4 = 5;
-            }
-            addView(view3, LayoutHelper.createFrame(18, 18.0f, i4 | 16, LocaleController.isRTL ? 19.0f : 0.0f, 0.0f, LocaleController.isRTL ? 0.0f : 19.0f, 0.0f));
+            this.checkBoxBig = new CheckBoxSquare(context, false);
+            addView(this.checkBoxBig, LayoutHelper.createFrame(18, 18.0f, (LocaleController.isRTL ? 3 : 5) | 16, LocaleController.isRTL ? 19.0f : 0.0f, 0.0f, LocaleController.isRTL ? 0.0f : 19.0f, 0.0f));
         } else if (checkbox == 1) {
-            this.checkBox = new CheckBox(context, C0553R.drawable.round_check2);
+            this.checkBox = new CheckBox(context, C0488R.drawable.round_check2);
             this.checkBox.setVisibility(4);
-            View view4 = this.checkBox;
-            if (!LocaleController.isRTL) {
-                i3 = 3;
+            this.checkBox.setColor(Theme.getColor(Theme.key_checkbox), Theme.getColor(Theme.key_checkboxCheck));
+            addView(this.checkBox, LayoutHelper.createFrame(22, 22.0f, (LocaleController.isRTL ? 5 : 3) | 48, LocaleController.isRTL ? 0.0f : (float) (padding + 37), 38.0f, LocaleController.isRTL ? (float) (padding + 37) : 0.0f, 0.0f));
+        }
+        if (admin) {
+            this.adminImage = new ImageView(context);
+            this.adminImage.setImageResource(C0488R.drawable.admin_star);
+            addView(this.adminImage, LayoutHelper.createFrame(16, 16.0f, (LocaleController.isRTL ? 3 : 5) | 48, LocaleController.isRTL ? 24.0f : 0.0f, 13.5f, LocaleController.isRTL ? 0.0f : 24.0f, 0.0f));
+        }
+    }
+
+    public void setIsAdmin(int value) {
+        if (this.adminImage != null) {
+            int i;
+            this.adminImage.setVisibility(value != 0 ? 0 : 8);
+            SimpleTextView simpleTextView = this.nameTextView;
+            if (!LocaleController.isRTL || value == 0) {
+                i = 0;
+            } else {
+                i = AndroidUtilities.dp(16.0f);
             }
-            addView(view4, LayoutHelper.createFrame(22, 22.0f, i3 | 48, LocaleController.isRTL ? 0.0f : (float) (padding + 37), 38.0f, LocaleController.isRTL ? (float) (padding + 37) : 0.0f, 0.0f));
+            int dp = (LocaleController.isRTL || value == 0) ? 0 : AndroidUtilities.dp(16.0f);
+            simpleTextView.setPadding(i, 0, dp, 0);
+            if (value == 1) {
+                setTag(Theme.key_profile_creatorIcon);
+                this.adminImage.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_profile_creatorIcon), Mode.MULTIPLY));
+            } else if (value == 2) {
+                setTag(Theme.key_profile_adminIcon);
+                this.adminImage.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_profile_adminIcon), Mode.MULTIPLY));
+            }
         }
     }
 
@@ -117,8 +122,8 @@ public class UserCell extends FrameLayout {
             this.currrntStatus = null;
             this.currentName = null;
             this.currentObject = null;
-            this.nameTextView.setText("");
-            this.statusTextView.setText("");
+            this.nameTextView.setText(TtmlNode.ANONYMOUS_REGION_ID);
+            this.statusTextView.setText(TtmlNode.ANONYMOUS_REGION_ID);
             this.avatarImageView.setImageDrawable(null);
             return;
         }
@@ -156,6 +161,13 @@ public class UserCell extends FrameLayout {
     public void setStatusColors(int color, int onlineColor) {
         this.statusColor = color;
         this.statusOnlineColor = onlineColor;
+    }
+
+    public void invalidate() {
+        super.invalidate();
+        if (this.checkBoxBig != null) {
+            this.checkBoxBig.invalidate();
+        }
     }
 
     public void update(int mask) {
@@ -237,17 +249,17 @@ public class UserCell extends FrameLayout {
             } else if (currentUser != null) {
                 if (currentUser.bot) {
                     this.statusTextView.setTextColor(this.statusColor);
-                    if (currentUser.bot_chat_history) {
-                        this.statusTextView.setText(LocaleController.getString("BotStatusRead", C0553R.string.BotStatusRead));
+                    if (currentUser.bot_chat_history || (this.adminImage != null && this.adminImage.getVisibility() == 0)) {
+                        this.statusTextView.setText(LocaleController.getString("BotStatusRead", C0488R.string.BotStatusRead));
                     } else {
-                        this.statusTextView.setText(LocaleController.getString("BotStatusCantRead", C0553R.string.BotStatusCantRead));
+                        this.statusTextView.setText(LocaleController.getString("BotStatusCantRead", C0488R.string.BotStatusCantRead));
                     }
-                } else if (currentUser.id == UserConfig.getClientUserId() || ((currentUser.status != null && currentUser.status.expires > ConnectionsManager.getInstance().getCurrentTime()) || MessagesController.getInstance().onlinePrivacy.containsKey(Integer.valueOf(currentUser.id)))) {
+                } else if (currentUser.id == UserConfig.getInstance(this.currentAccount).getClientUserId() || ((currentUser.status != null && currentUser.status.expires > ConnectionsManager.getInstance(this.currentAccount).getCurrentTime()) || MessagesController.getInstance(this.currentAccount).onlinePrivacy.containsKey(Integer.valueOf(currentUser.id)))) {
                     this.statusTextView.setTextColor(this.statusOnlineColor);
-                    this.statusTextView.setText(LocaleController.getString("Online", C0553R.string.Online));
+                    this.statusTextView.setText(LocaleController.getString("Online", C0488R.string.Online));
                 } else {
                     this.statusTextView.setTextColor(this.statusColor);
-                    this.statusTextView.setText(LocaleController.formatUserStatus(currentUser));
+                    this.statusTextView.setText(LocaleController.formatUserStatus(this.currentAccount, currentUser));
                 }
             }
             if ((this.imageView.getVisibility() == 0 && this.currentDrawable == 0) || (this.imageView.getVisibility() == 8 && this.currentDrawable != 0)) {

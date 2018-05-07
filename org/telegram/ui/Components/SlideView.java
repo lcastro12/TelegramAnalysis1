@@ -10,10 +10,10 @@ public class SlideView extends LinearLayout {
     }
 
     public String getHeaderName() {
-        return "";
+        return TtmlNode.ANONYMOUS_REGION_ID;
     }
 
-    public void setParams(Bundle params) {
+    public void setParams(Bundle params, boolean restore) {
     }
 
     public void onBackPressed() {
@@ -26,6 +26,9 @@ public class SlideView extends LinearLayout {
     }
 
     public void onNextPressed() {
+    }
+
+    public void onCancelPressed() {
     }
 
     public void saveStateParams(Bundle bundle) {

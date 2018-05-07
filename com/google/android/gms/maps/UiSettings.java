@@ -5,127 +5,31 @@ import com.google.android.gms.maps.internal.IUiSettingsDelegate;
 import com.google.android.gms.maps.model.RuntimeRemoteException;
 
 public final class UiSettings {
-    private final IUiSettingsDelegate gM;
+    private final IUiSettingsDelegate zzci;
 
-    UiSettings(IUiSettingsDelegate delegate) {
-        this.gM = delegate;
+    UiSettings(IUiSettingsDelegate iUiSettingsDelegate) {
+        this.zzci = iUiSettingsDelegate;
     }
 
-    public boolean isCompassEnabled() {
+    public final void setCompassEnabled(boolean z) {
         try {
-            return this.gM.isCompassEnabled();
+            this.zzci.setCompassEnabled(z);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
     }
 
-    public boolean isMyLocationButtonEnabled() {
+    public final void setMyLocationButtonEnabled(boolean z) {
         try {
-            return this.gM.isMyLocationButtonEnabled();
+            this.zzci.setMyLocationButtonEnabled(z);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
     }
 
-    public boolean isRotateGesturesEnabled() {
+    public final void setZoomControlsEnabled(boolean z) {
         try {
-            return this.gM.isRotateGesturesEnabled();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isScrollGesturesEnabled() {
-        try {
-            return this.gM.isScrollGesturesEnabled();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isTiltGesturesEnabled() {
-        try {
-            return this.gM.isTiltGesturesEnabled();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isZoomControlsEnabled() {
-        try {
-            return this.gM.isZoomControlsEnabled();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isZoomGesturesEnabled() {
-        try {
-            return this.gM.isZoomGesturesEnabled();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setAllGesturesEnabled(boolean enabled) {
-        try {
-            this.gM.setAllGesturesEnabled(enabled);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setCompassEnabled(boolean enabled) {
-        try {
-            this.gM.setCompassEnabled(enabled);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setMyLocationButtonEnabled(boolean enabled) {
-        try {
-            this.gM.setMyLocationButtonEnabled(enabled);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setRotateGesturesEnabled(boolean enabled) {
-        try {
-            this.gM.setRotateGesturesEnabled(enabled);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setScrollGesturesEnabled(boolean enabled) {
-        try {
-            this.gM.setScrollGesturesEnabled(enabled);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setTiltGesturesEnabled(boolean enabled) {
-        try {
-            this.gM.setTiltGesturesEnabled(enabled);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setZoomControlsEnabled(boolean enabled) {
-        try {
-            this.gM.setZoomControlsEnabled(enabled);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setZoomGesturesEnabled(boolean enabled) {
-        try {
-            this.gM.setZoomGesturesEnabled(enabled);
+            this.zzci.setZoomControlsEnabled(z);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }

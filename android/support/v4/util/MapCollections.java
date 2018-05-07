@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 abstract class MapCollections<K, V> {
@@ -28,10 +29,13 @@ abstract class MapCollections<K, V> {
         }
 
         public T next() {
-            Object res = MapCollections.this.colGetEntry(this.mIndex, this.mOffset);
-            this.mIndex++;
-            this.mCanRemove = true;
-            return res;
+            if (hasNext()) {
+                Object res = MapCollections.this.colGetEntry(this.mIndex, this.mOffset);
+                this.mIndex++;
+                this.mCanRemove = true;
+                return res;
+            }
+            throw new NoSuchElementException();
         }
 
         public void remove() {
@@ -126,9 +130,16 @@ abstract class MapCollections<K, V> {
         public int hashCode() {
             int result = 0;
             for (int i = MapCollections.this.colGetSize() - 1; i >= 0; i--) {
+                int i2;
                 Object key = MapCollections.this.colGetEntry(i, 0);
                 Object value = MapCollections.this.colGetEntry(i, 1);
-                result += (value == null ? 0 : value.hashCode()) ^ (key == null ? 0 : key.hashCode());
+                int hashCode = key == null ? 0 : key.hashCode();
+                if (value == null) {
+                    i2 = 0;
+                } else {
+                    i2 = value.hashCode();
+                }
+                result += i2 ^ hashCode;
             }
             return result;
         }
@@ -224,9 +235,12 @@ abstract class MapCollections<K, V> {
         }
 
         public Entry<K, V> next() {
-            this.mIndex++;
-            this.mEntryValid = true;
-            return this;
+            if (hasNext()) {
+                this.mIndex++;
+                this.mEntryValid = true;
+                return this;
+            }
+            throw new NoSuchElementException();
         }
 
         public void remove() {
@@ -261,7 +275,7 @@ abstract class MapCollections<K, V> {
             throw new IllegalStateException("This container does not support retaining Map.Entry objects");
         }
 
-        public final boolean equals(Object o) {
+        public boolean equals(Object o) {
             boolean z = true;
             if (!this.mEntryValid) {
                 throw new IllegalStateException("This container does not support retaining Map.Entry objects");
@@ -276,7 +290,7 @@ abstract class MapCollections<K, V> {
             }
         }
 
-        public final int hashCode() {
+        public int hashCode() {
             int i = 0;
             if (this.mEntryValid) {
                 Object key = MapCollections.this.colGetEntry(this.mIndex, 0);
@@ -290,7 +304,7 @@ abstract class MapCollections<K, V> {
             throw new IllegalStateException("This container does not support retaining Map.Entry objects");
         }
 
-        public final String toString() {
+        public String toString() {
             return getKey() + "=" + getValue();
         }
     }

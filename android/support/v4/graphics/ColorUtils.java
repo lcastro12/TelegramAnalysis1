@@ -1,21 +1,11 @@
 package android.support.v4.graphics;
 
 import android.graphics.Color;
-import android.support.annotation.ColorInt;
-import android.support.annotation.FloatRange;
-import android.support.annotation.IntRange;
-import android.support.annotation.NonNull;
-import android.support.v4.view.ViewCompat;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 
-public class ColorUtils {
-    private static final int MIN_ALPHA_SEARCH_MAX_ITERATIONS = 10;
-    private static final int MIN_ALPHA_SEARCH_PRECISION = 1;
+public final class ColorUtils {
+    private static final ThreadLocal<double[]> TEMP_ARRAY = new ThreadLocal();
 
-    private ColorUtils() {
-    }
-
-    public static int compositeColors(@ColorInt int foreground, @ColorInt int background) {
+    public static int compositeColors(int foreground, int background) {
         int bgAlpha = Color.alpha(background);
         int fgAlpha = Color.alpha(foreground);
         int a = compositeAlpha(fgAlpha, bgAlpha);
@@ -33,15 +23,13 @@ public class ColorUtils {
         return (((fgC * 255) * fgA) + ((bgC * bgA) * (255 - fgA))) / (a * 255);
     }
 
-    @FloatRange(from = 0.0d, to = 1.0d)
-    public static double calculateLuminance(@ColorInt int color) {
-        double red = ((double) Color.red(color)) / 255.0d;
-        double green = ((double) Color.green(color)) / 255.0d;
-        double blue = ((double) Color.blue(color)) / 255.0d;
-        return ((0.2126d * (red < 0.03928d ? red / 12.92d : Math.pow((0.055d + red) / 1.055d, 2.4d))) + (0.7152d * (green < 0.03928d ? green / 12.92d : Math.pow((0.055d + green) / 1.055d, 2.4d)))) + (0.0722d * (blue < 0.03928d ? blue / 12.92d : Math.pow((0.055d + blue) / 1.055d, 2.4d)));
+    public static double calculateLuminance(int color) {
+        double[] result = getTempDouble3Array();
+        colorToXYZ(color, result);
+        return result[1] / 100.0d;
     }
 
-    public static double calculateContrast(@ColorInt int foreground, @ColorInt int background) {
+    public static double calculateContrast(int foreground, int background) {
         if (Color.alpha(background) != 255) {
             throw new IllegalArgumentException("background can not be translucent: #" + Integer.toHexString(background));
         }
@@ -53,7 +41,7 @@ public class ColorUtils {
         return Math.max(luminance1, luminance2) / Math.min(luminance1, luminance2);
     }
 
-    public static int calculateMinimumAlpha(@ColorInt int foreground, @ColorInt int background, float minContrastRatio) {
+    public static int calculateMinimumAlpha(int foreground, int background, float minContrastRatio) {
         if (Color.alpha(background) != 255) {
             throw new IllegalArgumentException("background can not be translucent: #" + Integer.toHexString(background));
         } else if (calculateContrast(setAlphaComponent(foreground, 255), background) < ((double) minContrastRatio)) {
@@ -73,7 +61,7 @@ public class ColorUtils {
         }
     }
 
-    public static void RGBToHSL(@IntRange(from = 0, to = 255) int r, @IntRange(from = 0, to = 255) int g, @IntRange(from = 0, to = 255) int b, @NonNull float[] hsl) {
+    public static void RGBToHSL(int r, int g, int b, float[] outHsl) {
         float s;
         float h;
         float rf = ((float) r) / 255.0f;
@@ -96,72 +84,43 @@ public class ColorUtils {
             }
             s = deltaMaxMin / (1.0f - Math.abs((2.0f * l) - 1.0f));
         }
-        h = (BitmapDescriptorFactory.HUE_YELLOW * h) % 360.0f;
+        h = (60.0f * h) % 360.0f;
         if (h < 0.0f) {
             h += 360.0f;
         }
-        hsl[0] = constrain(h, 0.0f, 360.0f);
-        hsl[1] = constrain(s, 0.0f, 1.0f);
-        hsl[2] = constrain(l, 0.0f, 1.0f);
+        outHsl[0] = constrain(h, 0.0f, 360.0f);
+        outHsl[1] = constrain(s, 0.0f, 1.0f);
+        outHsl[2] = constrain(l, 0.0f, 1.0f);
     }
 
-    public static void colorToHSL(@ColorInt int color, @NonNull float[] hsl) {
-        RGBToHSL(Color.red(color), Color.green(color), Color.blue(color), hsl);
+    public static void colorToHSL(int color, float[] outHsl) {
+        RGBToHSL(Color.red(color), Color.green(color), Color.blue(color), outHsl);
     }
 
-    @ColorInt
-    public static int HSLToColor(@NonNull float[] hsl) {
-        float h = hsl[0];
-        float s = hsl[1];
-        float l = hsl[2];
-        float c = (1.0f - Math.abs((2.0f * l) - 1.0f)) * s;
-        float m = l - (0.5f * c);
-        float x = c * (1.0f - Math.abs(((h / BitmapDescriptorFactory.HUE_YELLOW) % 2.0f) - 1.0f));
-        int r = 0;
-        int g = 0;
-        int b = 0;
-        switch (((int) h) / 60) {
-            case 0:
-                r = Math.round(255.0f * (c + m));
-                g = Math.round(255.0f * (x + m));
-                b = Math.round(255.0f * m);
-                break;
-            case 1:
-                r = Math.round(255.0f * (x + m));
-                g = Math.round(255.0f * (c + m));
-                b = Math.round(255.0f * m);
-                break;
-            case 2:
-                r = Math.round(255.0f * m);
-                g = Math.round(255.0f * (c + m));
-                b = Math.round(255.0f * (x + m));
-                break;
-            case 3:
-                r = Math.round(255.0f * m);
-                g = Math.round(255.0f * (x + m));
-                b = Math.round(255.0f * (c + m));
-                break;
-            case 4:
-                r = Math.round(255.0f * (x + m));
-                g = Math.round(255.0f * m);
-                b = Math.round(255.0f * (c + m));
-                break;
-            case 5:
-            case 6:
-                r = Math.round(255.0f * (c + m));
-                g = Math.round(255.0f * m);
-                b = Math.round(255.0f * (x + m));
-                break;
-        }
-        return Color.rgb(constrain(r, 0, 255), constrain(g, 0, 255), constrain(b, 0, 255));
-    }
-
-    @ColorInt
-    public static int setAlphaComponent(@ColorInt int color, @IntRange(from = 0, to = 255) int alpha) {
+    public static int setAlphaComponent(int color, int alpha) {
         if (alpha >= 0 && alpha <= 255) {
-            return (ViewCompat.MEASURED_SIZE_MASK & color) | (alpha << 24);
+            return (16777215 & color) | (alpha << 24);
         }
         throw new IllegalArgumentException("alpha must be between 0 and 255.");
+    }
+
+    public static void colorToXYZ(int color, double[] outXyz) {
+        RGBToXYZ(Color.red(color), Color.green(color), Color.blue(color), outXyz);
+    }
+
+    public static void RGBToXYZ(int r, int g, int b, double[] outXyz) {
+        if (outXyz.length != 3) {
+            throw new IllegalArgumentException("outXyz must have a length of 3.");
+        }
+        double sr = ((double) r) / 255.0d;
+        sr = sr < 0.04045d ? sr / 12.92d : Math.pow((0.055d + sr) / 1.055d, 2.4d);
+        double sg = ((double) g) / 255.0d;
+        sg = sg < 0.04045d ? sg / 12.92d : Math.pow((0.055d + sg) / 1.055d, 2.4d);
+        double sb = ((double) b) / 255.0d;
+        sb = sb < 0.04045d ? sb / 12.92d : Math.pow((0.055d + sb) / 1.055d, 2.4d);
+        outXyz[0] = 100.0d * (((0.4124d * sr) + (0.3576d * sg)) + (0.1805d * sb));
+        outXyz[1] = 100.0d * (((0.2126d * sr) + (0.7152d * sg)) + (0.0722d * sb));
+        outXyz[2] = 100.0d * (((0.0193d * sr) + (0.1192d * sg)) + (0.9505d * sb));
     }
 
     private static float constrain(float amount, float low, float high) {
@@ -171,10 +130,13 @@ public class ColorUtils {
         return amount > high ? high : amount;
     }
 
-    private static int constrain(int amount, int low, int high) {
-        if (amount < low) {
-            return low;
+    private static double[] getTempDouble3Array() {
+        double[] result = (double[]) TEMP_ARRAY.get();
+        if (result != null) {
+            return result;
         }
-        return amount > high ? high : amount;
+        result = new double[3];
+        TEMP_ARRAY.set(result);
+        return result;
     }
 }

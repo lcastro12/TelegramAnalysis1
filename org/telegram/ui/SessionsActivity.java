@@ -1,60 +1,78 @@
 package org.telegram.ui;
 
-import android.app.AlertDialog.Builder;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffColorFilter;
 import android.os.Build.VERSION;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.AbsListView;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.Iterator;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationCenter.NotificationCenterDelegate;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.UserObject;
+import org.telegram.messenger.support.widget.LinearLayoutManager;
+import org.telegram.messenger.support.widget.RecyclerView.ViewHolder;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC.TL_account_getAuthorizations;
+import org.telegram.tgnet.TLRPC.TL_account_getWebAuthorizations;
 import org.telegram.tgnet.TLRPC.TL_account_resetAuthorization;
+import org.telegram.tgnet.TLRPC.TL_account_resetWebAuthorization;
+import org.telegram.tgnet.TLRPC.TL_account_resetWebAuthorizations;
+import org.telegram.tgnet.TLRPC.TL_account_webAuthorizations;
 import org.telegram.tgnet.TLRPC.TL_auth_resetAuthorizations;
 import org.telegram.tgnet.TLRPC.TL_authorization;
 import org.telegram.tgnet.TLRPC.TL_boolTrue;
 import org.telegram.tgnet.TLRPC.TL_error;
+import org.telegram.tgnet.TLRPC.TL_webAuthorization;
+import org.telegram.tgnet.TLRPC.User;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
+import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.AlertDialog.Builder;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.Adapters.BaseFragmentAdapter;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Cells.CheckBoxCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.SessionCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
+import org.telegram.ui.Components.EmptyTextProgressView;
+import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RecyclerListView;
+import org.telegram.ui.Components.RecyclerListView.Holder;
+import org.telegram.ui.Components.RecyclerListView.OnItemClickListener;
+import org.telegram.ui.Components.RecyclerListView.SelectionAdapter;
 
 public class SessionsActivity extends BaseFragment implements NotificationCenterDelegate {
-    private TL_authorization currentSession = null;
+    private TL_authorization currentSession;
     private int currentSessionRow;
     private int currentSessionSectionRow;
+    private int currentType;
     private LinearLayout emptyLayout;
+    private EmptyTextProgressView emptyView;
+    private ImageView imageView;
     private ListAdapter listAdapter;
+    private RecyclerListView listView;
     private boolean loading;
     private int noOtherSessionsRow;
     private int otherSessionsEndRow;
@@ -62,113 +80,14 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
     private int otherSessionsStartRow;
     private int otherSessionsTerminateDetail;
     private int rowCount;
-    private ArrayList<TL_authorization> sessions = new ArrayList();
+    private ArrayList<TLObject> sessions = new ArrayList();
     private int terminateAllSessionsDetailRow;
     private int terminateAllSessionsRow;
+    private TextView textView1;
+    private TextView textView2;
 
-    class C11922 implements OnTouchListener {
-        C11922() {
-        }
-
-        public boolean onTouch(View v, MotionEvent event) {
-            return true;
-        }
-    }
-
-    class C11973 implements OnItemClickListener {
-
-        class C11941 implements OnClickListener {
-
-            class C16651 implements RequestDelegate {
-                C16651() {
-                }
-
-                public void run(final TLObject response, final TL_error error) {
-                    AndroidUtilities.runOnUIThread(new Runnable() {
-                        public void run() {
-                            if (SessionsActivity.this.getParentActivity() != null) {
-                                if (error == null && (response instanceof TL_boolTrue)) {
-                                    Toast.makeText(SessionsActivity.this.getParentActivity(), LocaleController.getString("TerminateAllSessions", C0553R.string.TerminateAllSessions), 0).show();
-                                } else {
-                                    Toast.makeText(SessionsActivity.this.getParentActivity(), LocaleController.getString("UnknownError", C0553R.string.UnknownError), 0).show();
-                                }
-                                SessionsActivity.this.finishFragment();
-                            }
-                        }
-                    });
-                    UserConfig.registeredForPush = false;
-                    UserConfig.saveConfig(false);
-                    MessagesController.getInstance().registerForPush(UserConfig.pushString);
-                    ConnectionsManager.getInstance().setUserId(UserConfig.getClientUserId());
-                }
-            }
-
-            C11941() {
-            }
-
-            public void onClick(DialogInterface dialogInterface, int i) {
-                ConnectionsManager.getInstance().sendRequest(new TL_auth_resetAuthorizations(), new C16651());
-            }
-        }
-
-        C11973() {
-        }
-
-        public void onItemClick(AdapterView<?> adapterView, View view, final int i, long l) {
-            Builder builder;
-            if (i == SessionsActivity.this.terminateAllSessionsRow) {
-                if (SessionsActivity.this.getParentActivity() != null) {
-                    builder = new Builder(SessionsActivity.this.getParentActivity());
-                    builder.setMessage(LocaleController.getString("AreYouSureSessions", C0553R.string.AreYouSureSessions));
-                    builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-                    builder.setPositiveButton(LocaleController.getString("OK", C0553R.string.OK), new C11941());
-                    builder.setNegativeButton(LocaleController.getString("Cancel", C0553R.string.Cancel), null);
-                    SessionsActivity.this.showDialog(builder.create());
-                }
-            } else if (i >= SessionsActivity.this.otherSessionsStartRow && i < SessionsActivity.this.otherSessionsEndRow) {
-                builder = new Builder(SessionsActivity.this.getParentActivity());
-                builder.setMessage(LocaleController.getString("TerminateSessionQuestion", C0553R.string.TerminateSessionQuestion));
-                builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-                builder.setPositiveButton(LocaleController.getString("OK", C0553R.string.OK), new OnClickListener() {
-                    public void onClick(DialogInterface dialogInterface, int option) {
-                        final ProgressDialog progressDialog = new ProgressDialog(SessionsActivity.this.getParentActivity());
-                        progressDialog.setMessage(LocaleController.getString("Loading", C0553R.string.Loading));
-                        progressDialog.setCanceledOnTouchOutside(false);
-                        progressDialog.setCancelable(false);
-                        progressDialog.show();
-                        final TL_authorization authorization = (TL_authorization) SessionsActivity.this.sessions.get(i - SessionsActivity.this.otherSessionsStartRow);
-                        TL_account_resetAuthorization req = new TL_account_resetAuthorization();
-                        req.hash = authorization.hash;
-                        ConnectionsManager.getInstance().sendRequest(req, new RequestDelegate() {
-                            public void run(TLObject response, final TL_error error) {
-                                AndroidUtilities.runOnUIThread(new Runnable() {
-                                    public void run() {
-                                        try {
-                                            progressDialog.dismiss();
-                                        } catch (Throwable e) {
-                                            FileLog.m611e("tmessages", e);
-                                        }
-                                        if (error == null) {
-                                            SessionsActivity.this.sessions.remove(authorization);
-                                            SessionsActivity.this.updateRows();
-                                            if (SessionsActivity.this.listAdapter != null) {
-                                                SessionsActivity.this.listAdapter.notifyDataSetChanged();
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        });
-                    }
-                });
-                builder.setNegativeButton(LocaleController.getString("Cancel", C0553R.string.Cancel), null);
-                SessionsActivity.this.showDialog(builder.create());
-            }
-        }
-    }
-
-    class C16641 extends ActionBarMenuOnItemClick {
-        C16641() {
+    class C22191 extends ActionBarMenuOnItemClick {
+        C22191() {
         }
 
         public void onItemClick(int id) {
@@ -178,8 +97,201 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
         }
     }
 
-    class C16674 implements RequestDelegate {
-        C16674() {
+    class C22312 implements OnItemClickListener {
+
+        class C22241 implements OnClickListener {
+
+            class C22211 implements RequestDelegate {
+                C22211() {
+                }
+
+                public void run(final TLObject response, final TL_error error) {
+                    AndroidUtilities.runOnUIThread(new Runnable() {
+                        public void run() {
+                            if (SessionsActivity.this.getParentActivity() != null) {
+                                if (error == null && (response instanceof TL_boolTrue)) {
+                                    Toast.makeText(SessionsActivity.this.getParentActivity(), LocaleController.getString("TerminateAllSessions", C0488R.string.TerminateAllSessions), 0).show();
+                                } else {
+                                    Toast.makeText(SessionsActivity.this.getParentActivity(), LocaleController.getString("UnknownError", C0488R.string.UnknownError), 0).show();
+                                }
+                                SessionsActivity.this.finishFragment();
+                            }
+                        }
+                    });
+                    for (int a = 0; a < 3; a++) {
+                        UserConfig userConfig = UserConfig.getInstance(a);
+                        if (userConfig.isClientActivated()) {
+                            userConfig.registeredForPush = false;
+                            userConfig.saveConfig(false);
+                            MessagesController.getInstance(a).registerForPush(SharedConfig.pushString);
+                            ConnectionsManager.getInstance(a).setUserId(userConfig.getClientUserId());
+                        }
+                    }
+                }
+            }
+
+            class C22232 implements RequestDelegate {
+                C22232() {
+                }
+
+                public void run(final TLObject response, final TL_error error) {
+                    AndroidUtilities.runOnUIThread(new Runnable() {
+                        public void run() {
+                            if (SessionsActivity.this.getParentActivity() != null) {
+                                if (error == null && (response instanceof TL_boolTrue)) {
+                                    Toast.makeText(SessionsActivity.this.getParentActivity(), LocaleController.getString("TerminateAllWebSessions", C0488R.string.TerminateAllWebSessions), 0).show();
+                                } else {
+                                    Toast.makeText(SessionsActivity.this.getParentActivity(), LocaleController.getString("UnknownError", C0488R.string.UnknownError), 0).show();
+                                }
+                                SessionsActivity.this.finishFragment();
+                            }
+                        }
+                    });
+                }
+            }
+
+            C22241() {
+            }
+
+            public void onClick(DialogInterface dialogInterface, int i) {
+                if (SessionsActivity.this.currentType == 0) {
+                    ConnectionsManager.getInstance(SessionsActivity.this.currentAccount).sendRequest(new TL_auth_resetAuthorizations(), new C22211());
+                    return;
+                }
+                ConnectionsManager.getInstance(SessionsActivity.this.currentAccount).sendRequest(new TL_account_resetWebAuthorizations(), new C22232());
+            }
+        }
+
+        C22312() {
+        }
+
+        public void onItemClick(View view, int position) {
+            Builder builder;
+            if (position == SessionsActivity.this.terminateAllSessionsRow) {
+                if (SessionsActivity.this.getParentActivity() != null) {
+                    builder = new Builder(SessionsActivity.this.getParentActivity());
+                    if (SessionsActivity.this.currentType == 0) {
+                        builder.setMessage(LocaleController.getString("AreYouSureSessions", C0488R.string.AreYouSureSessions));
+                    } else {
+                        builder.setMessage(LocaleController.getString("AreYouSureWebSessions", C0488R.string.AreYouSureWebSessions));
+                    }
+                    builder.setTitle(LocaleController.getString("AppName", C0488R.string.AppName));
+                    builder.setPositiveButton(LocaleController.getString("OK", C0488R.string.OK), new C22241());
+                    builder.setNegativeButton(LocaleController.getString("Cancel", C0488R.string.Cancel), null);
+                    SessionsActivity.this.showDialog(builder.create());
+                }
+            } else if (position >= SessionsActivity.this.otherSessionsStartRow && position < SessionsActivity.this.otherSessionsEndRow && SessionsActivity.this.getParentActivity() != null) {
+                builder = new Builder(SessionsActivity.this.getParentActivity());
+                builder.setTitle(LocaleController.getString("AppName", C0488R.string.AppName));
+                final boolean[] param = new boolean[1];
+                if (SessionsActivity.this.currentType == 0) {
+                    builder.setMessage(LocaleController.getString("TerminateSessionQuestion", C0488R.string.TerminateSessionQuestion));
+                } else {
+                    String name;
+                    builder.setMessage(LocaleController.formatString("TerminateWebSessionQuestion", C0488R.string.TerminateWebSessionQuestion, ((TL_webAuthorization) SessionsActivity.this.sessions.get(position - SessionsActivity.this.otherSessionsStartRow)).domain));
+                    FrameLayout frameLayout = new FrameLayout(SessionsActivity.this.getParentActivity());
+                    User user = MessagesController.getInstance(SessionsActivity.this.currentAccount).getUser(Integer.valueOf(authorization.bot_id));
+                    if (user != null) {
+                        name = UserObject.getFirstName(user);
+                    } else {
+                        name = TtmlNode.ANONYMOUS_REGION_ID;
+                    }
+                    CheckBoxCell cell = new CheckBoxCell(SessionsActivity.this.getParentActivity(), 1);
+                    cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+                    cell.setText(LocaleController.formatString("TerminateWebSessionStop", C0488R.string.TerminateWebSessionStop, name), TtmlNode.ANONYMOUS_REGION_ID, false, false);
+                    cell.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(16.0f) : AndroidUtilities.dp(8.0f), 0, LocaleController.isRTL ? AndroidUtilities.dp(8.0f) : AndroidUtilities.dp(16.0f), 0);
+                    frameLayout.addView(cell, LayoutHelper.createFrame(-1, 48.0f, 51, 0.0f, 0.0f, 0.0f, 0.0f));
+                    cell.setOnClickListener(new View.OnClickListener() {
+                        public void onClick(View v) {
+                            if (v.isEnabled()) {
+                                boolean z;
+                                CheckBoxCell cell = (CheckBoxCell) v;
+                                boolean[] zArr = param;
+                                if (param[0]) {
+                                    z = false;
+                                } else {
+                                    z = true;
+                                }
+                                zArr[0] = z;
+                                cell.setChecked(param[0], true);
+                            }
+                        }
+                    });
+                    builder.setCustomViewOffset(16);
+                    builder.setView(frameLayout);
+                }
+                final int i = position;
+                builder.setPositiveButton(LocaleController.getString("OK", C0488R.string.OK), new OnClickListener() {
+                    public void onClick(DialogInterface dialogInterface, int option) {
+                        if (SessionsActivity.this.getParentActivity() != null) {
+                            final AlertDialog progressDialog = new AlertDialog(SessionsActivity.this.getParentActivity(), 1);
+                            progressDialog.setMessage(LocaleController.getString("Loading", C0488R.string.Loading));
+                            progressDialog.setCanceledOnTouchOutside(false);
+                            progressDialog.setCancelable(false);
+                            progressDialog.show();
+                            if (SessionsActivity.this.currentType == 0) {
+                                final TL_authorization authorization = (TL_authorization) SessionsActivity.this.sessions.get(i - SessionsActivity.this.otherSessionsStartRow);
+                                TL_account_resetAuthorization req = new TL_account_resetAuthorization();
+                                req.hash = authorization.hash;
+                                ConnectionsManager.getInstance(SessionsActivity.this.currentAccount).sendRequest(req, new RequestDelegate() {
+                                    public void run(TLObject response, final TL_error error) {
+                                        AndroidUtilities.runOnUIThread(new Runnable() {
+                                            public void run() {
+                                                try {
+                                                    progressDialog.dismiss();
+                                                } catch (Throwable e) {
+                                                    FileLog.m3e(e);
+                                                }
+                                                if (error == null) {
+                                                    SessionsActivity.this.sessions.remove(authorization);
+                                                    SessionsActivity.this.updateRows();
+                                                    if (SessionsActivity.this.listAdapter != null) {
+                                                        SessionsActivity.this.listAdapter.notifyDataSetChanged();
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                                return;
+                            }
+                            final TL_webAuthorization authorization2 = (TL_webAuthorization) SessionsActivity.this.sessions.get(i - SessionsActivity.this.otherSessionsStartRow);
+                            TL_account_resetWebAuthorization req2 = new TL_account_resetWebAuthorization();
+                            req2.hash = authorization2.hash;
+                            ConnectionsManager.getInstance(SessionsActivity.this.currentAccount).sendRequest(req2, new RequestDelegate() {
+                                public void run(TLObject response, final TL_error error) {
+                                    AndroidUtilities.runOnUIThread(new Runnable() {
+                                        public void run() {
+                                            try {
+                                                progressDialog.dismiss();
+                                            } catch (Throwable e) {
+                                                FileLog.m3e(e);
+                                            }
+                                            if (error == null) {
+                                                SessionsActivity.this.sessions.remove(authorization2);
+                                                SessionsActivity.this.updateRows();
+                                                if (SessionsActivity.this.listAdapter != null) {
+                                                    SessionsActivity.this.listAdapter.notifyDataSetChanged();
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                            if (param[0]) {
+                                MessagesController.getInstance(SessionsActivity.this.currentAccount).blockUser(authorization2.bot_id);
+                            }
+                        }
+                    }
+                });
+                builder.setNegativeButton(LocaleController.getString("Cancel", C0488R.string.Cancel), null);
+                SessionsActivity.this.showDialog(builder.create());
+            }
+        }
+    }
+
+    class C22333 implements RequestDelegate {
+        C22333() {
         }
 
         public void run(final TLObject response, final TL_error error) {
@@ -188,9 +300,9 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
                     SessionsActivity.this.loading = false;
                     if (error == null) {
                         SessionsActivity.this.sessions.clear();
-                        Iterator i$ = response.authorizations.iterator();
-                        while (i$.hasNext()) {
-                            TL_authorization authorization = (TL_authorization) i$.next();
+                        Iterator it = response.authorizations.iterator();
+                        while (it.hasNext()) {
+                            TL_authorization authorization = (TL_authorization) it.next();
                             if ((authorization.flags & 1) != 0) {
                                 SessionsActivity.this.currentSession = authorization;
                             } else {
@@ -207,228 +319,255 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
         }
     }
 
-    private class ListAdapter extends BaseFragmentAdapter {
+    class C22354 implements RequestDelegate {
+        C22354() {
+        }
+
+        public void run(final TLObject response, final TL_error error) {
+            AndroidUtilities.runOnUIThread(new Runnable() {
+                public void run() {
+                    SessionsActivity.this.loading = false;
+                    if (error == null) {
+                        SessionsActivity.this.sessions.clear();
+                        TL_account_webAuthorizations res = response;
+                        MessagesController.getInstance(SessionsActivity.this.currentAccount).putUsers(res.users, false);
+                        SessionsActivity.this.sessions.addAll(res.authorizations);
+                        SessionsActivity.this.updateRows();
+                    }
+                    if (SessionsActivity.this.listAdapter != null) {
+                        SessionsActivity.this.listAdapter.notifyDataSetChanged();
+                    }
+                }
+            });
+        }
+    }
+
+    private class ListAdapter extends SelectionAdapter {
         private Context mContext;
 
         public ListAdapter(Context context) {
             this.mContext = context;
         }
 
-        public boolean areAllItemsEnabled() {
-            return false;
+        public boolean isEnabled(ViewHolder holder) {
+            int position = holder.getAdapterPosition();
+            return position == SessionsActivity.this.terminateAllSessionsRow || (position >= SessionsActivity.this.otherSessionsStartRow && position < SessionsActivity.this.otherSessionsEndRow);
         }
 
-        public boolean isEnabled(int i) {
-            return i == SessionsActivity.this.terminateAllSessionsRow || (i >= SessionsActivity.this.otherSessionsStartRow && i < SessionsActivity.this.otherSessionsEndRow);
-        }
-
-        public int getCount() {
+        public int getItemCount() {
             return SessionsActivity.this.loading ? 0 : SessionsActivity.this.rowCount;
         }
 
-        public Object getItem(int i) {
-            return null;
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view;
+            switch (viewType) {
+                case 0:
+                    view = new TextSettingsCell(this.mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case 1:
+                    view = new TextInfoPrivacyCell(this.mContext);
+                    break;
+                case 2:
+                    view = new HeaderCell(this.mContext);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+                case 3:
+                    view = SessionsActivity.this.emptyLayout;
+                    break;
+                default:
+                    view = new SessionCell(this.mContext, SessionsActivity.this.currentType);
+                    view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+                    break;
+            }
+            return new Holder(view);
         }
 
-        public long getItemId(int i) {
-            return (long) i;
-        }
-
-        public boolean hasStableIds() {
-            return false;
-        }
-
-        public View getView(int i, View view, ViewGroup viewGroup) {
+        public void onBindViewHolder(ViewHolder holder, int position) {
             boolean z = true;
             boolean z2 = false;
-            int type = getItemViewType(i);
-            if (type == 0) {
-                if (view == null) {
-                    view = new TextSettingsCell(this.mContext);
-                    view.setBackgroundColor(-1);
-                }
-                TextSettingsCell textCell = (TextSettingsCell) view;
-                if (i == SessionsActivity.this.terminateAllSessionsRow) {
-                    textCell.setTextColor(-2404015);
-                    textCell.setText(LocaleController.getString("TerminateAllSessions", C0553R.string.TerminateAllSessions), false);
-                }
-            } else if (type == 1) {
-                if (view == null) {
-                    view = new TextInfoPrivacyCell(this.mContext);
-                }
-                if (i == SessionsActivity.this.terminateAllSessionsDetailRow) {
-                    ((TextInfoPrivacyCell) view).setText(LocaleController.getString("ClearOtherSessionsHelp", C0553R.string.ClearOtherSessionsHelp));
-                    view.setBackgroundResource(C0553R.drawable.greydivider);
-                } else if (i == SessionsActivity.this.otherSessionsTerminateDetail) {
-                    ((TextInfoPrivacyCell) view).setText(LocaleController.getString("TerminateSessionInfo", C0553R.string.TerminateSessionInfo));
-                    view.setBackgroundResource(C0553R.drawable.greydivider_bottom);
-                }
-            } else if (type == 2) {
-                if (view == null) {
-                    view = new HeaderCell(this.mContext);
-                    view.setBackgroundColor(-1);
-                }
-                if (i == SessionsActivity.this.currentSessionSectionRow) {
-                    ((HeaderCell) view).setText(LocaleController.getString("CurrentSession", C0553R.string.CurrentSession));
-                } else if (i == SessionsActivity.this.otherSessionsSectionRow) {
-                    ((HeaderCell) view).setText(LocaleController.getString("OtherSessions", C0553R.string.OtherSessions));
-                }
-            } else if (type == 3) {
-                LayoutParams layoutParams = SessionsActivity.this.emptyLayout.getLayoutParams();
-                if (layoutParams != null) {
-                    int i2;
-                    int dp = AndroidUtilities.dp(220.0f);
-                    int currentActionBarHeight = (AndroidUtilities.displaySize.y - ActionBar.getCurrentActionBarHeight()) - AndroidUtilities.dp(128.0f);
-                    if (VERSION.SDK_INT >= 21) {
-                        i2 = AndroidUtilities.statusBarHeight;
+            switch (holder.getItemViewType()) {
+                case 0:
+                    TextSettingsCell textCell = holder.itemView;
+                    if (position == SessionsActivity.this.terminateAllSessionsRow) {
+                        textCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText2));
+                        if (SessionsActivity.this.currentType == 0) {
+                            textCell.setText(LocaleController.getString("TerminateAllSessions", C0488R.string.TerminateAllSessions), false);
+                            return;
+                        } else {
+                            textCell.setText(LocaleController.getString("TerminateAllWebSessions", C0488R.string.TerminateAllWebSessions), false);
+                            return;
+                        }
+                    }
+                    return;
+                case 1:
+                    TextInfoPrivacyCell privacyCell = holder.itemView;
+                    if (position == SessionsActivity.this.terminateAllSessionsDetailRow) {
+                        if (SessionsActivity.this.currentType == 0) {
+                            privacyCell.setText(LocaleController.getString("ClearOtherSessionsHelp", C0488R.string.ClearOtherSessionsHelp));
+                        } else {
+                            privacyCell.setText(LocaleController.getString("ClearOtherWebSessionsHelp", C0488R.string.ClearOtherWebSessionsHelp));
+                        }
+                        privacyCell.setBackgroundDrawable(Theme.getThemedDrawable(this.mContext, C0488R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
+                        return;
+                    } else if (position == SessionsActivity.this.otherSessionsTerminateDetail) {
+                        if (SessionsActivity.this.currentType == 0) {
+                            privacyCell.setText(LocaleController.getString("TerminateSessionInfo", C0488R.string.TerminateSessionInfo));
+                        } else {
+                            privacyCell.setText(LocaleController.getString("TerminateWebSessionInfo", C0488R.string.TerminateWebSessionInfo));
+                        }
+                        privacyCell.setBackgroundDrawable(Theme.getThemedDrawable(this.mContext, C0488R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
+                        return;
                     } else {
-                        i2 = 0;
+                        return;
                     }
-                    layoutParams.height = Math.max(dp, currentActionBarHeight - i2);
-                    SessionsActivity.this.emptyLayout.setLayoutParams(layoutParams);
-                }
-                return SessionsActivity.this.emptyLayout;
-            } else if (type == 4) {
-                if (view == null) {
-                    view = new SessionCell(this.mContext);
-                    view.setBackgroundColor(-1);
-                }
-                SessionCell sessionCell;
-                TL_authorization access$700;
-                if (i == SessionsActivity.this.currentSessionRow) {
-                    sessionCell = (SessionCell) view;
-                    access$700 = SessionsActivity.this.currentSession;
-                    if (!SessionsActivity.this.sessions.isEmpty()) {
-                        z2 = true;
+                case 2:
+                    HeaderCell headerCell = holder.itemView;
+                    if (position == SessionsActivity.this.currentSessionSectionRow) {
+                        headerCell.setText(LocaleController.getString("CurrentSession", C0488R.string.CurrentSession));
+                        return;
+                    } else if (position != SessionsActivity.this.otherSessionsSectionRow) {
+                        return;
+                    } else {
+                        if (SessionsActivity.this.currentType == 0) {
+                            headerCell.setText(LocaleController.getString("OtherSessions", C0488R.string.OtherSessions));
+                            return;
+                        } else {
+                            headerCell.setText(LocaleController.getString("OtherWebSessions", C0488R.string.OtherWebSessions));
+                            return;
+                        }
                     }
-                    sessionCell.setSession(access$700, z2);
-                } else {
-                    sessionCell = (SessionCell) view;
-                    access$700 = (TL_authorization) SessionsActivity.this.sessions.get(i - SessionsActivity.this.otherSessionsStartRow);
-                    if (i == SessionsActivity.this.otherSessionsEndRow - 1) {
+                case 3:
+                    LayoutParams layoutParams = SessionsActivity.this.emptyLayout.getLayoutParams();
+                    if (layoutParams != null) {
+                        int i;
+                        int dp = AndroidUtilities.dp(220.0f);
+                        int currentActionBarHeight = (AndroidUtilities.displaySize.y - ActionBar.getCurrentActionBarHeight()) - AndroidUtilities.dp(128.0f);
+                        if (VERSION.SDK_INT >= 21) {
+                            i = AndroidUtilities.statusBarHeight;
+                        } else {
+                            i = 0;
+                        }
+                        layoutParams.height = Math.max(dp, currentActionBarHeight - i);
+                        SessionsActivity.this.emptyLayout.setLayoutParams(layoutParams);
+                        return;
+                    }
+                    return;
+                default:
+                    SessionCell sessionCell = holder.itemView;
+                    TLObject access$1400;
+                    if (position == SessionsActivity.this.currentSessionRow) {
+                        access$1400 = SessionsActivity.this.currentSession;
+                        if (!SessionsActivity.this.sessions.isEmpty()) {
+                            z2 = true;
+                        }
+                        sessionCell.setSession(access$1400, z2);
+                        return;
+                    }
+                    access$1400 = (TLObject) SessionsActivity.this.sessions.get(position - SessionsActivity.this.otherSessionsStartRow);
+                    if (position == SessionsActivity.this.otherSessionsEndRow - 1) {
                         z = false;
                     }
-                    sessionCell.setSession(access$700, z);
-                }
+                    sessionCell.setSession(access$1400, z);
+                    return;
             }
-            return view;
         }
 
-        public int getItemViewType(int i) {
-            if (i == SessionsActivity.this.terminateAllSessionsRow) {
+        public int getItemViewType(int position) {
+            if (position == SessionsActivity.this.terminateAllSessionsRow) {
                 return 0;
             }
-            if (i == SessionsActivity.this.terminateAllSessionsDetailRow || i == SessionsActivity.this.otherSessionsTerminateDetail) {
+            if (position == SessionsActivity.this.terminateAllSessionsDetailRow || position == SessionsActivity.this.otherSessionsTerminateDetail) {
                 return 1;
             }
-            if (i == SessionsActivity.this.currentSessionSectionRow || i == SessionsActivity.this.otherSessionsSectionRow) {
+            if (position == SessionsActivity.this.currentSessionSectionRow || position == SessionsActivity.this.otherSessionsSectionRow) {
                 return 2;
             }
-            if (i == SessionsActivity.this.noOtherSessionsRow) {
+            if (position == SessionsActivity.this.noOtherSessionsRow) {
                 return 3;
             }
-            if (i == SessionsActivity.this.currentSessionRow || (i >= SessionsActivity.this.otherSessionsStartRow && i < SessionsActivity.this.otherSessionsEndRow)) {
+            if (position == SessionsActivity.this.currentSessionRow || (position >= SessionsActivity.this.otherSessionsStartRow && position < SessionsActivity.this.otherSessionsEndRow)) {
                 return 4;
             }
             return 0;
         }
+    }
 
-        public int getViewTypeCount() {
-            return 5;
-        }
-
-        public boolean isEmpty() {
-            return SessionsActivity.this.loading;
-        }
+    public SessionsActivity(int type) {
+        this.currentType = type;
     }
 
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
         updateRows();
         loadSessions(false);
-        NotificationCenter.getInstance().addObserver(this, NotificationCenter.newSessionReceived);
+        NotificationCenter.getInstance(this.currentAccount).addObserver(this, NotificationCenter.newSessionReceived);
         return true;
     }
 
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        NotificationCenter.getInstance().removeObserver(this, NotificationCenter.newSessionReceived);
+        NotificationCenter.getInstance(this.currentAccount).removeObserver(this, NotificationCenter.newSessionReceived);
     }
 
     public View createView(Context context) {
-        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_ab_back);
         this.actionBar.setAllowOverlayTitle(true);
-        this.actionBar.setTitle(LocaleController.getString("SessionsTitle", C0553R.string.SessionsTitle));
-        this.actionBar.setActionBarMenuOnItemClick(new C16641());
+        if (this.currentType == 0) {
+            this.actionBar.setTitle(LocaleController.getString("SessionsTitle", C0488R.string.SessionsTitle));
+        } else {
+            this.actionBar.setTitle(LocaleController.getString("WebSessionsTitle", C0488R.string.WebSessionsTitle));
+        }
+        this.actionBar.setActionBarMenuOnItemClick(new C22191());
         this.listAdapter = new ListAdapter(context);
         this.fragmentView = new FrameLayout(context);
         FrameLayout frameLayout = this.fragmentView;
-        frameLayout.setBackgroundColor(-986896);
+        frameLayout.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         this.emptyLayout = new LinearLayout(context);
         this.emptyLayout.setOrientation(1);
         this.emptyLayout.setGravity(17);
-        this.emptyLayout.setBackgroundResource(C0553R.drawable.greydivider_bottom);
+        this.emptyLayout.setBackgroundDrawable(Theme.getThemedDrawable(context, C0488R.drawable.greydivider_bottom, Theme.key_windowBackgroundGrayShadow));
         this.emptyLayout.setLayoutParams(new AbsListView.LayoutParams(-1, AndroidUtilities.displaySize.y - ActionBar.getCurrentActionBarHeight()));
-        ImageView imageView = new ImageView(context);
-        imageView.setImageResource(C0553R.drawable.devices);
-        this.emptyLayout.addView(imageView);
-        LinearLayout.LayoutParams layoutParams2 = (LinearLayout.LayoutParams) imageView.getLayoutParams();
-        layoutParams2.width = -2;
-        layoutParams2.height = -2;
-        imageView.setLayoutParams(layoutParams2);
-        TextView textView = new TextView(context);
-        textView.setTextColor(-7697782);
-        textView.setGravity(17);
-        textView.setTextSize(1, 17.0f);
-        textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        textView.setText(LocaleController.getString("NoOtherSessions", C0553R.string.NoOtherSessions));
-        this.emptyLayout.addView(textView);
-        layoutParams2 = (LinearLayout.LayoutParams) textView.getLayoutParams();
-        layoutParams2.topMargin = AndroidUtilities.dp(16.0f);
-        layoutParams2.width = -2;
-        layoutParams2.height = -2;
-        layoutParams2.gravity = 17;
-        textView.setLayoutParams(layoutParams2);
-        textView = new TextView(context);
-        textView.setTextColor(-7697782);
-        textView.setGravity(17);
-        textView.setTextSize(1, 17.0f);
-        textView.setPadding(AndroidUtilities.dp(20.0f), 0, AndroidUtilities.dp(20.0f), 0);
-        textView.setText(LocaleController.getString("NoOtherSessionsInfo", C0553R.string.NoOtherSessionsInfo));
-        this.emptyLayout.addView(textView);
-        layoutParams2 = (LinearLayout.LayoutParams) textView.getLayoutParams();
-        layoutParams2.topMargin = AndroidUtilities.dp(14.0f);
-        layoutParams2.width = -2;
-        layoutParams2.height = -2;
-        layoutParams2.gravity = 17;
-        textView.setLayoutParams(layoutParams2);
-        FrameLayout progressView = new FrameLayout(context);
-        frameLayout.addView(progressView);
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) progressView.getLayoutParams();
-        layoutParams.width = -1;
-        layoutParams.height = -1;
-        progressView.setLayoutParams(layoutParams);
-        progressView.setOnTouchListener(new C11922());
-        progressView.addView(new ProgressBar(context));
-        layoutParams = (FrameLayout.LayoutParams) progressView.getLayoutParams();
-        layoutParams.width = -2;
-        layoutParams.height = -2;
-        layoutParams.gravity = 17;
-        progressView.setLayoutParams(layoutParams);
-        ListView listView = new ListView(context);
-        listView.setDivider(null);
-        listView.setDividerHeight(0);
-        listView.setVerticalScrollBarEnabled(false);
-        listView.setDrawSelectorOnTop(true);
-        listView.setEmptyView(progressView);
-        frameLayout.addView(listView);
-        layoutParams = (FrameLayout.LayoutParams) listView.getLayoutParams();
-        layoutParams.width = -1;
-        layoutParams.height = -1;
-        layoutParams.gravity = 48;
-        listView.setLayoutParams(layoutParams);
-        listView.setAdapter(this.listAdapter);
-        listView.setOnItemClickListener(new C11973());
+        this.imageView = new ImageView(context);
+        if (this.currentType == 0) {
+            this.imageView.setImageResource(C0488R.drawable.devices);
+        } else {
+            this.imageView.setImageResource(C0488R.drawable.no_apps);
+        }
+        this.imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_sessions_devicesImage), Mode.MULTIPLY));
+        this.emptyLayout.addView(this.imageView, LayoutHelper.createLinear(-2, -2));
+        this.textView1 = new TextView(context);
+        this.textView1.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2));
+        this.textView1.setGravity(17);
+        this.textView1.setTextSize(1, 17.0f);
+        this.textView1.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+        if (this.currentType == 0) {
+            this.textView1.setText(LocaleController.getString("NoOtherSessions", C0488R.string.NoOtherSessions));
+        } else {
+            this.textView1.setText(LocaleController.getString("NoOtherWebSessions", C0488R.string.NoOtherWebSessions));
+        }
+        this.emptyLayout.addView(this.textView1, LayoutHelper.createLinear(-2, -2, 17, 0, 16, 0, 0));
+        this.textView2 = new TextView(context);
+        this.textView2.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2));
+        this.textView2.setGravity(17);
+        this.textView2.setTextSize(1, 17.0f);
+        this.textView2.setPadding(AndroidUtilities.dp(20.0f), 0, AndroidUtilities.dp(20.0f), 0);
+        if (this.currentType == 0) {
+            this.textView2.setText(LocaleController.getString("NoOtherSessionsInfo", C0488R.string.NoOtherSessionsInfo));
+        } else {
+            this.textView2.setText(LocaleController.getString("NoOtherWebSessionsInfo", C0488R.string.NoOtherWebSessionsInfo));
+        }
+        this.emptyLayout.addView(this.textView2, LayoutHelper.createLinear(-2, -2, 17, 0, 14, 0, 0));
+        this.emptyView = new EmptyTextProgressView(context);
+        this.emptyView.showProgress();
+        frameLayout.addView(this.emptyView, LayoutHelper.createFrame(-1, -1, 17));
+        this.listView = new RecyclerListView(context);
+        this.listView.setLayoutManager(new LinearLayoutManager(context, 1, false));
+        this.listView.setVerticalScrollBarEnabled(false);
+        this.listView.setEmptyView(this.emptyView);
+        frameLayout.addView(this.listView, LayoutHelper.createFrame(-1, -1.0f));
+        this.listView.setAdapter(this.listAdapter);
+        this.listView.setOnItemClickListener(new C22312());
         return this.fragmentView;
     }
 
@@ -439,7 +578,7 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
         }
     }
 
-    public void didReceivedNotification(int id, Object... args) {
+    public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.newSessionReceived) {
             loadSessions(true);
         }
@@ -450,7 +589,11 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
             if (!silent) {
                 this.loading = true;
             }
-            ConnectionsManager.getInstance().bindRequestToGuid(ConnectionsManager.getInstance().sendRequest(new TL_account_getAuthorizations(), new C16674()), this.classGuid);
+            if (this.currentType == 0) {
+                ConnectionsManager.getInstance(this.currentAccount).bindRequestToGuid(ConnectionsManager.getInstance(this.currentAccount).sendRequest(new TL_account_getAuthorizations(), new C22333()), this.classGuid);
+                return;
+            }
+            ConnectionsManager.getInstance(this.currentAccount).bindRequestToGuid(ConnectionsManager.getInstance(this.currentAccount).sendRequest(new TL_account_getWebAuthorizations(), new C22354()), this.classGuid);
         }
     }
 
@@ -468,7 +611,7 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
             this.currentSessionSectionRow = -1;
         }
         if (this.sessions.isEmpty()) {
-            if (this.currentSession != null) {
+            if (this.currentType == 1 || this.currentSession != null) {
                 i = this.rowCount;
                 this.rowCount = i + 1;
                 this.noOtherSessionsRow = i;
@@ -499,5 +642,32 @@ public class SessionsActivity extends BaseFragment implements NotificationCenter
         i = this.rowCount;
         this.rowCount = i + 1;
         this.otherSessionsTerminateDetail = i;
+    }
+
+    public ThemeDescription[] getThemeDescriptions() {
+        r9 = new ThemeDescription[22];
+        r9[0] = new ThemeDescription(this.listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{TextSettingsCell.class, HeaderCell.class, SessionCell.class}, null, null, null, Theme.key_windowBackgroundWhite);
+        r9[1] = new ThemeDescription(this.fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundGray);
+        r9[2] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault);
+        r9[3] = new ThemeDescription(this.listView, ThemeDescription.FLAG_LISTGLOWCOLOR, null, null, null, null, Theme.key_actionBarDefault);
+        r9[4] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_actionBarDefaultIcon);
+        r9[5] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_TITLECOLOR, null, null, null, null, Theme.key_actionBarDefaultTitle);
+        r9[6] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_actionBarDefaultSelector);
+        r9[7] = new ThemeDescription(this.listView, ThemeDescription.FLAG_SELECTOR, null, null, null, null, Theme.key_listSelector);
+        r9[8] = new ThemeDescription(this.listView, 0, new Class[]{View.class}, Theme.dividerPaint, null, null, Theme.key_divider);
+        r9[9] = new ThemeDescription(this.imageView, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_sessions_devicesImage);
+        r9[10] = new ThemeDescription(this.textView1, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText2);
+        r9[11] = new ThemeDescription(this.textView2, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText2);
+        r9[12] = new ThemeDescription(this.emptyView, ThemeDescription.FLAG_PROGRESSBAR, null, null, null, null, Theme.key_progressCircle);
+        r9[13] = new ThemeDescription(this.listView, 0, new Class[]{TextSettingsCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteRedText2);
+        r9[14] = new ThemeDescription(this.listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow);
+        r9[15] = new ThemeDescription(this.listView, 0, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4);
+        r9[16] = new ThemeDescription(this.listView, 0, new Class[]{HeaderCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlueHeader);
+        r9[17] = new ThemeDescription(this.listView, 0, new Class[]{SessionCell.class}, new String[]{"nameTextView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        r9[18] = new ThemeDescription(this.listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{SessionCell.class}, new String[]{"onlineTextView"}, null, null, null, Theme.key_windowBackgroundWhiteValueText);
+        r9[19] = new ThemeDescription(this.listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{SessionCell.class}, new String[]{"onlineTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3);
+        r9[20] = new ThemeDescription(this.listView, 0, new Class[]{SessionCell.class}, new String[]{"detailTextView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        r9[21] = new ThemeDescription(this.listView, 0, new Class[]{SessionCell.class}, new String[]{"detailExTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3);
+        return r9;
     }
 }

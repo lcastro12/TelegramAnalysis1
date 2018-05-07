@@ -1,6 +1,7 @@
 package com.coremedia.iso;
 
 import java.io.ByteArrayOutputStream;
+import org.telegram.messenger.exoplayer2.extractor.ts.PsExtractor;
 
 public class Hex {
     private static final char[] DIGITS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -23,7 +24,7 @@ public class Hex {
                 out[j] = '-';
             }
             j = i2 + 1;
-            out[i2] = DIGITS[(data[i] & 240) >>> 4];
+            out[i2] = DIGITS[(data[i] & PsExtractor.VIDEO_STREAM_MASK) >>> 4];
             i2 = j + 1;
             out[j] = DIGITS[data[i] & 15];
             i++;

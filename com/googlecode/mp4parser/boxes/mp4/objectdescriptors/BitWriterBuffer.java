@@ -1,7 +1,5 @@
 package com.googlecode.mp4parser.boxes.mp4.objectdescriptors;
 
-import android.support.v4.media.TransportMediator;
-import android.support.v4.view.InputDeviceCompat;
 import java.nio.ByteBuffer;
 
 public class BitWriterBuffer {
@@ -29,8 +27,8 @@ public class BitWriterBuffer {
                 current += i << (left - numBits);
                 byteBuffer = this.buffer;
                 i3 = this.initialPos + (this.position / 8);
-                if (current > TransportMediator.KEYCODE_MEDIA_PAUSE) {
-                    current += InputDeviceCompat.SOURCE_ANY;
+                if (current > 127) {
+                    current -= 256;
                 }
                 byteBuffer.put(i3, (byte) current);
                 this.position += numBits;

@@ -1,8 +1,5 @@
 package org.telegram.messenger.time;
 
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationStatusCodes;
-import com.googlecode.mp4parser.boxes.microsoft.XtraBox;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -18,7 +15,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class FastDatePrinter implements DatePrinter, Serializable {
+public class FastDatePrinter implements Serializable, DatePrinter {
     public static final int FULL = 0;
     public static final int LONG = 1;
     public static final int MEDIUM = 2;
@@ -35,40 +32,6 @@ public class FastDatePrinter implements DatePrinter, Serializable {
         void appendTo(StringBuffer stringBuffer, Calendar calendar);
 
         int estimateLength();
-    }
-
-    private static class TimeZoneDisplayKey {
-        private final Locale mLocale;
-        private final int mStyle;
-        private final TimeZone mTimeZone;
-
-        TimeZoneDisplayKey(TimeZone timeZone, boolean daylight, int style, Locale locale) {
-            this.mTimeZone = timeZone;
-            if (daylight) {
-                this.mStyle = Integer.MIN_VALUE | style;
-            } else {
-                this.mStyle = style;
-            }
-            this.mLocale = locale;
-        }
-
-        public int hashCode() {
-            return (((this.mStyle * 31) + this.mLocale.hashCode()) * 31) + this.mTimeZone.hashCode();
-        }
-
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if (!(obj instanceof TimeZoneDisplayKey)) {
-                return false;
-            }
-            TimeZoneDisplayKey other = (TimeZoneDisplayKey) obj;
-            if (this.mTimeZone.equals(other.mTimeZone) && this.mStyle == other.mStyle && this.mLocale.equals(other.mLocale)) {
-                return true;
-            }
-            return false;
-        }
     }
 
     private static class CharacterLiteral implements Rule {
@@ -89,6 +52,60 @@ public class FastDatePrinter implements DatePrinter, Serializable {
 
     private interface NumberRule extends Rule {
         void appendTo(StringBuffer stringBuffer, int i);
+    }
+
+    private static class PaddedNumberField implements NumberRule {
+        private final int mField;
+        private final int mSize;
+
+        PaddedNumberField(int field, int size) {
+            if (size < 3) {
+                throw new IllegalArgumentException();
+            }
+            this.mField = field;
+            this.mSize = size;
+        }
+
+        public int estimateLength() {
+            return 4;
+        }
+
+        public void appendTo(StringBuffer buffer, Calendar calendar) {
+            appendTo(buffer, calendar.get(this.mField));
+        }
+
+        public final void appendTo(StringBuffer buffer, int value) {
+            int i;
+            if (value < 100) {
+                i = this.mSize;
+                while (true) {
+                    i--;
+                    if (i >= 2) {
+                        buffer.append('0');
+                    } else {
+                        buffer.append((char) ((value / 10) + 48));
+                        buffer.append((char) ((value % 10) + 48));
+                        return;
+                    }
+                }
+            }
+            int digits;
+            if (value < 1000) {
+                digits = 3;
+            } else {
+                digits = Integer.toString(value).length();
+            }
+            i = this.mSize;
+            while (true) {
+                i--;
+                if (i >= digits) {
+                    buffer.append('0');
+                } else {
+                    buffer.append(Integer.toString(value));
+                    return;
+                }
+            }
+        }
     }
 
     private static class StringLiteral implements Rule {
@@ -133,6 +150,40 @@ public class FastDatePrinter implements DatePrinter, Serializable {
 
         public void appendTo(StringBuffer buffer, Calendar calendar) {
             buffer.append(this.mValues[calendar.get(this.mField)]);
+        }
+    }
+
+    private static class TimeZoneDisplayKey {
+        private final Locale mLocale;
+        private final int mStyle;
+        private final TimeZone mTimeZone;
+
+        TimeZoneDisplayKey(TimeZone timeZone, boolean daylight, int style, Locale locale) {
+            this.mTimeZone = timeZone;
+            if (daylight) {
+                this.mStyle = Integer.MIN_VALUE | style;
+            } else {
+                this.mStyle = style;
+            }
+            this.mLocale = locale;
+        }
+
+        public int hashCode() {
+            return (((this.mStyle * 31) + this.mLocale.hashCode()) * 31) + this.mTimeZone.hashCode();
+        }
+
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof TimeZoneDisplayKey)) {
+                return false;
+            }
+            TimeZoneDisplayKey other = (TimeZoneDisplayKey) obj;
+            if (this.mTimeZone.equals(other.mTimeZone) && this.mStyle == other.mStyle && this.mLocale.equals(other.mLocale)) {
+                return true;
+            }
+            return false;
         }
     }
 
@@ -193,60 +244,6 @@ public class FastDatePrinter implements DatePrinter, Serializable {
             int minutes = (offset / 60000) - (hours * 60);
             buffer.append((char) ((minutes / 10) + 48));
             buffer.append((char) ((minutes % 10) + 48));
-        }
-    }
-
-    private static class PaddedNumberField implements NumberRule {
-        private final int mField;
-        private final int mSize;
-
-        PaddedNumberField(int field, int size) {
-            if (size < 3) {
-                throw new IllegalArgumentException();
-            }
-            this.mField = field;
-            this.mSize = size;
-        }
-
-        public int estimateLength() {
-            return 4;
-        }
-
-        public void appendTo(StringBuffer buffer, Calendar calendar) {
-            appendTo(buffer, calendar.get(this.mField));
-        }
-
-        public final void appendTo(StringBuffer buffer, int value) {
-            int i;
-            if (value < 100) {
-                i = this.mSize;
-                while (true) {
-                    i--;
-                    if (i >= 2) {
-                        buffer.append('0');
-                    } else {
-                        buffer.append((char) ((value / 10) + 48));
-                        buffer.append((char) ((value % 10) + 48));
-                        return;
-                    }
-                }
-            }
-            int digits;
-            if (value < LocationStatusCodes.GEOFENCE_NOT_AVAILABLE) {
-                digits = 3;
-            } else {
-                digits = Integer.toString(value).length();
-            }
-            i = this.mSize;
-            while (true) {
-                i--;
-                if (i >= digits) {
-                    buffer.append('0');
-                } else {
-                    buffer.append(Integer.toString(value));
-                    return;
-                }
-            }
         }
     }
 
@@ -485,7 +482,7 @@ public class FastDatePrinter implements DatePrinter, Serializable {
                 case 'G':
                     rule = new TextField(0, ERAs);
                     break;
-                case XtraBox.MP4_XTRA_BT_GUID /*72*/:
+                case 'H':
                     rule = selectNumberRule(11, tokenLen);
                     break;
                 case 'K':
@@ -522,10 +519,10 @@ public class FastDatePrinter implements DatePrinter, Serializable {
                 case 'a':
                     rule = new TextField(9, AmPmStrings);
                     break;
-                case LocationRequest.PRIORITY_HIGH_ACCURACY /*100*/:
+                case 'd':
                     rule = selectNumberRule(5, tokenLen);
                     break;
-                case LocationRequest.PRIORITY_LOW_POWER /*104*/:
+                case 'h':
                     rule = new TwelveHourField(selectNumberRule(10, tokenLen));
                     break;
                 case 'k':
@@ -622,7 +619,14 @@ public class FastDatePrinter implements DatePrinter, Serializable {
         if (obj instanceof Long) {
             return format(((Long) obj).longValue(), toAppendTo);
         }
-        throw new IllegalArgumentException("Unknown class: " + (obj == null ? "<null>" : obj.getClass().getName()));
+        String str;
+        StringBuilder append = new StringBuilder().append("Unknown class: ");
+        if (obj == null) {
+            str = "<null>";
+        } else {
+            str = obj.getClass().getName();
+        }
+        throw new IllegalArgumentException(append.append(str).toString());
     }
 
     public String format(long millis) {

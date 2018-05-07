@@ -1,7 +1,5 @@
 package org.telegram.messenger.time;
 
-import com.google.android.gms.location.LocationRequest;
-import com.googlecode.mp4parser.boxes.microsoft.XtraBox;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -23,7 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FastDateParser implements DateParser, Serializable {
+public class FastDateParser implements Serializable, DateParser {
     private static final Strategy ABBREVIATED_YEAR_STRATEGY = new NumberStrategy(1) {
         void setCalendar(FastDateParser parser, Calendar cal, String value) {
             int iValue = Integer.parseInt(value);
@@ -87,28 +85,6 @@ public class FastDateParser implements DateParser, Serializable {
         }
     }
 
-    private static class CopyQuotedStrategy extends Strategy {
-        private final String formatField;
-
-        CopyQuotedStrategy(String formatField) {
-            super();
-            this.formatField = formatField;
-        }
-
-        boolean isNumber() {
-            char c = this.formatField.charAt(0);
-            if (c == '\'') {
-                c = this.formatField.charAt(1);
-            }
-            return Character.isDigit(c);
-        }
-
-        boolean addRegex(FastDateParser parser, StringBuilder regex) {
-            FastDateParser.escapeRegex(regex, this.formatField, true);
-            return false;
-        }
-    }
-
     private static class NumberStrategy extends Strategy {
         private final int field;
 
@@ -136,6 +112,28 @@ public class FastDateParser implements DateParser, Serializable {
 
         int modify(int iValue) {
             return iValue;
+        }
+    }
+
+    private static class CopyQuotedStrategy extends Strategy {
+        private final String formatField;
+
+        CopyQuotedStrategy(String formatField) {
+            super();
+            this.formatField = formatField;
+        }
+
+        boolean isNumber() {
+            char c = this.formatField.charAt(0);
+            if (c == '\'') {
+                c = this.formatField.charAt(1);
+            }
+            return Character.isDigit(c);
+        }
+
+        boolean addRegex(FastDateParser parser, StringBuilder regex) {
+            FastDateParser.escapeRegex(regex, this.formatField, true);
+            return false;
         }
     }
 
@@ -342,7 +340,7 @@ public class FastDateParser implements DateParser, Serializable {
             return date;
         }
         if (this.locale.equals(JAPANESE_IMPERIAL)) {
-            throw new ParseException("(The " + this.locale + " locale does not support dates before 1868 AD)\n" + "Unparseable date: \"" + source + "\" does not match " + this.parsePattern.pattern(), 0);
+            throw new ParseException("(The " + this.locale + " locale does not support dates before 1868 AD)\nUnparseable date: \"" + source + "\" does not match " + this.parsePattern.pattern(), 0);
         }
         throw new ParseException("Unparseable date: \"" + source + "\" does not match " + this.parsePattern.pattern(), 0);
     }
@@ -376,49 +374,49 @@ public class FastDateParser implements DateParser, Serializable {
         r2 = "\\Q";
         r3.append(r2);
         r1 = 0;
-    L_0x0006:
+    L_0x0007:
         r2 = r4.length();
-        if (r1 >= r2) goto L_0x0044;
-    L_0x000c:
+        if (r1 >= r2) goto L_0x0046;
+    L_0x000d:
         r0 = r4.charAt(r1);
         switch(r0) {
-            case 39: goto L_0x0019;
-            case 92: goto L_0x0029;
-            default: goto L_0x0013;
+            case 39: goto L_0x001a;
+            case 92: goto L_0x002a;
+            default: goto L_0x0014;
         };
-    L_0x0013:
+    L_0x0014:
         r3.append(r0);
         r1 = r1 + 1;
-        goto L_0x0006;
-    L_0x0019:
-        if (r5 == 0) goto L_0x0013;
-    L_0x001b:
+        goto L_0x0007;
+    L_0x001a:
+        if (r5 == 0) goto L_0x0014;
+    L_0x001c:
         r1 = r1 + 1;
         r2 = r4.length();
-        if (r1 != r2) goto L_0x0024;
-    L_0x0023:
-        return r3;
+        if (r1 != r2) goto L_0x0025;
     L_0x0024:
+        return r3;
+    L_0x0025:
         r0 = r4.charAt(r1);
-        goto L_0x0013;
-    L_0x0029:
+        goto L_0x0014;
+    L_0x002a:
         r1 = r1 + 1;
         r2 = r4.length();
-        if (r1 == r2) goto L_0x0013;
-    L_0x0031:
+        if (r1 == r2) goto L_0x0014;
+    L_0x0032:
         r3.append(r0);
         r0 = r4.charAt(r1);
         r2 = 69;
-        if (r0 != r2) goto L_0x0013;
-    L_0x003c:
+        if (r0 != r2) goto L_0x0014;
+    L_0x003d:
         r2 = "E\\\\E\\";
         r3.append(r2);
         r0 = 81;
-        goto L_0x0013;
-    L_0x0044:
+        goto L_0x0014;
+    L_0x0046:
         r2 = "\\E";
         r3.append(r2);
-        goto L_0x0023;
+        goto L_0x0024;
         */
         throw new UnsupportedOperationException("Method not decompiled: org.telegram.messenger.time.FastDateParser.escapeRegex(java.lang.StringBuilder, java.lang.String, boolean):java.lang.StringBuilder");
     }
@@ -490,7 +488,7 @@ public class FastDateParser implements DateParser, Serializable {
                 return DAY_OF_WEEK_IN_MONTH_STRATEGY;
             case 'G':
                 return getLocaleSpecificStrategy(0, definingCalendar);
-            case XtraBox.MP4_XTRA_BT_GUID /*72*/:
+            case 'H':
                 return MODULO_HOUR_OF_DAY_STRATEGY;
             case 'K':
                 return HOUR_STRATEGY;
@@ -505,9 +503,9 @@ public class FastDateParser implements DateParser, Serializable {
                 return getLocaleSpecificStrategy(15, definingCalendar);
             case 'a':
                 return getLocaleSpecificStrategy(9, definingCalendar);
-            case LocationRequest.PRIORITY_HIGH_ACCURACY /*100*/:
+            case 'd':
                 return DAY_OF_MONTH_STRATEGY;
-            case LocationRequest.PRIORITY_LOW_POWER /*104*/:
+            case 'h':
                 return MODULO_HOUR_STRATEGY;
             case 'k':
                 return HOUR_OF_DAY_STRATEGY;
@@ -544,6 +542,7 @@ public class FastDateParser implements DateParser, Serializable {
                 return inCache;
             }
         }
+        Strategy strategy2 = strategy;
         return strategy;
     }
 }

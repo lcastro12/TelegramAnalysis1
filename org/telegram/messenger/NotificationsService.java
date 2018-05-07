@@ -6,7 +6,6 @@ import android.os.IBinder;
 
 public class NotificationsService extends Service {
     public void onCreate() {
-        FileLog.m609e("tmessages", "service started");
         ApplicationLoader.postInitApplication();
     }
 
@@ -19,8 +18,7 @@ public class NotificationsService extends Service {
     }
 
     public void onDestroy() {
-        FileLog.m609e("tmessages", "service destroyed");
-        if (ApplicationLoader.applicationContext.getSharedPreferences("Notifications", 0).getBoolean("pushService", true)) {
+        if (MessagesController.getGlobalNotificationsSettings().getBoolean("pushService", true)) {
             sendBroadcast(new Intent("org.telegram.start"));
         }
     }

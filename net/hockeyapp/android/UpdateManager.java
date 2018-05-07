@@ -1,10 +1,10 @@
 package net.hockeyapp.android;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask.Status;
+import android.os.Build.VERSION;
 import android.text.TextUtils;
 import java.lang.ref.WeakReference;
 import java.util.Date;
@@ -14,7 +14,6 @@ import net.hockeyapp.android.utils.AsyncTaskUtils;
 import net.hockeyapp.android.utils.Util;
 
 public class UpdateManager {
-    private static UpdateManagerListener lastListener = null;
     private static CheckUpdateTask updateTask = null;
 
     public static void register(Activity activity, String appIdentifier) {
@@ -25,40 +24,17 @@ public class UpdateManager {
         register(activity, appIdentifier, null, isDialogRequired);
     }
 
-    public static void register(Activity activity, String appIdentifier, UpdateManagerListener listener) {
-        register(activity, Constants.BASE_URL, appIdentifier, listener, true);
-    }
-
     public static void register(Activity activity, String appIdentifier, UpdateManagerListener listener, boolean isDialogRequired) {
-        register(activity, Constants.BASE_URL, appIdentifier, listener, isDialogRequired);
-    }
-
-    public static void register(Activity activity, String urlString, String appIdentifier, UpdateManagerListener listener) {
-        register(activity, urlString, appIdentifier, listener, true);
+        register(activity, "https://sdk.hockeyapp.net/", appIdentifier, listener, isDialogRequired);
     }
 
     public static void register(Activity activity, String urlString, String appIdentifier, UpdateManagerListener listener, boolean isDialogRequired) {
         appIdentifier = Util.sanitizeAppIdentifier(appIdentifier);
-        lastListener = listener;
+        Constants.loadFromContext(activity);
         WeakReference<Activity> weakActivity = new WeakReference(activity);
-        if ((!Util.fragmentsSupported().booleanValue() || !dialogShown(weakActivity)) && !checkExpiryDate(weakActivity, listener)) {
+        if (!dialogShown(weakActivity) && !checkExpiryDate(weakActivity, listener)) {
             if ((listener != null && listener.canUpdateInMarket()) || !installedFromMarket(weakActivity)) {
                 startUpdateTask(weakActivity, urlString, appIdentifier, listener, isDialogRequired);
-            }
-        }
-    }
-
-    public static void registerForBackground(Context appContext, String appIdentifier, UpdateManagerListener listener) {
-        registerForBackground(appContext, Constants.BASE_URL, appIdentifier, listener);
-    }
-
-    public static void registerForBackground(Context appContext, String urlString, String appIdentifier, UpdateManagerListener listener) {
-        appIdentifier = Util.sanitizeAppIdentifier(appIdentifier);
-        lastListener = listener;
-        WeakReference<Context> weakContext = new WeakReference(appContext);
-        if (!checkExpiryDateForBackground(listener)) {
-            if ((listener != null && listener.canUpdateInMarket()) || !installedFromMarket(weakContext)) {
-                startUpdateTaskForBackground(weakContext, urlString, appIdentifier, listener);
             }
         }
     }
@@ -69,7 +45,6 @@ public class UpdateManager {
             updateTask.detach();
             updateTask = null;
         }
-        lastListener = null;
     }
 
     private static boolean checkExpiryDate(WeakReference<Activity> weakActivity, UpdateManagerListener listener) {
@@ -92,13 +67,24 @@ public class UpdateManager {
         return expiryDate != null && new Date().compareTo(expiryDate) > 0;
     }
 
-    private static boolean installedFromMarket(WeakReference<? extends Context> weakContext) {
+    protected static boolean installedFromMarket(WeakReference<? extends Context> weakContext) {
         Context context = (Context) weakContext.get();
         if (context == null) {
             return false;
         }
         try {
-            return !TextUtils.isEmpty(context.getPackageManager().getInstallerPackageName(context.getPackageName()));
+            String installer = context.getPackageManager().getInstallerPackageName(context.getPackageName());
+            if (TextUtils.isEmpty(installer)) {
+                return false;
+            }
+            boolean result = true;
+            if (VERSION.SDK_INT >= 24 && (TextUtils.equals(installer, "com.google.android.packageinstaller") || TextUtils.equals(installer, "com.android.packageinstaller"))) {
+                result = false;
+            }
+            if (TextUtils.equals(installer, "adb")) {
+                return false;
+            }
+            return result;
         } catch (Throwable th) {
             return false;
         }
@@ -125,28 +111,14 @@ public class UpdateManager {
         updateTask.attach(weakActivity);
     }
 
-    private static void startUpdateTaskForBackground(WeakReference<Context> weakContext, String urlString, String appIdentifier, UpdateManagerListener listener) {
-        if (updateTask == null || updateTask.getStatus() == Status.FINISHED) {
-            updateTask = new CheckUpdateTask(weakContext, urlString, appIdentifier, listener);
-            AsyncTaskUtils.execute(updateTask);
-            return;
-        }
-        updateTask.attach(weakContext);
-    }
-
-    @TargetApi(11)
     private static boolean dialogShown(WeakReference<Activity> weakActivity) {
         if (weakActivity == null) {
             return false;
         }
         Activity activity = (Activity) weakActivity.get();
-        if (activity == null || activity.getFragmentManager().findFragmentByTag("hockey_update_dialog") == null) {
+        if (activity == null || activity.getFragmentManager().findFragmentByTag(UpdateFragment.FRAGMENT_TAG) == null) {
             return false;
         }
         return true;
-    }
-
-    public static UpdateManagerListener getLastListener() {
-        return lastListener;
     }
 }

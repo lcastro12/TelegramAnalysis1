@@ -17,7 +17,7 @@ class ChildHelper {
         static final int BITS_PER_WORD = 64;
         static final long LAST_BIT = Long.MIN_VALUE;
         long mData = 0;
-        Bucket next;
+        Bucket mNext;
 
         Bucket() {
         }
@@ -25,23 +25,23 @@ class ChildHelper {
         void set(int index) {
             if (index >= 64) {
                 ensureNext();
-                this.next.set(index - 64);
+                this.mNext.set(index - 64);
                 return;
             }
             this.mData |= 1 << index;
         }
 
         private void ensureNext() {
-            if (this.next == null) {
-                this.next = new Bucket();
+            if (this.mNext == null) {
+                this.mNext = new Bucket();
             }
         }
 
         void clear(int index) {
             if (index < 64) {
                 this.mData &= (1 << index) ^ -1;
-            } else if (this.next != null) {
-                this.next.clear(index - 64);
+            } else if (this.mNext != null) {
+                this.mNext.clear(index - 64);
             }
         }
 
@@ -50,24 +50,24 @@ class ChildHelper {
                 return (this.mData & (1 << index)) != 0;
             } else {
                 ensureNext();
-                return this.next.get(index - 64);
+                return this.mNext.get(index - 64);
             }
         }
 
         void reset() {
             this.mData = 0;
-            if (this.next != null) {
-                this.next.reset();
+            if (this.mNext != null) {
+                this.mNext.reset();
             }
         }
 
         void insert(int index, boolean value) {
             if (index >= 64) {
                 ensureNext();
-                this.next.insert(index - 64, value);
+                this.mNext.insert(index - 64, value);
                 return;
             }
-            boolean lastBit = (this.mData & LAST_BIT) != 0;
+            boolean lastBit = (this.mData & Long.MIN_VALUE) != 0;
             long mask = (1 << index) - 1;
             this.mData = (this.mData & mask) | ((this.mData & (-1 ^ mask)) << 1);
             if (value) {
@@ -75,34 +75,34 @@ class ChildHelper {
             } else {
                 clear(index);
             }
-            if (lastBit || this.next != null) {
+            if (lastBit || this.mNext != null) {
                 ensureNext();
-                this.next.insert(0, lastBit);
+                this.mNext.insert(0, lastBit);
             }
         }
 
         boolean remove(int index) {
             if (index >= 64) {
                 ensureNext();
-                return this.next.remove(index - 64);
+                return this.mNext.remove(index - 64);
             }
             long mask = 1 << index;
             boolean z = (this.mData & mask) != 0;
             this.mData &= -1 ^ mask;
             mask--;
             this.mData = (this.mData & mask) | Long.rotateRight(this.mData & (-1 ^ mask), 1);
-            if (this.next == null) {
+            if (this.mNext == null) {
                 return z;
             }
-            if (this.next.get(0)) {
+            if (this.mNext.get(0)) {
                 set(63);
             }
-            this.next.remove(0);
+            this.mNext.remove(0);
             return z;
         }
 
         int countOnesBefore(int index) {
-            if (this.next == null) {
+            if (this.mNext == null) {
                 if (index >= 64) {
                     return Long.bitCount(this.mData);
                 }
@@ -110,12 +110,15 @@ class ChildHelper {
             } else if (index < 64) {
                 return Long.bitCount(this.mData & ((1 << index) - 1));
             } else {
-                return this.next.countOnesBefore(index - 64) + Long.bitCount(this.mData);
+                return this.mNext.countOnesBefore(index - 64) + Long.bitCount(this.mData);
             }
         }
 
         public String toString() {
-            return this.next == null ? Long.toBinaryString(this.mData) : this.next.toString() + "xx" + Long.toBinaryString(this.mData);
+            if (this.mNext == null) {
+                return Long.toBinaryString(this.mData);
+            }
+            return this.mNext.toString() + "xx" + Long.toBinaryString(this.mData);
         }
     }
 
@@ -158,6 +161,17 @@ class ChildHelper {
         }
         this.mCallback.onLeftHiddenState(child);
         return true;
+    }
+
+    protected int getHiddenChildCount() {
+        return this.mHiddenViews.size();
+    }
+
+    public View getHiddenChildAt(int index) {
+        if (index < 0 || index >= this.mHiddenViews.size()) {
+            return null;
+        }
+        return (View) this.mHiddenViews.get(index);
     }
 
     void addView(View child, boolean hidden) {
@@ -231,12 +245,12 @@ class ChildHelper {
         this.mCallback.removeAllViews();
     }
 
-    View findHiddenNonRemovedView(int position, int type) {
+    View findHiddenNonRemovedView(int position) {
         int count = this.mHiddenViews.size();
         for (int i = 0; i < count; i++) {
             View view = (View) this.mHiddenViews.get(i);
             ViewHolder holder = this.mCallback.getChildViewHolder(view);
-            if (holder.getLayoutPosition() == position && !holder.isInvalid() && (type == -1 || holder.getItemViewType() == type)) {
+            if (holder.getLayoutPosition() == position && !holder.isInvalid() && !holder.isRemoved()) {
                 return view;
             }
         }
@@ -294,6 +308,18 @@ class ChildHelper {
         }
         this.mBucket.set(offset);
         hideViewInternal(view);
+    }
+
+    void unhide(View view) {
+        int offset = this.mCallback.indexOfChild(view);
+        if (offset < 0) {
+            throw new IllegalArgumentException("view is not a child, cannot hide " + view);
+        } else if (this.mBucket.get(offset)) {
+            this.mBucket.clear(offset);
+            unhideViewInternal(view);
+        } else {
+            throw new RuntimeException("trying to unhide a view that was not hidden" + view);
+        }
     }
 
     public String toString() {

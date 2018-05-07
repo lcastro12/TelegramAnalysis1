@@ -1,24 +1,14 @@
 package android.support.v4.text;
 
+import android.text.SpannableStringBuilder;
 import java.util.Locale;
 
 public final class BidiFormatter {
-    private static final int DEFAULT_FLAGS = 2;
     private static final BidiFormatter DEFAULT_LTR_INSTANCE = new BidiFormatter(false, 2, DEFAULT_TEXT_DIRECTION_HEURISTIC);
     private static final BidiFormatter DEFAULT_RTL_INSTANCE = new BidiFormatter(true, 2, DEFAULT_TEXT_DIRECTION_HEURISTIC);
     private static TextDirectionHeuristicCompat DEFAULT_TEXT_DIRECTION_HEURISTIC = TextDirectionHeuristicsCompat.FIRSTSTRONG_LTR;
-    private static final int DIR_LTR = -1;
-    private static final int DIR_RTL = 1;
-    private static final int DIR_UNKNOWN = 0;
-    private static final String EMPTY_STRING = "";
-    private static final int FLAG_STEREO_RESET = 2;
-    private static final char LRE = '‪';
-    private static final char LRM = '‎';
-    private static final String LRM_STRING = Character.toString(LRM);
-    private static final char PDF = '‬';
-    private static final char RLE = '‫';
-    private static final char RLM = '‏';
-    private static final String RLM_STRING = Character.toString(RLM);
+    private static final String LRM_STRING = Character.toString('‎');
+    private static final String RLM_STRING = Character.toString('‏');
     private final TextDirectionHeuristicCompat mDefaultTextDirectionHeuristicCompat;
     private final int mFlags;
     private final boolean mIsRtlContext;
@@ -32,32 +22,10 @@ public final class BidiFormatter {
             initialize(BidiFormatter.isRtlLocale(Locale.getDefault()));
         }
 
-        public Builder(boolean rtlContext) {
-            initialize(rtlContext);
-        }
-
-        public Builder(Locale locale) {
-            initialize(BidiFormatter.isRtlLocale(locale));
-        }
-
         private void initialize(boolean isRtlContext) {
             this.mIsRtlContext = isRtlContext;
             this.mTextDirectionHeuristicCompat = BidiFormatter.DEFAULT_TEXT_DIRECTION_HEURISTIC;
             this.mFlags = 2;
-        }
-
-        public Builder stereoReset(boolean stereoReset) {
-            if (stereoReset) {
-                this.mFlags |= 2;
-            } else {
-                this.mFlags &= -3;
-            }
-            return this;
-        }
-
-        public Builder setTextDirectionHeuristic(TextDirectionHeuristicCompat heuristic) {
-            this.mTextDirectionHeuristicCompat = heuristic;
-            return this;
         }
 
         private static BidiFormatter getDefaultInstanceFromContext(boolean isRtlContext) {
@@ -74,12 +42,11 @@ public final class BidiFormatter {
 
     private static class DirectionalityEstimator {
         private static final byte[] DIR_TYPE_CACHE = new byte[1792];
-        private static final int DIR_TYPE_CACHE_SIZE = 1792;
         private int charIndex;
         private final boolean isHtml;
         private char lastChar;
         private final int length;
-        private final String text;
+        private final CharSequence text;
 
         static {
             for (int i = 0; i < 1792; i++) {
@@ -87,7 +54,7 @@ public final class BidiFormatter {
             }
         }
 
-        DirectionalityEstimator(String text, boolean isHtml) {
+        DirectionalityEstimator(CharSequence text, boolean isHtml) {
             this.text = text;
             this.isHtml = isHtml;
             this.length = text.length();
@@ -270,20 +237,20 @@ public final class BidiFormatter {
         private byte skipTagForward() {
             int initialCharIndex = this.charIndex;
             while (this.charIndex < this.length) {
-                String str = this.text;
+                CharSequence charSequence = this.text;
                 int i = this.charIndex;
                 this.charIndex = i + 1;
-                this.lastChar = str.charAt(i);
+                this.lastChar = charSequence.charAt(i);
                 if (this.lastChar == '>') {
                     return (byte) 12;
                 }
                 if (this.lastChar == '\"' || this.lastChar == '\'') {
                     char quote = this.lastChar;
                     while (this.charIndex < this.length) {
-                        str = this.text;
+                        charSequence = this.text;
                         i = this.charIndex;
                         this.charIndex = i + 1;
-                        char charAt = str.charAt(i);
+                        char charAt = charSequence.charAt(i);
                         this.lastChar = charAt;
                         if (charAt == quote) {
                             break;
@@ -299,10 +266,10 @@ public final class BidiFormatter {
         private byte skipTagBackward() {
             int initialCharIndex = this.charIndex;
             while (this.charIndex > 0) {
-                String str = this.text;
+                CharSequence charSequence = this.text;
                 int i = this.charIndex - 1;
                 this.charIndex = i;
-                this.lastChar = str.charAt(i);
+                this.lastChar = charSequence.charAt(i);
                 if (this.lastChar == '<') {
                     return (byte) 12;
                 }
@@ -311,10 +278,10 @@ public final class BidiFormatter {
                 } else if (this.lastChar == '\"' || this.lastChar == '\'') {
                     char quote = this.lastChar;
                     while (this.charIndex > 0) {
-                        str = this.text;
+                        charSequence = this.text;
                         i = this.charIndex - 1;
                         this.charIndex = i;
-                        char charAt = str.charAt(i);
+                        char charAt = charSequence.charAt(i);
                         this.lastChar = charAt;
                         if (charAt == quote) {
                             break;
@@ -329,10 +296,10 @@ public final class BidiFormatter {
 
         private byte skipEntityForward() {
             while (this.charIndex < this.length) {
-                String str = this.text;
+                CharSequence charSequence = this.text;
                 int i = this.charIndex;
                 this.charIndex = i + 1;
-                char charAt = str.charAt(i);
+                char charAt = charSequence.charAt(i);
                 this.lastChar = charAt;
                 if (charAt == ';') {
                     break;
@@ -344,10 +311,10 @@ public final class BidiFormatter {
         private byte skipEntityBackward() {
             int initialCharIndex = this.charIndex;
             while (this.charIndex > 0) {
-                String str = this.text;
+                CharSequence charSequence = this.text;
                 int i = this.charIndex - 1;
                 this.charIndex = i;
-                this.lastChar = str.charAt(i);
+                this.lastChar = charSequence.charAt(i);
                 if (this.lastChar != '&') {
                     if (this.lastChar == ';') {
                         break;
@@ -365,85 +332,68 @@ public final class BidiFormatter {
         return new Builder().build();
     }
 
-    public static BidiFormatter getInstance(boolean rtlContext) {
-        return new Builder(rtlContext).build();
-    }
-
-    public static BidiFormatter getInstance(Locale locale) {
-        return new Builder(locale).build();
-    }
-
     private BidiFormatter(boolean isRtlContext, int flags, TextDirectionHeuristicCompat heuristic) {
         this.mIsRtlContext = isRtlContext;
         this.mFlags = flags;
         this.mDefaultTextDirectionHeuristicCompat = heuristic;
     }
 
-    public boolean isRtlContext() {
-        return this.mIsRtlContext;
-    }
-
     public boolean getStereoReset() {
         return (this.mFlags & 2) != 0;
     }
 
-    private String markAfter(String str, TextDirectionHeuristicCompat heuristic) {
-        boolean isRtl = heuristic.isRtl((CharSequence) str, 0, str.length());
+    private String markAfter(CharSequence str, TextDirectionHeuristicCompat heuristic) {
+        boolean isRtl = heuristic.isRtl(str, 0, str.length());
         if (!this.mIsRtlContext && (isRtl || getExitDir(str) == 1)) {
             return LRM_STRING;
         }
         if (!this.mIsRtlContext || (isRtl && getExitDir(str) != -1)) {
-            return "";
+            return TtmlNode.ANONYMOUS_REGION_ID;
         }
         return RLM_STRING;
     }
 
-    private String markBefore(String str, TextDirectionHeuristicCompat heuristic) {
-        boolean isRtl = heuristic.isRtl((CharSequence) str, 0, str.length());
+    private String markBefore(CharSequence str, TextDirectionHeuristicCompat heuristic) {
+        boolean isRtl = heuristic.isRtl(str, 0, str.length());
         if (!this.mIsRtlContext && (isRtl || getEntryDir(str) == 1)) {
             return LRM_STRING;
         }
         if (!this.mIsRtlContext || (isRtl && getEntryDir(str) != -1)) {
-            return "";
+            return TtmlNode.ANONYMOUS_REGION_ID;
         }
         return RLM_STRING;
     }
 
-    public boolean isRtl(String str) {
-        return this.mDefaultTextDirectionHeuristicCompat.isRtl((CharSequence) str, 0, str.length());
-    }
-
-    public String unicodeWrap(String str, TextDirectionHeuristicCompat heuristic, boolean isolate) {
+    public CharSequence unicodeWrap(CharSequence str, TextDirectionHeuristicCompat heuristic, boolean isolate) {
         if (str == null) {
             return null;
         }
-        boolean isRtl = heuristic.isRtl((CharSequence) str, 0, str.length());
-        StringBuilder result = new StringBuilder();
+        boolean isRtl = heuristic.isRtl(str, 0, str.length());
+        CharSequence result = new SpannableStringBuilder();
         if (getStereoReset() && isolate) {
             result.append(markBefore(str, isRtl ? TextDirectionHeuristicsCompat.RTL : TextDirectionHeuristicsCompat.LTR));
         }
         if (isRtl != this.mIsRtlContext) {
-            result.append(isRtl ? RLE : LRE);
+            result.append(isRtl ? '‫' : '‪');
             result.append(str);
-            result.append(PDF);
+            result.append('‬');
         } else {
             result.append(str);
         }
-        if (isolate) {
-            result.append(markAfter(str, isRtl ? TextDirectionHeuristicsCompat.RTL : TextDirectionHeuristicsCompat.LTR));
+        if (!isolate) {
+            return result;
         }
-        return result.toString();
+        TextDirectionHeuristicCompat textDirectionHeuristicCompat;
+        if (isRtl) {
+            textDirectionHeuristicCompat = TextDirectionHeuristicsCompat.RTL;
+        } else {
+            textDirectionHeuristicCompat = TextDirectionHeuristicsCompat.LTR;
+        }
+        result.append(markAfter(str, textDirectionHeuristicCompat));
+        return result;
     }
 
-    public String unicodeWrap(String str, TextDirectionHeuristicCompat heuristic) {
-        return unicodeWrap(str, heuristic, true);
-    }
-
-    public String unicodeWrap(String str, boolean isolate) {
-        return unicodeWrap(str, this.mDefaultTextDirectionHeuristicCompat, isolate);
-    }
-
-    public String unicodeWrap(String str) {
+    public CharSequence unicodeWrap(CharSequence str) {
         return unicodeWrap(str, this.mDefaultTextDirectionHeuristicCompat, true);
     }
 
@@ -451,11 +401,11 @@ public final class BidiFormatter {
         return TextUtilsCompat.getLayoutDirectionFromLocale(locale) == 1;
     }
 
-    private static int getExitDir(String str) {
+    private static int getExitDir(CharSequence str) {
         return new DirectionalityEstimator(str, false).getExitDir();
     }
 
-    private static int getEntryDir(String str) {
+    private static int getEntryDir(CharSequence str) {
         return new DirectionalityEstimator(str, false).getEntryDir();
     }
 }

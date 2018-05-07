@@ -1,6 +1,6 @@
 package net.hockeyapp.android;
 
-public abstract class CrashManagerListener extends StringListener {
+public abstract class CrashManagerListener {
     public boolean ignoreDefaultHandler() {
         return false;
     }
@@ -10,6 +10,10 @@ public abstract class CrashManagerListener extends StringListener {
     }
 
     public boolean includeDeviceIdentifier() {
+        return true;
+    }
+
+    public boolean includeThreadDetails() {
         return true;
     }
 
@@ -25,10 +29,6 @@ public abstract class CrashManagerListener extends StringListener {
         return null;
     }
 
-    public boolean onCrashesFound() {
-        return false;
-    }
-
     public boolean shouldAutoUploadCrashes() {
         return false;
     }
@@ -37,6 +37,9 @@ public abstract class CrashManagerListener extends StringListener {
     }
 
     public void onConfirmedCrashesFound() {
+    }
+
+    public void onNoCrashesFound() {
     }
 
     public void onCrashesSent() {

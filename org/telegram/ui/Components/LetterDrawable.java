@@ -10,10 +10,11 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLog;
+import org.telegram.ui.ActionBar.Theme;
 
 public class LetterDrawable extends Drawable {
     private static TextPaint namePaint;
-    private static Paint paint = new Paint();
+    public static Paint paint = new Paint();
     private StringBuilder stringBuilder = new StringBuilder(5);
     private float textHeight;
     private StaticLayout textLayout;
@@ -22,11 +23,19 @@ public class LetterDrawable extends Drawable {
 
     public LetterDrawable() {
         if (namePaint == null) {
-            paint.setColor(-2105377);
+            paint.setColor(Theme.getColor(Theme.key_sharedMedia_linkPlaceholder));
             namePaint = new TextPaint(1);
-            namePaint.setColor(-1);
-            namePaint.setTextSize((float) AndroidUtilities.dp(28.0f));
+            namePaint.setColor(Theme.getColor(Theme.key_sharedMedia_linkPlaceholderText));
         }
+        namePaint.setTextSize((float) AndroidUtilities.dp(28.0f));
+    }
+
+    public void setBackgroundColor(int value) {
+        paint.setColor(value);
+    }
+
+    public void setColor(int value) {
+        namePaint.setColor(value);
     }
 
     public void setTitle(String title) {
@@ -45,7 +54,7 @@ public class LetterDrawable extends Drawable {
                 }
                 return;
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
                 return;
             }
         }

@@ -41,7 +41,7 @@ public class Scroller {
 
     static {
         float x_min = 0.0f;
-        for (int i = 0; i <= 100; i++) {
+        for (int i = 0; i <= NB_SAMPLES; i++) {
             float x;
             float coef;
             float t = ((float) i) / 100.0f;
@@ -60,7 +60,7 @@ public class Scroller {
             }
             SPLINE[i] = coef + ((x * x) * x);
         }
-        SPLINE[100] = 1.0f;
+        SPLINE[NB_SAMPLES] = 1.0f;
         sViscousFluidNormalize = 1.0f;
         sViscousFluidNormalize = 1.0f / viscousFluid(1.0f);
     }

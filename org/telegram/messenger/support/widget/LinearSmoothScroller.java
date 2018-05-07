@@ -11,9 +11,10 @@ import org.telegram.messenger.support.widget.RecyclerView.LayoutManager;
 import org.telegram.messenger.support.widget.RecyclerView.LayoutParams;
 import org.telegram.messenger.support.widget.RecyclerView.SmoothScroller;
 import org.telegram.messenger.support.widget.RecyclerView.SmoothScroller.Action;
+import org.telegram.messenger.support.widget.RecyclerView.SmoothScroller.ScrollVectorProvider;
 import org.telegram.messenger.support.widget.RecyclerView.State;
 
-public abstract class LinearSmoothScroller extends SmoothScroller {
+public class LinearSmoothScroller extends SmoothScroller {
     private static final boolean DEBUG = false;
     private static final float MILLISECONDS_PER_INCH = 25.0f;
     public static final int SNAP_TO_ANY = 0;
@@ -28,8 +29,6 @@ public abstract class LinearSmoothScroller extends SmoothScroller {
     protected int mInterimTargetDy = 0;
     protected final LinearInterpolator mLinearInterpolator = new LinearInterpolator();
     protected PointF mTargetVector;
-
-    public abstract PointF computeScrollVectorForPosition(int i);
 
     public LinearSmoothScroller(Context context) {
         this.MILLISECONDS_PER_PX = calculateSpeedPerPixel(context.getResources().getDisplayMetrics());
@@ -94,7 +93,6 @@ public abstract class LinearSmoothScroller extends SmoothScroller {
     protected void updateActionForInterimTarget(Action action) {
         PointF scrollVector = computeScrollVectorForPosition(getTargetPosition());
         if (scrollVector == null || (scrollVector.x == 0.0f && scrollVector.y == 0.0f)) {
-            Log.e(TAG, "To support smooth scrolling, you should override \nLayoutManager#computeScrollVectorForPosition.\nFalling back to instant scroll");
             action.jumpTo(getTargetPosition());
             stop();
             return;
@@ -103,7 +101,7 @@ public abstract class LinearSmoothScroller extends SmoothScroller {
         this.mTargetVector = scrollVector;
         this.mInterimTargetDx = (int) (scrollVector.x * 10000.0f);
         this.mInterimTargetDy = (int) (scrollVector.y * 10000.0f);
-        action.update((int) (((float) this.mInterimTargetDx) * TARGET_SEEK_EXTRA_SCROLL_RATIO), (int) (((float) this.mInterimTargetDy) * TARGET_SEEK_EXTRA_SCROLL_RATIO), (int) (((float) calculateTimeForScrolling(TARGET_SEEK_SCROLL_DISTANCE_PX)) * TARGET_SEEK_EXTRA_SCROLL_RATIO), this.mLinearInterpolator);
+        action.update((int) (((float) this.mInterimTargetDx) * TARGET_SEEK_EXTRA_SCROLL_RATIO), (int) (((float) this.mInterimTargetDy) * TARGET_SEEK_EXTRA_SCROLL_RATIO), (int) (((float) calculateTimeForScrolling(10000)) * TARGET_SEEK_EXTRA_SCROLL_RATIO), this.mLinearInterpolator);
     }
 
     private int clampApplyScroll(int tmpDt, int dt) {
@@ -138,7 +136,7 @@ public abstract class LinearSmoothScroller extends SmoothScroller {
 
     public int calculateDyToMakeVisible(View view, int snapPreference) {
         LayoutManager layoutManager = getLayoutManager();
-        if (!layoutManager.canScrollVertically()) {
+        if (layoutManager == null || !layoutManager.canScrollVertically()) {
             return 0;
         }
         LayoutParams params = (LayoutParams) view.getLayoutParams();
@@ -147,10 +145,19 @@ public abstract class LinearSmoothScroller extends SmoothScroller {
 
     public int calculateDxToMakeVisible(View view, int snapPreference) {
         LayoutManager layoutManager = getLayoutManager();
-        if (!layoutManager.canScrollHorizontally()) {
+        if (layoutManager == null || !layoutManager.canScrollHorizontally()) {
             return 0;
         }
         LayoutParams params = (LayoutParams) view.getLayoutParams();
         return calculateDtToFit(layoutManager.getDecoratedLeft(view) - params.leftMargin, layoutManager.getDecoratedRight(view) + params.rightMargin, layoutManager.getPaddingLeft(), layoutManager.getWidth() - layoutManager.getPaddingRight(), snapPreference);
+    }
+
+    public PointF computeScrollVectorForPosition(int targetPosition) {
+        LayoutManager layoutManager = getLayoutManager();
+        if (layoutManager instanceof ScrollVectorProvider) {
+            return ((ScrollVectorProvider) layoutManager).computeScrollVectorForPosition(targetPosition);
+        }
+        Log.w(TAG, "You should override computeScrollVectorForPosition when the LayoutManager does not implement " + ScrollVectorProvider.class.getCanonicalName());
+        return null;
     }
 }

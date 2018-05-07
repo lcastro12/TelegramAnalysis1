@@ -1,16 +1,16 @@
 package com.google.android.gms.maps;
 
-import com.google.android.gms.dynamic.C0146b;
-import com.google.android.gms.internal.C0192s;
+import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.dynamic.IObjectWrapper;
 
 public final class CameraUpdate {
-    private final C0146b fV;
+    private final IObjectWrapper zze;
 
-    CameraUpdate(C0146b remoteObject) {
-        this.fV = (C0146b) C0192s.m521d(remoteObject);
+    CameraUpdate(IObjectWrapper iObjectWrapper) {
+        this.zze = (IObjectWrapper) Preconditions.checkNotNull(iObjectWrapper);
     }
 
-    public C0146b aW() {
-        return this.fV;
+    public final IObjectWrapper zza() {
+        return this.zze;
     }
 }

@@ -19,8 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class BasicContainer implements Container, Iterator<Box>, Closeable {
-    private static final Box EOF = new C17341("eof ");
+public class BasicContainer implements Container, Closeable, Iterator<Box> {
+    private static final Box EOF = new C00271("eof ");
     private static Logger LOG = Logger.getLogger(BasicContainer.class);
     protected BoxParser boxParser;
     private List<Box> boxes = new ArrayList();
@@ -30,8 +30,8 @@ public class BasicContainer implements Container, Iterator<Box>, Closeable {
     long parsePosition = 0;
     long startPosition = 0;
 
-    class C17341 extends AbstractBox {
-        C17341(String $anonymous0) {
+    class C00271 extends AbstractBox {
+        C00271(String $anonymous0) {
             super($anonymous0);
         }
 

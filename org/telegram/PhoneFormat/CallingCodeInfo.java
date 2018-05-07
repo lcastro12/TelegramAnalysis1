@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public class CallingCodeInfo {
-    public String callingCode = "";
+    public String callingCode = TtmlNode.ANONYMOUS_REGION_ID;
     public ArrayList<String> countries = new ArrayList();
     public ArrayList<String> intlPrefixes = new ArrayList();
     public ArrayList<RuleSet> ruleSets = new ArrayList();
     public ArrayList<String> trunkPrefixes = new ArrayList();
 
     String matchingAccessCode(String str) {
-        Iterator i$ = this.intlPrefixes.iterator();
-        while (i$.hasNext()) {
-            String code = (String) i$.next();
+        Iterator it = this.intlPrefixes.iterator();
+        while (it.hasNext()) {
+            String code = (String) it.next();
             if (str.startsWith(code)) {
                 return code;
             }
@@ -22,9 +22,9 @@ public class CallingCodeInfo {
     }
 
     String matchingTrunkCode(String str) {
-        Iterator i$ = this.trunkPrefixes.iterator();
-        while (i$.hasNext()) {
-            String code = (String) i$.next();
+        Iterator it = this.trunkPrefixes.iterator();
+        while (it.hasNext()) {
+            String code = (String) it.next();
             if (str.startsWith(code)) {
                 return code;
             }
@@ -46,16 +46,16 @@ public class CallingCodeInfo {
                 str = str.substring(trunkPrefix.length());
             }
         }
-        Iterator i$ = this.ruleSets.iterator();
-        while (i$.hasNext()) {
-            String phone = ((RuleSet) i$.next()).format(str, intlPrefix, trunkPrefix, true);
+        Iterator it = this.ruleSets.iterator();
+        while (it.hasNext()) {
+            String phone = ((RuleSet) it.next()).format(str, intlPrefix, trunkPrefix, true);
             if (phone != null) {
                 return phone;
             }
         }
-        i$ = this.ruleSets.iterator();
-        while (i$.hasNext()) {
-            phone = ((RuleSet) i$.next()).format(str, intlPrefix, trunkPrefix, false);
+        it = this.ruleSets.iterator();
+        while (it.hasNext()) {
+            phone = ((RuleSet) it.next()).format(str, intlPrefix, trunkPrefix, false);
             if (phone != null) {
                 return phone;
             }
@@ -80,15 +80,15 @@ public class CallingCodeInfo {
                 str = str.substring(trunkPrefix.length());
             }
         }
-        Iterator i$ = this.ruleSets.iterator();
-        while (i$.hasNext()) {
-            if (((RuleSet) i$.next()).isValid(str, intlPrefix, trunkPrefix, true)) {
+        Iterator it = this.ruleSets.iterator();
+        while (it.hasNext()) {
+            if (((RuleSet) it.next()).isValid(str, intlPrefix, trunkPrefix, true)) {
                 return true;
             }
         }
-        i$ = this.ruleSets.iterator();
-        while (i$.hasNext()) {
-            if (((RuleSet) i$.next()).isValid(str, intlPrefix, trunkPrefix, false)) {
+        it = this.ruleSets.iterator();
+        while (it.hasNext()) {
+            if (((RuleSet) it.next()).isValid(str, intlPrefix, trunkPrefix, false)) {
                 return true;
             }
         }

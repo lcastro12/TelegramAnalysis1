@@ -1,7 +1,7 @@
 package com.coremedia.iso;
 
 import java.io.UnsupportedEncodingException;
-import net.hockeyapp.android.utils.HttpURLConnectionBuilder;
+import org.telegram.messenger.exoplayer2.C0600C;
 
 public final class Utf8 {
     public static byte[] convert(String s) {
@@ -9,7 +9,7 @@ public final class Utf8 {
             return null;
         }
         try {
-            return s.getBytes(HttpURLConnectionBuilder.DEFAULT_CHARSET);
+            return s.getBytes(C0600C.UTF8_NAME);
         } catch (UnsupportedEncodingException e) {
             throw new Error(e);
         }
@@ -20,7 +20,7 @@ public final class Utf8 {
             return null;
         }
         try {
-            return new String(b, HttpURLConnectionBuilder.DEFAULT_CHARSET);
+            return new String(b, C0600C.UTF8_NAME);
         } catch (UnsupportedEncodingException e) {
             throw new Error(e);
         }
@@ -31,7 +31,7 @@ public final class Utf8 {
             return 0;
         }
         try {
-            return utf8.getBytes(HttpURLConnectionBuilder.DEFAULT_CHARSET).length;
+            return utf8.getBytes(C0600C.UTF8_NAME).length;
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException();
         }

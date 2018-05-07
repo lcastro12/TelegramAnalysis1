@@ -11,7 +11,7 @@ class OpReorderer {
         void recycleUpdateOp(UpdateOp updateOp);
     }
 
-    public OpReorderer(Callback callback) {
+    OpReorderer(Callback callback) {
         this.mCallback = callback;
     }
 
@@ -30,13 +30,13 @@ class OpReorderer {
         UpdateOp moveOp = (UpdateOp) list.get(badMove);
         UpdateOp nextOp = (UpdateOp) list.get(next);
         switch (nextOp.cmd) {
-            case 0:
+            case 1:
                 swapMoveAdd(list, badMove, moveOp, next, nextOp);
                 return;
-            case 1:
+            case 2:
                 swapMoveRemove(list, badMove, moveOp, next, nextOp);
                 return;
-            case 2:
+            case 4:
                 swapMoveUpdate(list, badMove, moveOp, next, nextOp);
                 return;
             default:
@@ -63,7 +63,7 @@ class OpReorderer {
             removeOp.positionStart--;
         } else if (moveOp.itemCount < removeOp.positionStart + removeOp.itemCount) {
             removeOp.itemCount--;
-            moveOp.cmd = 1;
+            moveOp.cmd = 2;
             moveOp.itemCount = 1;
             if (removeOp.itemCount == 0) {
                 list.remove(removePos);
@@ -75,7 +75,7 @@ class OpReorderer {
         if (moveOp.positionStart <= removeOp.positionStart) {
             removeOp.positionStart++;
         } else if (moveOp.positionStart < removeOp.positionStart + removeOp.itemCount) {
-            extraRm = this.mCallback.obtainUpdateOp(1, moveOp.positionStart + 1, (removeOp.positionStart + removeOp.itemCount) - moveOp.positionStart, null);
+            extraRm = this.mCallback.obtainUpdateOp(2, moveOp.positionStart + 1, (removeOp.positionStart + removeOp.itemCount) - moveOp.positionStart, null);
             removeOp.itemCount = moveOp.positionStart - removeOp.positionStart;
         }
         if (revertedMove) {
@@ -152,13 +152,13 @@ class OpReorderer {
             updateOp.positionStart--;
         } else if (moveOp.itemCount < updateOp.positionStart + updateOp.itemCount) {
             updateOp.itemCount--;
-            extraUp1 = this.mCallback.obtainUpdateOp(2, moveOp.positionStart, 1, updateOp.payload);
+            extraUp1 = this.mCallback.obtainUpdateOp(4, moveOp.positionStart, 1, updateOp.payload);
         }
         if (moveOp.positionStart <= updateOp.positionStart) {
             updateOp.positionStart++;
         } else if (moveOp.positionStart < updateOp.positionStart + updateOp.itemCount) {
             int remaining = (updateOp.positionStart + updateOp.itemCount) - moveOp.positionStart;
-            extraUp2 = this.mCallback.obtainUpdateOp(2, moveOp.positionStart + 1, remaining, updateOp.payload);
+            extraUp2 = this.mCallback.obtainUpdateOp(4, moveOp.positionStart + 1, remaining, updateOp.payload);
             updateOp.itemCount -= remaining;
         }
         list.set(update, moveOp);
@@ -179,7 +179,7 @@ class OpReorderer {
     private int getLastMoveOutOfOrder(List<UpdateOp> list) {
         boolean foundNonMove = false;
         for (int i = list.size() - 1; i >= 0; i--) {
-            if (((UpdateOp) list.get(i)).cmd != 3) {
+            if (((UpdateOp) list.get(i)).cmd != 8) {
                 foundNonMove = true;
             } else if (foundNonMove) {
                 return i;

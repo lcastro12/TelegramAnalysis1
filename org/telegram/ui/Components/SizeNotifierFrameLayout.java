@@ -3,18 +3,22 @@ package org.telegram.ui.Components;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.graphics.Shader.TileMode;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build.VERSION;
 import android.view.View;
 import android.widget.FrameLayout;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.FileLog;
+import org.telegram.ui.ActionBar.ActionBar;
 
 public class SizeNotifierFrameLayout extends FrameLayout {
     private Drawable backgroundDrawable;
     private int bottomClip;
     private SizeNotifierFrameLayoutDelegate delegate;
     private int keyboardHeight;
+    private boolean occupyStatusBar = true;
     private Rect rect = new Rect();
 
     public interface SizeNotifierFrameLayoutDelegate {
@@ -26,16 +30,9 @@ public class SizeNotifierFrameLayout extends FrameLayout {
         setWillNotDraw(false);
     }
 
-    public void setBackgroundImage(int resourceId) {
-        try {
-            this.backgroundDrawable = getResources().getDrawable(resourceId);
-        } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
-        }
-    }
-
     public void setBackgroundImage(Drawable bitmap) {
         this.backgroundDrawable = bitmap;
+        invalidate();
     }
 
     public Drawable getBackgroundImage() {
@@ -44,6 +41,10 @@ public class SizeNotifierFrameLayout extends FrameLayout {
 
     public void setDelegate(SizeNotifierFrameLayoutDelegate delegate) {
         this.delegate = delegate;
+    }
+
+    public void setOccupyStatusBar(boolean value) {
+        this.occupyStatusBar = value;
     }
 
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -88,10 +89,24 @@ public class SizeNotifierFrameLayout extends FrameLayout {
             if (this.bottomClip != 0) {
                 canvas.restore();
             }
+        } else if (!(this.backgroundDrawable instanceof BitmapDrawable)) {
         } else {
             float scale;
+            if (this.backgroundDrawable.getTileModeX() == TileMode.REPEAT) {
+                canvas.save();
+                scale = 2.0f / AndroidUtilities.density;
+                canvas.scale(scale, scale);
+                this.backgroundDrawable.setBounds(0, 0, (int) Math.ceil((double) (((float) getMeasuredWidth()) / scale)), (int) Math.ceil((double) (((float) getMeasuredHeight()) / scale)));
+                this.backgroundDrawable.draw(canvas);
+                canvas.restore();
+                return;
+            }
+            int currentActionBarHeight = isActionBarVisible() ? ActionBar.getCurrentActionBarHeight() : 0;
+            int i = (VERSION.SDK_INT < 21 || !this.occupyStatusBar) ? 0 : AndroidUtilities.statusBarHeight;
+            int actionBarHeight = currentActionBarHeight + i;
+            int viewHeight = getMeasuredHeight() - actionBarHeight;
             float scaleX = ((float) getMeasuredWidth()) / ((float) this.backgroundDrawable.getIntrinsicWidth());
-            float scaleY = ((float) (getMeasuredHeight() + this.keyboardHeight)) / ((float) this.backgroundDrawable.getIntrinsicHeight());
+            float scaleY = ((float) (this.keyboardHeight + viewHeight)) / ((float) this.backgroundDrawable.getIntrinsicHeight());
             if (scaleX < scaleY) {
                 scale = scaleY;
             } else {
@@ -100,16 +115,16 @@ public class SizeNotifierFrameLayout extends FrameLayout {
             int width = (int) Math.ceil((double) (((float) this.backgroundDrawable.getIntrinsicWidth()) * scale));
             int height = (int) Math.ceil((double) (((float) this.backgroundDrawable.getIntrinsicHeight()) * scale));
             int x = (getMeasuredWidth() - width) / 2;
-            int y = ((getMeasuredHeight() - height) + this.keyboardHeight) / 2;
-            if (this.bottomClip != 0) {
-                canvas.save();
-                canvas.clipRect(0, 0, width, getMeasuredHeight() - this.bottomClip);
-            }
+            int y = (((viewHeight - height) + this.keyboardHeight) / 2) + actionBarHeight;
+            canvas.save();
+            canvas.clipRect(0, actionBarHeight, width, getMeasuredHeight() - this.bottomClip);
             this.backgroundDrawable.setBounds(x, y, x + width, y + height);
             this.backgroundDrawable.draw(canvas);
-            if (this.bottomClip != 0) {
-                canvas.restore();
-            }
+            canvas.restore();
         }
+    }
+
+    protected boolean isActionBarVisible() {
+        return true;
     }
 }

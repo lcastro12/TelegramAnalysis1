@@ -70,7 +70,7 @@ public abstract class SearchActionVerificationClientService extends IntentServic
     protected final void onHandleIntent(Intent intent) {
         if (intent != null) {
             long startTime = System.nanoTime();
-            while (!isConnected() && System.nanoTime() - startTime < this.mConnectionTimeout * MS_TO_NS) {
+            while (!isConnected() && System.nanoTime() - startTime < this.mConnectionTimeout * 1000000) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException exception) {

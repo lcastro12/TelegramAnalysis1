@@ -4,10 +4,10 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.widget.EditText;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.ui.ActionBar.Theme;
 
-public class HintEditText extends EditText {
+public class HintEditText extends EditTextBoldCursor {
     private String hintText;
     private float numberSize;
     private Paint paint = new Paint();
@@ -17,7 +17,7 @@ public class HintEditText extends EditText {
 
     public HintEditText(Context context) {
         super(context);
-        this.paint.setColor(-6842473);
+        this.paint.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
     }
 
     public String getHintText() {

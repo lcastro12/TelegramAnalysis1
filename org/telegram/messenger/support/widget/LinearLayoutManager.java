@@ -5,35 +5,38 @@ import android.graphics.PointF;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Parcelable.Creator;
-import android.support.v4.media.TransportMediator;
-import android.support.v4.view.accessibility.AccessibilityEventCompat;
-import android.support.v4.view.accessibility.AccessibilityRecordCompat;
 import android.util.Log;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import java.util.List;
+import org.telegram.messenger.exoplayer2.extractor.ts.TsExtractor;
 import org.telegram.messenger.support.widget.RecyclerView.LayoutManager;
+import org.telegram.messenger.support.widget.RecyclerView.LayoutManager.LayoutPrefetchRegistry;
 import org.telegram.messenger.support.widget.RecyclerView.LayoutParams;
 import org.telegram.messenger.support.widget.RecyclerView.Recycler;
+import org.telegram.messenger.support.widget.RecyclerView.SmoothScroller.ScrollVectorProvider;
 import org.telegram.messenger.support.widget.RecyclerView.State;
 import org.telegram.messenger.support.widget.RecyclerView.ViewHolder;
 import org.telegram.messenger.support.widget.helper.ItemTouchHelper.ViewDropHandler;
 import org.telegram.tgnet.ConnectionsManager;
 
-public class LinearLayoutManager extends LayoutManager implements ViewDropHandler {
-    private static final boolean DEBUG = false;
+public class LinearLayoutManager extends LayoutManager implements ScrollVectorProvider, ViewDropHandler {
+    static final boolean DEBUG = false;
     public static final int HORIZONTAL = 0;
     public static final int INVALID_OFFSET = Integer.MIN_VALUE;
-    private static final float MAX_SCROLL_FACTOR = 0.33f;
+    private static final float MAX_SCROLL_FACTOR = 0.33333334f;
     private static final String TAG = "LinearLayoutManager";
     public static final int VERTICAL = 1;
     final AnchorInfo mAnchorInfo;
+    private int mInitialPrefetchItemCount;
     private boolean mLastStackFromEnd;
+    private final LayoutChunkResult mLayoutChunkResult;
     private LayoutState mLayoutState;
     int mOrientation;
     OrientationHelper mOrientationHelper;
     SavedState mPendingSavedState;
     int mPendingScrollPosition;
+    boolean mPendingScrollPositionBottom;
     int mPendingScrollPositionOffset;
     private boolean mRecycleChildrenOnDetach;
     private boolean mReverseLayout;
@@ -41,48 +44,58 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     private boolean mSmoothScrollbarEnabled;
     private boolean mStackFromEnd;
 
-    class AnchorInfo {
+    static class AnchorInfo {
         int mCoordinate;
         boolean mLayoutFromEnd;
+        OrientationHelper mOrientationHelper;
         int mPosition;
+        boolean mValid;
 
         AnchorInfo() {
+            reset();
         }
 
         void reset() {
             this.mPosition = -1;
             this.mCoordinate = Integer.MIN_VALUE;
             this.mLayoutFromEnd = false;
+            this.mValid = false;
         }
 
         void assignCoordinateFromPadding() {
-            this.mCoordinate = this.mLayoutFromEnd ? LinearLayoutManager.this.mOrientationHelper.getEndAfterPadding() : LinearLayoutManager.this.mOrientationHelper.getStartAfterPadding();
+            int endAfterPadding;
+            if (this.mLayoutFromEnd) {
+                endAfterPadding = this.mOrientationHelper.getEndAfterPadding();
+            } else {
+                endAfterPadding = this.mOrientationHelper.getStartAfterPadding();
+            }
+            this.mCoordinate = endAfterPadding;
         }
 
         public String toString() {
-            return "AnchorInfo{mPosition=" + this.mPosition + ", mCoordinate=" + this.mCoordinate + ", mLayoutFromEnd=" + this.mLayoutFromEnd + '}';
+            return "AnchorInfo{mPosition=" + this.mPosition + ", mCoordinate=" + this.mCoordinate + ", mLayoutFromEnd=" + this.mLayoutFromEnd + ", mValid=" + this.mValid + '}';
         }
 
-        private boolean isViewValidAsAnchor(View child, State state) {
+        boolean isViewValidAsAnchor(View child, State state) {
             LayoutParams lp = (LayoutParams) child.getLayoutParams();
             return !lp.isItemRemoved() && lp.getViewLayoutPosition() >= 0 && lp.getViewLayoutPosition() < state.getItemCount();
         }
 
-        public void assignFromViewAndKeepVisibleRect(View child) {
-            int spaceChange = LinearLayoutManager.this.mOrientationHelper.getTotalSpaceChange();
+        public void assignFromViewAndKeepVisibleRect(View child, int position) {
+            int spaceChange = this.mOrientationHelper.getTotalSpaceChange();
             if (spaceChange >= 0) {
-                assignFromView(child);
+                assignFromView(child, position);
                 return;
             }
-            this.mPosition = LinearLayoutManager.this.getPosition(child);
+            this.mPosition = position;
             int startMargin;
             if (this.mLayoutFromEnd) {
-                int previousEndMargin = (LinearLayoutManager.this.mOrientationHelper.getEndAfterPadding() - spaceChange) - LinearLayoutManager.this.mOrientationHelper.getDecoratedEnd(child);
-                this.mCoordinate = LinearLayoutManager.this.mOrientationHelper.getEndAfterPadding() - previousEndMargin;
+                int previousEndMargin = (this.mOrientationHelper.getEndAfterPadding() - spaceChange) - this.mOrientationHelper.getDecoratedEnd(child);
+                this.mCoordinate = this.mOrientationHelper.getEndAfterPadding() - previousEndMargin;
                 if (previousEndMargin > 0) {
-                    int estimatedChildStart = this.mCoordinate - LinearLayoutManager.this.mOrientationHelper.getDecoratedMeasurement(child);
-                    int layoutStart = LinearLayoutManager.this.mOrientationHelper.getStartAfterPadding();
-                    startMargin = estimatedChildStart - (layoutStart + Math.min(LinearLayoutManager.this.mOrientationHelper.getDecoratedStart(child) - layoutStart, 0));
+                    int estimatedChildStart = this.mCoordinate - this.mOrientationHelper.getDecoratedMeasurement(child);
+                    int layoutStart = this.mOrientationHelper.getStartAfterPadding();
+                    startMargin = estimatedChildStart - (layoutStart + Math.min(this.mOrientationHelper.getDecoratedStart(child) - layoutStart, 0));
                     if (startMargin < 0) {
                         this.mCoordinate += Math.min(previousEndMargin, -startMargin);
                         return;
@@ -91,24 +104,24 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                 }
                 return;
             }
-            int childStart = LinearLayoutManager.this.mOrientationHelper.getDecoratedStart(child);
-            startMargin = childStart - LinearLayoutManager.this.mOrientationHelper.getStartAfterPadding();
+            int childStart = this.mOrientationHelper.getDecoratedStart(child);
+            startMargin = childStart - this.mOrientationHelper.getStartAfterPadding();
             this.mCoordinate = childStart;
             if (startMargin > 0) {
-                int endMargin = (LinearLayoutManager.this.mOrientationHelper.getEndAfterPadding() - Math.min(0, (LinearLayoutManager.this.mOrientationHelper.getEndAfterPadding() - spaceChange) - LinearLayoutManager.this.mOrientationHelper.getDecoratedEnd(child))) - (childStart + LinearLayoutManager.this.mOrientationHelper.getDecoratedMeasurement(child));
+                int endMargin = (this.mOrientationHelper.getEndAfterPadding() - Math.min(0, (this.mOrientationHelper.getEndAfterPadding() - spaceChange) - this.mOrientationHelper.getDecoratedEnd(child))) - (childStart + this.mOrientationHelper.getDecoratedMeasurement(child));
                 if (endMargin < 0) {
                     this.mCoordinate -= Math.min(startMargin, -endMargin);
                 }
             }
         }
 
-        public void assignFromView(View child) {
+        public void assignFromView(View child, int position) {
             if (this.mLayoutFromEnd) {
-                this.mCoordinate = LinearLayoutManager.this.mOrientationHelper.getDecoratedEnd(child) + LinearLayoutManager.this.mOrientationHelper.getTotalSpaceChange();
+                this.mCoordinate = this.mOrientationHelper.getDecoratedEnd(child) + this.mOrientationHelper.getTotalSpaceChange();
             } else {
-                this.mCoordinate = LinearLayoutManager.this.mOrientationHelper.getDecoratedStart(child);
+                this.mCoordinate = this.mOrientationHelper.getDecoratedStart(child);
             }
-            this.mPosition = LinearLayoutManager.this.getPosition(child);
+            this.mPosition = position;
         }
     }
 
@@ -135,11 +148,12 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         static final int ITEM_DIRECTION_TAIL = 1;
         static final int LAYOUT_END = 1;
         static final int LAYOUT_START = -1;
-        static final int SCOLLING_OFFSET_NaN = Integer.MIN_VALUE;
-        static final String TAG = "LinearLayoutManager#LayoutState";
+        static final int SCROLLING_OFFSET_NaN = Integer.MIN_VALUE;
+        static final String TAG = "LLM#LayoutState";
         int mAvailable;
         int mCurrentPosition;
         int mExtra = 0;
+        boolean mInfinite;
         boolean mIsPreLayout = false;
         int mItemDirection;
         int mLastScrollDelta;
@@ -217,14 +231,14 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         }
     }
 
-    static class SavedState implements Parcelable {
-        public static final Creator<SavedState> CREATOR = new C06581();
+    public static class SavedState implements Parcelable {
+        public static final Creator<SavedState> CREATOR = new C07531();
         boolean mAnchorLayoutFromEnd;
         int mAnchorOffset;
         int mAnchorPosition;
 
-        static class C06581 implements Creator<SavedState> {
-            C06581() {
+        static class C07531 implements Creator<SavedState> {
+            C07531() {
             }
 
             public SavedState createFromParcel(Parcel in) {
@@ -276,16 +290,24 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     }
 
     public LinearLayoutManager(Context context, int orientation, boolean reverseLayout) {
+        this.mOrientation = 1;
         this.mReverseLayout = false;
         this.mShouldReverseLayout = false;
         this.mStackFromEnd = false;
         this.mSmoothScrollbarEnabled = true;
         this.mPendingScrollPosition = -1;
+        this.mPendingScrollPositionBottom = true;
         this.mPendingScrollPositionOffset = Integer.MIN_VALUE;
         this.mPendingSavedState = null;
         this.mAnchorInfo = new AnchorInfo();
+        this.mLayoutChunkResult = new LayoutChunkResult();
+        this.mInitialPrefetchItemCount = 2;
         setOrientation(orientation);
         setReverseLayout(reverseLayout);
+    }
+
+    public boolean isAutoMeasureEnabled() {
+        return true;
     }
 
     public LayoutParams generateDefaultLayoutParams() {
@@ -311,9 +333,8 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
         super.onInitializeAccessibilityEvent(event);
         if (getChildCount() > 0) {
-            AccessibilityRecordCompat record = AccessibilityEventCompat.asRecord(event);
-            record.setFromIndex(findFirstVisibleItemPosition());
-            record.setToIndex(findLastVisibleItemPosition());
+            event.setFromIndex(findFirstVisibleItemPosition());
+            event.setToIndex(findLastVisibleItemPosition());
         }
     }
 
@@ -376,9 +397,10 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     public void setOrientation(int orientation) {
         if (orientation == 0 || orientation == 1) {
             assertNotInLayoutOrScroll(null);
-            if (orientation != this.mOrientation) {
+            if (orientation != this.mOrientation || this.mOrientationHelper == null) {
+                this.mOrientationHelper = OrientationHelper.createOrientationHelper(this, orientation);
+                this.mAnchorInfo.mOrientationHelper = this.mOrientationHelper;
                 this.mOrientation = orientation;
-                this.mOrientationHelper = null;
                 requestLayout();
                 return;
             }
@@ -434,11 +456,7 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     }
 
     public void smoothScrollToPosition(RecyclerView recyclerView, State state, int position) {
-        LinearSmoothScroller linearSmoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
-            public PointF computeScrollVectorForPosition(int targetPosition) {
-                return LinearLayoutManager.this.computeScrollVectorForPosition(targetPosition);
-            }
-        };
+        LinearSmoothScroller linearSmoothScroller = new LinearSmoothScroller(recyclerView.getContext());
         linearSmoothScroller.setTargetPosition(position);
         startSmoothScroll(linearSmoothScroller);
     }
@@ -478,9 +496,15 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         ensureLayoutState();
         this.mLayoutState.mRecycle = false;
         resolveShouldLayoutReverse();
-        this.mAnchorInfo.reset();
-        this.mAnchorInfo.mLayoutFromEnd = this.mShouldReverseLayout ^ this.mStackFromEnd;
-        updateAnchorInfoForLayout(recycler, state, this.mAnchorInfo);
+        View focused = getFocusedChild();
+        if (!this.mAnchorInfo.mValid || this.mPendingScrollPosition != -1 || this.mPendingSavedState != null) {
+            this.mAnchorInfo.reset();
+            this.mAnchorInfo.mLayoutFromEnd = this.mShouldReverseLayout ^ this.mStackFromEnd;
+            updateAnchorInfoForLayout(recycler, state, this.mAnchorInfo);
+            this.mAnchorInfo.mValid = true;
+        } else if (focused != null && (this.mOrientationHelper.getDecoratedStart(focused) >= this.mOrientationHelper.getEndAfterPadding() || this.mOrientationHelper.getDecoratedEnd(focused) <= this.mOrientationHelper.getStartAfterPadding())) {
+            this.mAnchorInfo.assignFromViewAndKeepVisibleRect(focused, getPosition(focused));
+        }
         int extra = getExtraLayoutSpace(state);
         if (this.mLayoutState.mLastScrollDelta >= 0) {
             extraForEnd = extra;
@@ -495,7 +519,7 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
             View existing = findViewByPosition(this.mPendingScrollPosition);
             if (existing != null) {
                 int upcomingOffset;
-                if (this.mShouldReverseLayout) {
+                if (this.mPendingScrollPositionBottom) {
                     upcomingOffset = (this.mOrientationHelper.getEndAfterPadding() - this.mOrientationHelper.getDecoratedEnd(existing)) - this.mPendingScrollPositionOffset;
                 } else {
                     upcomingOffset = this.mPendingScrollPositionOffset - (this.mOrientationHelper.getDecoratedStart(existing) - this.mOrientationHelper.getStartAfterPadding());
@@ -507,8 +531,10 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                 }
             }
         }
-        onAnchorReady(recycler, state, this.mAnchorInfo);
+        int firstLayoutDirection = this.mAnchorInfo.mLayoutFromEnd ? this.mShouldReverseLayout ? 1 : -1 : this.mShouldReverseLayout ? -1 : 1;
+        onAnchorReady(recycler, state, this.mAnchorInfo, firstLayoutDirection);
         detachAndScrapAttachedViews(recycler);
+        this.mLayoutState.mInfinite = resolveIsInfinite();
         this.mLayoutState.mIsPreLayout = state.isPreLayout();
         LayoutState layoutState;
         if (this.mAnchorInfo.mLayoutFromEnd) {
@@ -575,16 +601,23 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
             }
         }
         layoutForPredictiveAnimations(recycler, state, startOffset, endOffset);
-        if (!state.isPreLayout()) {
-            this.mPendingScrollPosition = -1;
-            this.mPendingScrollPositionOffset = Integer.MIN_VALUE;
+        if (state.isPreLayout()) {
+            this.mAnchorInfo.reset();
+        } else {
             this.mOrientationHelper.onLayoutComplete();
         }
         this.mLastStackFromEnd = this.mStackFromEnd;
-        this.mPendingSavedState = null;
     }
 
-    void onAnchorReady(Recycler recycler, State state, AnchorInfo anchorInfo) {
+    public void onLayoutCompleted(State state) {
+        super.onLayoutCompleted(state);
+        this.mPendingSavedState = null;
+        this.mPendingScrollPosition = -1;
+        this.mPendingScrollPositionOffset = Integer.MIN_VALUE;
+        this.mAnchorInfo.reset();
+    }
+
+    void onAnchorReady(Recycler recycler, State state, AnchorInfo anchorInfo, int firstLayoutItemDirection) {
     }
 
     private void layoutForPredictiveAnimations(Recycler recycler, State state, int startOffset, int endOffset) {
@@ -636,16 +669,21 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         }
         View focused = getFocusedChild();
         if (focused != null && anchorInfo.isViewValidAsAnchor(focused, state)) {
-            anchorInfo.assignFromViewAndKeepVisibleRect(focused);
+            anchorInfo.assignFromViewAndKeepVisibleRect(focused, getPosition(focused));
             return true;
         } else if (this.mLastStackFromEnd != this.mStackFromEnd) {
             return false;
         } else {
-            View referenceChild = anchorInfo.mLayoutFromEnd ? findReferenceChildClosestToEnd(recycler, state) : findReferenceChildClosestToStart(recycler, state);
+            View referenceChild;
+            if (anchorInfo.mLayoutFromEnd) {
+                referenceChild = findReferenceChildClosestToEnd(recycler, state);
+            } else {
+                referenceChild = findReferenceChildClosestToStart(recycler, state);
+            }
             if (referenceChild == null) {
                 return false;
             }
-            anchorInfo.assignFromView(referenceChild);
+            anchorInfo.assignFromView(referenceChild, getPosition(referenceChild));
             if (!state.isPreLayout() && supportsPredictiveItemAnimations()) {
                 boolean notVisible;
                 if (this.mOrientationHelper.getDecoratedStart(referenceChild) >= this.mOrientationHelper.getEndAfterPadding() || this.mOrientationHelper.getDecoratedEnd(referenceChild) < this.mOrientationHelper.getStartAfterPadding()) {
@@ -654,7 +692,13 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                     notVisible = false;
                 }
                 if (notVisible) {
-                    anchorInfo.mCoordinate = anchorInfo.mLayoutFromEnd ? this.mOrientationHelper.getEndAfterPadding() : this.mOrientationHelper.getStartAfterPadding();
+                    int endAfterPadding;
+                    if (anchorInfo.mLayoutFromEnd) {
+                        endAfterPadding = this.mOrientationHelper.getEndAfterPadding();
+                    } else {
+                        endAfterPadding = this.mOrientationHelper.getStartAfterPadding();
+                    }
+                    anchorInfo.mCoordinate = endAfterPadding;
                 }
             }
             return true;
@@ -690,7 +734,7 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                     } else {
                         z2 = false;
                     }
-                    if (z2 == this.mShouldReverseLayout) {
+                    if (z2 == this.mPendingScrollPositionBottom) {
                         z = true;
                     }
                     anchorInfo.mLayoutFromEnd = z;
@@ -709,12 +753,18 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                 anchorInfo.mLayoutFromEnd = true;
                 return true;
             } else {
-                anchorInfo.mCoordinate = anchorInfo.mLayoutFromEnd ? this.mOrientationHelper.getDecoratedEnd(child) + this.mOrientationHelper.getTotalSpaceChange() : this.mOrientationHelper.getDecoratedStart(child);
+                int decoratedEnd;
+                if (anchorInfo.mLayoutFromEnd) {
+                    decoratedEnd = this.mOrientationHelper.getDecoratedEnd(child) + this.mOrientationHelper.getTotalSpaceChange();
+                } else {
+                    decoratedEnd = this.mOrientationHelper.getDecoratedStart(child);
+                }
+                anchorInfo.mCoordinate = decoratedEnd;
                 return true;
             }
         } else {
-            anchorInfo.mLayoutFromEnd = this.mShouldReverseLayout;
-            if (this.mShouldReverseLayout) {
+            anchorInfo.mLayoutFromEnd = this.mPendingScrollPositionBottom;
+            if (this.mPendingScrollPositionBottom) {
                 anchorInfo.mCoordinate = this.mOrientationHelper.getEndAfterPadding() - this.mPendingScrollPositionOffset;
                 return true;
             }
@@ -725,36 +775,38 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
 
     private int fixLayoutEndGap(int endOffset, Recycler recycler, State state, boolean canOffsetChildren) {
         int gap = this.mOrientationHelper.getEndAfterPadding() - endOffset;
-        if (gap <= 0) {
-            return 0;
-        }
-        int fixOffset = -scrollBy(-gap, recycler, state);
-        endOffset += fixOffset;
-        if (canOffsetChildren) {
-            gap = this.mOrientationHelper.getEndAfterPadding() - endOffset;
-            if (gap > 0) {
-                this.mOrientationHelper.offsetChildren(gap);
-                return gap + fixOffset;
+        if (gap > 0) {
+            int fixOffset = -scrollBy(-gap, recycler, state);
+            endOffset += fixOffset;
+            if (canOffsetChildren) {
+                gap = this.mOrientationHelper.getEndAfterPadding() - endOffset;
+                if (gap > 0) {
+                    this.mOrientationHelper.offsetChildren(gap);
+                    return gap + fixOffset;
+                }
             }
+            return fixOffset;
         }
-        return fixOffset;
+        int i = 0;
+        return 0;
     }
 
     private int fixLayoutStartGap(int startOffset, Recycler recycler, State state, boolean canOffsetChildren) {
         int gap = startOffset - this.mOrientationHelper.getStartAfterPadding();
-        if (gap <= 0) {
-            return 0;
-        }
-        int fixOffset = -scrollBy(gap, recycler, state);
-        startOffset += fixOffset;
-        if (canOffsetChildren) {
-            gap = startOffset - this.mOrientationHelper.getStartAfterPadding();
-            if (gap > 0) {
-                this.mOrientationHelper.offsetChildren(-gap);
-                return fixOffset - gap;
+        if (gap > 0) {
+            int fixOffset = -scrollBy(gap, recycler, state);
+            startOffset += fixOffset;
+            if (canOffsetChildren) {
+                gap = startOffset - this.mOrientationHelper.getStartAfterPadding();
+                if (gap > 0) {
+                    this.mOrientationHelper.offsetChildren(-gap);
+                    return fixOffset - gap;
+                }
             }
+            return fixOffset;
         }
-        return fixOffset;
+        int i = 0;
+        return 0;
     }
 
     private void updateLayoutStateToFillEnd(AnchorInfo anchorInfo) {
@@ -791,9 +843,6 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         if (this.mLayoutState == null) {
             this.mLayoutState = createLayoutState();
         }
-        if (this.mOrientationHelper == null) {
-            this.mOrientationHelper = OrientationHelper.createOrientationHelper(this, this.mOrientation);
-        }
     }
 
     LayoutState createLayoutState() {
@@ -810,8 +859,13 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     }
 
     public void scrollToPositionWithOffset(int position, int offset) {
+        scrollToPositionWithOffset(position, offset, this.mShouldReverseLayout);
+    }
+
+    public void scrollToPositionWithOffset(int position, int offset, boolean bottom) {
         this.mPendingScrollPosition = position;
         this.mPendingScrollPositionOffset = offset;
+        this.mPendingScrollPositionBottom = bottom;
         if (this.mPendingSavedState != null) {
             this.mPendingSavedState.invalidateAnchor();
         }
@@ -907,9 +961,10 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     }
 
     private void updateLayoutState(int layoutDirection, int requiredSpace, boolean canUseExistingSpace, State state) {
-        int fastScrollSpace;
+        int scrollingOffset;
         int i = -1;
         int i2 = 1;
+        this.mLayoutState.mInfinite = resolveIsInfinite();
         this.mLayoutState.mExtra = getExtraLayoutSpace(state);
         this.mLayoutState.mLayoutDirection = layoutDirection;
         LayoutState layoutState;
@@ -925,7 +980,7 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
             layoutState.mItemDirection = i;
             this.mLayoutState.mCurrentPosition = getPosition(child) + this.mLayoutState.mItemDirection;
             this.mLayoutState.mOffset = this.mOrientationHelper.getDecoratedEnd(child);
-            fastScrollSpace = this.mOrientationHelper.getDecoratedEnd(child) - this.mOrientationHelper.getEndAfterPadding();
+            scrollingOffset = this.mOrientationHelper.getDecoratedEnd(child) - this.mOrientationHelper.getEndAfterPadding();
         } else {
             child = getChildClosestToStart();
             layoutState = this.mLayoutState;
@@ -937,14 +992,73 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
             layoutState.mItemDirection = i2;
             this.mLayoutState.mCurrentPosition = getPosition(child) + this.mLayoutState.mItemDirection;
             this.mLayoutState.mOffset = this.mOrientationHelper.getDecoratedStart(child);
-            fastScrollSpace = (-this.mOrientationHelper.getDecoratedStart(child)) + this.mOrientationHelper.getStartAfterPadding();
+            scrollingOffset = (-this.mOrientationHelper.getDecoratedStart(child)) + this.mOrientationHelper.getStartAfterPadding();
         }
         this.mLayoutState.mAvailable = requiredSpace;
         if (canUseExistingSpace) {
             LayoutState layoutState2 = this.mLayoutState;
-            layoutState2.mAvailable -= fastScrollSpace;
+            layoutState2.mAvailable -= scrollingOffset;
         }
-        this.mLayoutState.mScrollingOffset = fastScrollSpace;
+        this.mLayoutState.mScrollingOffset = scrollingOffset;
+    }
+
+    boolean resolveIsInfinite() {
+        return this.mOrientationHelper.getMode() == 0 && this.mOrientationHelper.getEnd() == 0;
+    }
+
+    void collectPrefetchPositionsForLayoutState(State state, LayoutState layoutState, LayoutPrefetchRegistry layoutPrefetchRegistry) {
+        int pos = layoutState.mCurrentPosition;
+        if (pos >= 0 && pos < state.getItemCount()) {
+            layoutPrefetchRegistry.addPosition(pos, Math.max(0, layoutState.mScrollingOffset));
+        }
+    }
+
+    public void collectInitialPrefetchPositions(int adapterItemCount, LayoutPrefetchRegistry layoutPrefetchRegistry) {
+        boolean fromEnd;
+        int anchorPos;
+        int direction = -1;
+        if (this.mPendingSavedState == null || !this.mPendingSavedState.hasValidAnchor()) {
+            resolveShouldLayoutReverse();
+            fromEnd = this.mShouldReverseLayout;
+            if (this.mPendingScrollPosition == -1) {
+                anchorPos = fromEnd ? adapterItemCount - 1 : 0;
+            } else {
+                anchorPos = this.mPendingScrollPosition;
+            }
+        } else {
+            fromEnd = this.mPendingSavedState.mAnchorLayoutFromEnd;
+            anchorPos = this.mPendingSavedState.mAnchorPosition;
+        }
+        if (!fromEnd) {
+            direction = 1;
+        }
+        int targetPos = anchorPos;
+        for (int i = 0; i < this.mInitialPrefetchItemCount && targetPos >= 0 && targetPos < adapterItemCount; i++) {
+            layoutPrefetchRegistry.addPosition(targetPos, 0);
+            targetPos += direction;
+        }
+    }
+
+    public void setInitialPrefetchItemCount(int itemCount) {
+        this.mInitialPrefetchItemCount = itemCount;
+    }
+
+    public int getInitialPrefetchItemCount() {
+        return this.mInitialPrefetchItemCount;
+    }
+
+    public void collectAdjacentPrefetchPositions(int dx, int dy, State state, LayoutPrefetchRegistry layoutPrefetchRegistry) {
+        int delta;
+        if (this.mOrientation == 0) {
+            delta = dx;
+        } else {
+            delta = dy;
+        }
+        if (getChildCount() != 0 && delta != 0) {
+            ensureLayoutState();
+            updateLayoutState(delta > 0 ? 1 : -1, Math.abs(delta), true, state);
+            collectPrefetchPositionsForLayoutState(state, this.mLayoutState, layoutPrefetchRegistry);
+        }
     }
 
     int scrollBy(int dy, Recycler recycler, State state) {
@@ -975,7 +1089,7 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         }
     }
 
-    private void recycleChildren(Recycler recycler, int startIndex, int endIndex) {
+    protected void recycleChildren(Recycler recycler, int startIndex, int endIndex) {
         if (startIndex != endIndex) {
             int i;
             if (endIndex > startIndex) {
@@ -990,14 +1104,16 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         }
     }
 
-    private void recycleViewsFromStart(Recycler recycler, int dt) {
+    protected void recycleViewsFromStart(Recycler recycler, int dt) {
         if (dt >= 0) {
             int limit = dt;
             int childCount = getChildCount();
             int i;
+            View child;
             if (this.mShouldReverseLayout) {
                 for (i = childCount - 1; i >= 0; i--) {
-                    if (this.mOrientationHelper.getDecoratedEnd(getChildAt(i)) > limit) {
+                    child = getChildAt(i);
+                    if (this.mOrientationHelper.getDecoratedEnd(child) > limit || this.mOrientationHelper.getTransformedEndWithDecoration(child) > limit) {
                         recycleChildren(recycler, childCount - 1, i);
                         return;
                     }
@@ -1005,7 +1121,8 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                 return;
             }
             for (i = 0; i < childCount; i++) {
-                if (this.mOrientationHelper.getDecoratedEnd(getChildAt(i)) > limit) {
+                child = getChildAt(i);
+                if (this.mOrientationHelper.getDecoratedEnd(child) > limit || this.mOrientationHelper.getTransformedEndWithDecoration(child) > limit) {
                     recycleChildren(recycler, 0, i);
                     return;
                 }
@@ -1018,9 +1135,11 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         if (dt >= 0) {
             int limit = this.mOrientationHelper.getEnd() - dt;
             int i;
+            View child;
             if (this.mShouldReverseLayout) {
                 for (i = 0; i < childCount; i++) {
-                    if (this.mOrientationHelper.getDecoratedStart(getChildAt(i)) < limit) {
+                    child = getChildAt(i);
+                    if (this.mOrientationHelper.getDecoratedStart(child) < limit || this.mOrientationHelper.getTransformedStartWithDecoration(child) < limit) {
                         recycleChildren(recycler, 0, i);
                         return;
                     }
@@ -1028,7 +1147,8 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                 return;
             }
             for (i = childCount - 1; i >= 0; i--) {
-                if (this.mOrientationHelper.getDecoratedStart(getChildAt(i)) < limit) {
+                child = getChildAt(i);
+                if (this.mOrientationHelper.getDecoratedStart(child) < limit || this.mOrientationHelper.getTransformedStartWithDecoration(child) < limit) {
                     recycleChildren(recycler, childCount - 1, i);
                     return;
                 }
@@ -1037,13 +1157,12 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     }
 
     private void recycleByLayoutState(Recycler recycler, LayoutState layoutState) {
-        if (!layoutState.mRecycle) {
-            return;
-        }
-        if (layoutState.mLayoutDirection == -1) {
-            recycleViewsFromEnd(recycler, layoutState.mScrollingOffset);
-        } else {
-            recycleViewsFromStart(recycler, layoutState.mScrollingOffset);
+        if (layoutState.mRecycle && !layoutState.mInfinite) {
+            if (layoutState.mLayoutDirection == -1) {
+                recycleViewsFromEnd(recycler, layoutState.mScrollingOffset);
+            } else {
+                recycleViewsFromStart(recycler, layoutState.mScrollingOffset);
+            }
         }
     }
 
@@ -1056,8 +1175,11 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
             recycleByLayoutState(recycler, layoutState);
         }
         int remainingSpace = layoutState.mAvailable + layoutState.mExtra;
-        LayoutChunkResult layoutChunkResult = new LayoutChunkResult();
-        while (remainingSpace > 0 && layoutState.hasMore(state)) {
+        LayoutChunkResult layoutChunkResult = this.mLayoutChunkResult;
+        while (true) {
+            if ((!layoutState.mInfinite && remainingSpace <= 0) || !layoutState.hasMore(state)) {
+                break;
+            }
             layoutChunkResult.resetInternal();
             layoutChunk(recycler, state, layoutState, layoutChunkResult);
             if (!layoutChunkResult.mFinished) {
@@ -1094,14 +1216,28 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         int bottom;
         int top;
         LayoutParams params = (LayoutParams) view.getLayoutParams();
+        boolean z;
+        boolean z2;
         if (layoutState.mScrapList == null) {
-            if (this.mShouldReverseLayout == (layoutState.mLayoutDirection == -1)) {
+            z = this.mShouldReverseLayout;
+            if (layoutState.mLayoutDirection == -1) {
+                z2 = true;
+            } else {
+                z2 = false;
+            }
+            if (z == z2) {
                 addView(view);
             } else {
                 addView(view, 0);
             }
         } else {
-            if (this.mShouldReverseLayout == (layoutState.mLayoutDirection == -1)) {
+            z = this.mShouldReverseLayout;
+            if (layoutState.mLayoutDirection == -1) {
+                z2 = true;
+            } else {
+                z2 = false;
+            }
+            if (z == z2) {
                 addDisappearingView(view);
             } else {
                 addDisappearingView(view, 0);
@@ -1135,20 +1271,33 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                 right = layoutState.mOffset + result.mConsumed;
             }
         }
-        layoutDecorated(view, left + params.leftMargin, top + params.topMargin, right - params.rightMargin, bottom - params.bottomMargin);
+        layoutDecoratedWithMargins(view, left, top, right, bottom);
         if (params.isItemRemoved() || params.isItemChanged()) {
             result.mIgnoreConsumed = true;
         }
-        result.mFocusable = view.isFocusable();
+        result.mFocusable = view.hasFocusable();
     }
 
-    private int convertFocusDirectionToLayoutDirection(int focusDirection) {
-        int i = 1;
-        int i2 = Integer.MIN_VALUE;
+    boolean shouldMeasureTwice() {
+        return (getHeightMode() == 1073741824 || getWidthMode() == 1073741824 || !hasFlexibleChildInBothOrientations()) ? false : true;
+    }
+
+    int convertFocusDirectionToLayoutDirection(int focusDirection) {
+        int i = Integer.MIN_VALUE;
+        int i2 = 1;
         switch (focusDirection) {
             case 1:
-                return -1;
+                if (this.mOrientation == 1 || !isLayoutRTL()) {
+                    return -1;
+                }
+                return 1;
             case 2:
+                if (this.mOrientation == 1) {
+                    return 1;
+                }
+                if (isLayoutRTL()) {
+                    return -1;
+                }
                 return 1;
             case 17:
                 if (this.mOrientation != 0) {
@@ -1162,14 +1311,14 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
                 return -1;
             case 66:
                 if (this.mOrientation != 0) {
-                    i = Integer.MIN_VALUE;
-                }
-                return i;
-            case TransportMediator.KEYCODE_MEDIA_RECORD /*130*/:
-                if (this.mOrientation == 1) {
-                    i2 = 1;
+                    i2 = Integer.MIN_VALUE;
                 }
                 return i2;
+            case TsExtractor.TS_STREAM_TYPE_HDMV_DTS /*130*/:
+                if (this.mOrientation == 1) {
+                    i = 1;
+                }
+                return i;
             default:
                 return Integer.MIN_VALUE;
         }
@@ -1198,11 +1347,17 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     }
 
     private View findReferenceChildClosestToEnd(Recycler recycler, State state) {
-        return this.mShouldReverseLayout ? findFirstReferenceChild(recycler, state) : findLastReferenceChild(recycler, state);
+        if (this.mShouldReverseLayout) {
+            return findFirstReferenceChild(recycler, state);
+        }
+        return findLastReferenceChild(recycler, state);
     }
 
     private View findReferenceChildClosestToStart(Recycler recycler, State state) {
-        return this.mShouldReverseLayout ? findLastReferenceChild(recycler, state) : findFirstReferenceChild(recycler, state);
+        if (this.mShouldReverseLayout) {
+            return findLastReferenceChild(recycler, state);
+        }
+        return findFirstReferenceChild(recycler, state);
     }
 
     private View findFirstReferenceChild(Recycler recycler, State state) {
@@ -1243,6 +1398,28 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         return outOfBoundsMatch;
     }
 
+    private View findPartiallyOrCompletelyInvisibleChildClosestToEnd(Recycler recycler, State state) {
+        if (this.mShouldReverseLayout) {
+            return findFirstPartiallyOrCompletelyInvisibleChild(recycler, state);
+        }
+        return findLastPartiallyOrCompletelyInvisibleChild(recycler, state);
+    }
+
+    private View findPartiallyOrCompletelyInvisibleChildClosestToStart(Recycler recycler, State state) {
+        if (this.mShouldReverseLayout) {
+            return findLastPartiallyOrCompletelyInvisibleChild(recycler, state);
+        }
+        return findFirstPartiallyOrCompletelyInvisibleChild(recycler, state);
+    }
+
+    private View findFirstPartiallyOrCompletelyInvisibleChild(Recycler recycler, State state) {
+        return findOnePartiallyOrCompletelyInvisibleChild(0, getChildCount());
+    }
+
+    private View findLastPartiallyOrCompletelyInvisibleChild(Recycler recycler, State state) {
+        return findOnePartiallyOrCompletelyInvisibleChild(getChildCount() - 1, -1);
+    }
+
     public int findFirstVisibleItemPosition() {
         View child = findOneVisibleChild(0, getChildCount(), false, true);
         return child == null ? -1 : getPosition(child);
@@ -1270,28 +1447,42 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
     }
 
     View findOneVisibleChild(int fromIndex, int toIndex, boolean completelyVisible, boolean acceptPartiallyVisible) {
+        int preferredBoundsFlag;
         ensureLayoutState();
-        int start = this.mOrientationHelper.getStartAfterPadding();
-        int end = this.mOrientationHelper.getEndAfterPadding();
-        int next = toIndex > fromIndex ? 1 : -1;
-        View partiallyVisible = null;
-        for (int i = fromIndex; i != toIndex; i += next) {
-            View child = getChildAt(i);
-            int childStart = this.mOrientationHelper.getDecoratedStart(child);
-            int childEnd = this.mOrientationHelper.getDecoratedEnd(child);
-            if (childStart < end && childEnd > start) {
-                if (!completelyVisible) {
-                    return child;
-                }
-                if (childStart >= start && childEnd <= end) {
-                    return child;
-                }
-                if (acceptPartiallyVisible && partiallyVisible == null) {
-                    partiallyVisible = child;
-                }
-            }
+        int acceptableBoundsFlag = 0;
+        if (completelyVisible) {
+            preferredBoundsFlag = 24579;
+        } else {
+            preferredBoundsFlag = 320;
         }
-        return partiallyVisible;
+        if (acceptPartiallyVisible) {
+            acceptableBoundsFlag = 320;
+        }
+        if (this.mOrientation == 0) {
+            return this.mHorizontalBoundCheck.findOneViewWithinBoundFlags(fromIndex, toIndex, preferredBoundsFlag, acceptableBoundsFlag);
+        }
+        return this.mVerticalBoundCheck.findOneViewWithinBoundFlags(fromIndex, toIndex, preferredBoundsFlag, acceptableBoundsFlag);
+    }
+
+    View findOnePartiallyOrCompletelyInvisibleChild(int fromIndex, int toIndex) {
+        ensureLayoutState();
+        int next = toIndex > fromIndex ? 1 : toIndex < fromIndex ? -1 : 0;
+        if (next == 0) {
+            return getChildAt(fromIndex);
+        }
+        int preferredBoundsFlag;
+        int acceptableBoundsFlag;
+        if (this.mOrientationHelper.getDecoratedStart(getChildAt(fromIndex)) < this.mOrientationHelper.getStartAfterPadding()) {
+            preferredBoundsFlag = 16644;
+            acceptableBoundsFlag = 16388;
+        } else {
+            preferredBoundsFlag = 4161;
+            acceptableBoundsFlag = 4097;
+        }
+        if (this.mOrientation == 0) {
+            return this.mHorizontalBoundCheck.findOneViewWithinBoundFlags(fromIndex, toIndex, preferredBoundsFlag, acceptableBoundsFlag);
+        }
+        return this.mVerticalBoundCheck.findOneViewWithinBoundFlags(fromIndex, toIndex, preferredBoundsFlag, acceptableBoundsFlag);
     }
 
     public View onFocusSearchFailed(View focused, int focusDirection, Recycler recycler, State state) {
@@ -1303,28 +1494,28 @@ public class LinearLayoutManager extends LayoutManager implements ViewDropHandle
         if (layoutDir == Integer.MIN_VALUE) {
             return null;
         }
-        View referenceChild;
-        ensureLayoutState();
-        if (layoutDir == -1) {
-            referenceChild = findReferenceChildClosestToStart(recycler, state);
-        } else {
-            referenceChild = findReferenceChildClosestToEnd(recycler, state);
-        }
-        if (referenceChild == null) {
-            return null;
-        }
+        View nextCandidate;
         View nextFocus;
+        ensureLayoutState();
         ensureLayoutState();
         updateLayoutState(layoutDir, (int) (MAX_SCROLL_FACTOR * ((float) this.mOrientationHelper.getTotalSpace())), false, state);
         this.mLayoutState.mScrollingOffset = Integer.MIN_VALUE;
         this.mLayoutState.mRecycle = false;
         fill(recycler, this.mLayoutState, state, true);
         if (layoutDir == -1) {
+            nextCandidate = findPartiallyOrCompletelyInvisibleChildClosestToStart(recycler, state);
+        } else {
+            nextCandidate = findPartiallyOrCompletelyInvisibleChildClosestToEnd(recycler, state);
+        }
+        if (layoutDir == -1) {
             nextFocus = getChildClosestToStart();
         } else {
             nextFocus = getChildClosestToEnd();
         }
-        if (nextFocus == referenceChild || !nextFocus.isFocusable()) {
+        if (!nextFocus.hasFocusable()) {
+            return nextCandidate;
+        }
+        if (nextCandidate == null) {
             return null;
         }
         return nextFocus;

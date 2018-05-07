@@ -1,5 +1,6 @@
 package org.telegram.ui.Components;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -9,11 +10,10 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
+import android.support.annotation.Keep;
 import android.view.View;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.AnimationCompat.ObjectAnimatorProxy;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.ImageLoader;
 
 public class RadioButton extends View {
     private static Paint checkedPaint;
@@ -22,9 +22,9 @@ public class RadioButton extends View {
     private boolean attachedToWindow;
     private Bitmap bitmap;
     private Canvas bitmapCanvas;
-    private ObjectAnimatorProxy checkAnimator;
-    private int checkedColor = -2627337;
-    private int color = -2627337;
+    private ObjectAnimator checkAnimator;
+    private int checkedColor;
+    private int color;
     private boolean isChecked;
     private float progress;
     private int size = AndroidUtilities.dp(16.0f);
@@ -42,15 +42,13 @@ public class RadioButton extends View {
         }
         try {
             this.bitmap = Bitmap.createBitmap(AndroidUtilities.dp((float) this.size), AndroidUtilities.dp((float) this.size), Config.ARGB_4444);
-            if (ImageLoader.getInstance().runtimeHack != null) {
-                ImageLoader.getInstance().runtimeHack.trackFree((long) (this.bitmap.getRowBytes() * this.bitmap.getHeight()));
-            }
             this.bitmapCanvas = new Canvas(this.bitmap);
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
     }
 
+    @Keep
     public void setProgress(float value) {
         if (this.progress != value) {
             this.progress = value;
@@ -71,6 +69,17 @@ public class RadioButton extends View {
     public void setColor(int color1, int color2) {
         this.color = color1;
         this.checkedColor = color2;
+        invalidate();
+    }
+
+    public void setBackgroundColor(int color1) {
+        this.color = color1;
+        invalidate();
+    }
+
+    public void setCheckedColor(int color2) {
+        this.checkedColor = color2;
+        invalidate();
     }
 
     private void cancelCheckAnimator() {
@@ -83,7 +92,7 @@ public class RadioButton extends View {
         String str = "progress";
         float[] fArr = new float[1];
         fArr[0] = newCheckedState ? 1.0f : 0.0f;
-        this.checkAnimator = ObjectAnimatorProxy.ofFloatProxy(this, str, fArr);
+        this.checkAnimator = ObjectAnimator.ofFloat(this, str, fArr);
         this.checkAnimator.setDuration(200);
         this.checkAnimator.start();
     }
@@ -96,11 +105,6 @@ public class RadioButton extends View {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         this.attachedToWindow = false;
-        if (this.bitmap != null && ImageLoader.getInstance().runtimeHack != null) {
-            ImageLoader.getInstance().runtimeHack.trackAlloc((long) (this.bitmap.getRowBytes() * this.bitmap.getHeight()));
-            this.bitmap.recycle();
-            this.bitmap = null;
-        }
     }
 
     public void setChecked(boolean checked, boolean animated) {
@@ -123,19 +127,14 @@ public class RadioButton extends View {
         float circleProgress;
         if (this.bitmap == null || this.bitmap.getWidth() != getMeasuredWidth()) {
             if (this.bitmap != null) {
-                if (ImageLoader.getInstance().runtimeHack != null) {
-                    ImageLoader.getInstance().runtimeHack.trackAlloc((long) (this.bitmap.getRowBytes() * this.bitmap.getHeight()));
-                }
                 this.bitmap.recycle();
+                this.bitmap = null;
             }
             try {
                 this.bitmap = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(), Config.ARGB_8888);
-                if (ImageLoader.getInstance().runtimeHack != null) {
-                    ImageLoader.getInstance().runtimeHack.trackFree((long) (this.bitmap.getRowBytes() * this.bitmap.getHeight()));
-                }
                 this.bitmapCanvas = new Canvas(this.bitmap);
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
         }
         if (this.progress <= 0.5f) {

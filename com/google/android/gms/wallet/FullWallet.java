@@ -2,71 +2,67 @@ package com.google.android.gms.wallet;
 
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.common.internal.ReflectedParcelable;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
+import com.google.android.gms.identity.intents.model.UserAddress;
 
-public final class FullWallet implements SafeParcelable {
-    public static final Creator<FullWallet> CREATOR = new C0256c();
-    private final int iM;
-    String tH;
-    String tI;
-    ProxyCard tJ;
-    String tK;
-    Address tL;
-    Address tM;
-    String[] tN;
+public final class FullWallet extends AbstractSafeParcelable implements ReflectedParcelable {
+    public static final Creator<FullWallet> CREATOR = new zzk();
+    private String zzaw;
+    private String zzax;
+    private ProxyCard zzay;
+    private String zzaz;
+    private zza zzba;
+    private zza zzbb;
+    private String[] zzbc;
+    private UserAddress zzbd;
+    private UserAddress zzbe;
+    private InstrumentInfo[] zzbf;
+    private PaymentMethodToken zzbg;
 
-    public FullWallet() {
-        this.iM = 1;
+    private FullWallet() {
     }
 
-    FullWallet(int versionCode, String googleTransactionId, String merchantTransactionId, ProxyCard proxyCard, String email, Address billingAddress, Address shippingAddress, String[] paymentDescriptions) {
-        this.iM = versionCode;
-        this.tH = googleTransactionId;
-        this.tI = merchantTransactionId;
-        this.tJ = proxyCard;
-        this.tK = email;
-        this.tL = billingAddress;
-        this.tM = shippingAddress;
-        this.tN = paymentDescriptions;
+    FullWallet(String str, String str2, ProxyCard proxyCard, String str3, zza com_google_android_gms_wallet_zza, zza com_google_android_gms_wallet_zza2, String[] strArr, UserAddress userAddress, UserAddress userAddress2, InstrumentInfo[] instrumentInfoArr, PaymentMethodToken paymentMethodToken) {
+        this.zzaw = str;
+        this.zzax = str2;
+        this.zzay = proxyCard;
+        this.zzaz = str3;
+        this.zzba = com_google_android_gms_wallet_zza;
+        this.zzbb = com_google_android_gms_wallet_zza2;
+        this.zzbc = strArr;
+        this.zzbd = userAddress;
+        this.zzbe = userAddress2;
+        this.zzbf = instrumentInfoArr;
+        this.zzbg = paymentMethodToken;
     }
 
-    public int describeContents() {
-        return 0;
+    public final String getGoogleTransactionId() {
+        return this.zzaw;
     }
 
-    public Address getBillingAddress() {
-        return this.tL;
+    public final String[] getPaymentDescriptions() {
+        return this.zzbc;
     }
 
-    public String getEmail() {
-        return this.tK;
+    public final PaymentMethodToken getPaymentMethodToken() {
+        return this.zzbg;
     }
 
-    public String getGoogleTransactionId() {
-        return this.tH;
-    }
-
-    public String getMerchantTransactionId() {
-        return this.tI;
-    }
-
-    public String[] getPaymentDescriptions() {
-        return this.tN;
-    }
-
-    public ProxyCard getProxyCard() {
-        return this.tJ;
-    }
-
-    public Address getShippingAddress() {
-        return this.tM;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
-    }
-
-    public void writeToParcel(Parcel out, int flags) {
-        C0256c.m780a(this, out, flags);
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeString(parcel, 2, this.zzaw, false);
+        SafeParcelWriter.writeString(parcel, 3, this.zzax, false);
+        SafeParcelWriter.writeParcelable(parcel, 4, this.zzay, i, false);
+        SafeParcelWriter.writeString(parcel, 5, this.zzaz, false);
+        SafeParcelWriter.writeParcelable(parcel, 6, this.zzba, i, false);
+        SafeParcelWriter.writeParcelable(parcel, 7, this.zzbb, i, false);
+        SafeParcelWriter.writeStringArray(parcel, 8, this.zzbc, false);
+        SafeParcelWriter.writeParcelable(parcel, 9, this.zzbd, i, false);
+        SafeParcelWriter.writeParcelable(parcel, 10, this.zzbe, i, false);
+        SafeParcelWriter.writeTypedArray(parcel, 11, this.zzbf, i, false);
+        SafeParcelWriter.writeParcelable(parcel, 12, this.zzbg, i, false);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

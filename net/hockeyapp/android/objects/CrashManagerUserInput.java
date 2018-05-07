@@ -5,13 +5,9 @@ public enum CrashManagerUserInput {
     CrashManagerUserInputSend(1),
     CrashManagerUserInputAlwaysSend(2);
     
-    private final int value;
+    private final int mValue;
 
     private CrashManagerUserInput(int value) {
-        this.value = value;
-    }
-
-    public int getValue() {
-        return this.value;
+        this.mValue = value;
     }
 }

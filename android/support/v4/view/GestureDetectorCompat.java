@@ -10,33 +10,23 @@ import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
-import com.google.android.gms.location.LocationStatusCodes;
 
-public class GestureDetectorCompat {
+public final class GestureDetectorCompat {
     private final GestureDetectorCompatImpl mImpl;
 
     interface GestureDetectorCompatImpl {
-        boolean isLongpressEnabled();
-
         boolean onTouchEvent(MotionEvent motionEvent);
-
-        void setIsLongpressEnabled(boolean z);
-
-        void setOnDoubleTapListener(OnDoubleTapListener onDoubleTapListener);
     }
 
     static class GestureDetectorCompatImplBase implements GestureDetectorCompatImpl {
         private static final int DOUBLE_TAP_TIMEOUT = ViewConfiguration.getDoubleTapTimeout();
         private static final int LONGPRESS_TIMEOUT = ViewConfiguration.getLongPressTimeout();
-        private static final int LONG_PRESS = 2;
-        private static final int SHOW_PRESS = 1;
-        private static final int TAP = 3;
         private static final int TAP_TIMEOUT = ViewConfiguration.getTapTimeout();
         private boolean mAlwaysInBiggerTapRegion;
         private boolean mAlwaysInTapRegion;
-        private MotionEvent mCurrentDownEvent;
-        private boolean mDeferConfirmSingleTap;
-        private OnDoubleTapListener mDoubleTapListener;
+        MotionEvent mCurrentDownEvent;
+        boolean mDeferConfirmSingleTap;
+        OnDoubleTapListener mDoubleTapListener;
         private int mDoubleTapSlopSquare;
         private float mDownFocusX;
         private float mDownFocusY;
@@ -46,11 +36,11 @@ public class GestureDetectorCompat {
         private boolean mIsLongpressEnabled;
         private float mLastFocusX;
         private float mLastFocusY;
-        private final OnGestureListener mListener;
+        final OnGestureListener mListener;
         private int mMaximumFlingVelocity;
         private int mMinimumFlingVelocity;
         private MotionEvent mPreviousUpEvent;
-        private boolean mStillDown;
+        boolean mStillDown;
         private int mTouchSlopSquare;
         private VelocityTracker mVelocityTracker;
 
@@ -87,7 +77,7 @@ public class GestureDetectorCompat {
             }
         }
 
-        public GestureDetectorCompatImplBase(Context context, OnGestureListener listener, Handler handler) {
+        GestureDetectorCompatImplBase(Context context, OnGestureListener listener, Handler handler) {
             if (handler != null) {
                 this.mHandler = new GestureHandler(handler);
             } else {
@@ -121,14 +111,6 @@ public class GestureDetectorCompat {
             this.mDoubleTapListener = onDoubleTapListener;
         }
 
-        public void setIsLongpressEnabled(boolean isLongpressEnabled) {
-            this.mIsLongpressEnabled = isLongpressEnabled;
-        }
-
-        public boolean isLongpressEnabled() {
-            return this.mIsLongpressEnabled;
-        }
-
         public boolean onTouchEvent(MotionEvent ev) {
             int i;
             int div;
@@ -138,14 +120,14 @@ public class GestureDetectorCompat {
             }
             this.mVelocityTracker.addMovement(ev);
             boolean pointerUp = (action & 255) == 6;
-            int skipIndex = pointerUp ? MotionEventCompat.getActionIndex(ev) : -1;
+            int skipIndex = pointerUp ? ev.getActionIndex() : -1;
             float sumX = 0.0f;
             float sumY = 0.0f;
-            int count = MotionEventCompat.getPointerCount(ev);
+            int count = ev.getPointerCount();
             for (i = 0; i < count; i++) {
                 if (skipIndex != i) {
-                    sumX += MotionEventCompat.getX(ev, i);
-                    sumY += MotionEventCompat.getY(ev, i);
+                    sumX += ev.getX(i);
+                    sumY += ev.getY(i);
                 }
             }
             if (pointerUp) {
@@ -205,10 +187,10 @@ public class GestureDetectorCompat {
                         }
                     } else {
                         VelocityTracker velocityTracker = this.mVelocityTracker;
-                        int pointerId = MotionEventCompat.getPointerId(ev, 0);
-                        velocityTracker.computeCurrentVelocity(LocationStatusCodes.GEOFENCE_NOT_AVAILABLE, (float) this.mMaximumFlingVelocity);
-                        float velocityY = VelocityTrackerCompat.getYVelocity(velocityTracker, pointerId);
-                        float velocityX = VelocityTrackerCompat.getXVelocity(velocityTracker, pointerId);
+                        int pointerId = ev.getPointerId(0);
+                        velocityTracker.computeCurrentVelocity(1000, (float) this.mMaximumFlingVelocity);
+                        float velocityY = velocityTracker.getYVelocity(pointerId);
+                        float velocityX = velocityTracker.getXVelocity(pointerId);
                         if (Math.abs(velocityY) > ((float) this.mMinimumFlingVelocity) || Math.abs(velocityX) > ((float) this.mMinimumFlingVelocity)) {
                             handled = this.mListener.onFling(this.mCurrentDownEvent, ev, velocityX, velocityY);
                         }
@@ -276,15 +258,15 @@ public class GestureDetectorCompat {
                     this.mDownFocusX = focusX;
                     this.mLastFocusY = focusY;
                     this.mDownFocusY = focusY;
-                    this.mVelocityTracker.computeCurrentVelocity(LocationStatusCodes.GEOFENCE_NOT_AVAILABLE, (float) this.mMaximumFlingVelocity);
-                    int upIndex = MotionEventCompat.getActionIndex(ev);
-                    int id1 = MotionEventCompat.getPointerId(ev, upIndex);
-                    float x1 = VelocityTrackerCompat.getXVelocity(this.mVelocityTracker, id1);
-                    float y1 = VelocityTrackerCompat.getYVelocity(this.mVelocityTracker, id1);
+                    this.mVelocityTracker.computeCurrentVelocity(1000, (float) this.mMaximumFlingVelocity);
+                    int upIndex = ev.getActionIndex();
+                    int id1 = ev.getPointerId(upIndex);
+                    float x1 = this.mVelocityTracker.getXVelocity(id1);
+                    float y1 = this.mVelocityTracker.getYVelocity(id1);
                     for (i = 0; i < count; i++) {
                         if (i != upIndex) {
-                            int id2 = MotionEventCompat.getPointerId(ev, i);
-                            if ((x1 * VelocityTrackerCompat.getXVelocity(this.mVelocityTracker, id2)) + (y1 * VelocityTrackerCompat.getYVelocity(this.mVelocityTracker, id2)) < 0.0f) {
+                            int id2 = ev.getPointerId(i);
+                            if ((x1 * this.mVelocityTracker.getXVelocity(id2)) + (y1 * this.mVelocityTracker.getYVelocity(id2)) < 0.0f) {
                                 this.mVelocityTracker.clear();
                                 return false;
                             }
@@ -337,7 +319,7 @@ public class GestureDetectorCompat {
             return false;
         }
 
-        private void dispatchLongPress() {
+        void dispatchLongPress() {
             this.mHandler.removeMessages(3);
             this.mDeferConfirmSingleTap = false;
             this.mInLongPress = true;
@@ -348,24 +330,12 @@ public class GestureDetectorCompat {
     static class GestureDetectorCompatImplJellybeanMr2 implements GestureDetectorCompatImpl {
         private final GestureDetector mDetector;
 
-        public GestureDetectorCompatImplJellybeanMr2(Context context, OnGestureListener listener, Handler handler) {
+        GestureDetectorCompatImplJellybeanMr2(Context context, OnGestureListener listener, Handler handler) {
             this.mDetector = new GestureDetector(context, listener, handler);
-        }
-
-        public boolean isLongpressEnabled() {
-            return this.mDetector.isLongpressEnabled();
         }
 
         public boolean onTouchEvent(MotionEvent ev) {
             return this.mDetector.onTouchEvent(ev);
-        }
-
-        public void setIsLongpressEnabled(boolean enabled) {
-            this.mDetector.setIsLongpressEnabled(enabled);
-        }
-
-        public void setOnDoubleTapListener(OnDoubleTapListener listener) {
-            this.mDetector.setOnDoubleTapListener(listener);
         }
     }
 
@@ -381,19 +351,7 @@ public class GestureDetectorCompat {
         }
     }
 
-    public boolean isLongpressEnabled() {
-        return this.mImpl.isLongpressEnabled();
-    }
-
     public boolean onTouchEvent(MotionEvent event) {
         return this.mImpl.onTouchEvent(event);
-    }
-
-    public void setIsLongpressEnabled(boolean enabled) {
-        this.mImpl.setIsLongpressEnabled(enabled);
-    }
-
-    public void setOnDoubleTapListener(OnDoubleTapListener listener) {
-        this.mImpl.setOnDoubleTapListener(listener);
     }
 }

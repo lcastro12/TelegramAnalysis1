@@ -4,10 +4,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Cap;
-import android.graphics.Paint.Style;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import org.telegram.messenger.AndroidUtilities;
 
 public class LineProgressView extends View {
@@ -20,14 +18,13 @@ public class LineProgressView extends View {
     private float currentProgress = 0.0f;
     private long currentProgressTime = 0;
     private long lastUpdateTime = 0;
-    private int progressColor = -13196562;
+    private int progressColor;
 
     public LineProgressView(Context context) {
         super(context);
         if (decelerateInterpolator == null) {
             decelerateInterpolator = new DecelerateInterpolator();
             progressPaint = new Paint(1);
-            progressPaint.setStyle(Style.STROKE);
             progressPaint.setStrokeCap(Cap.ROUND);
             progressPaint.setStrokeWidth((float) AndroidUtilities.dp(2.0f));
         }
@@ -46,7 +43,7 @@ public class LineProgressView extends View {
                     this.animationProgressStart = this.currentProgress;
                     this.currentProgressTime = 0;
                 } else {
-                    this.animatedProgressValue = this.animationProgressStart + (decelerateInterpolator.getInterpolation(((float) this.currentProgressTime) / BitmapDescriptorFactory.HUE_MAGENTA) * progressDiff);
+                    this.animatedProgressValue = this.animationProgressStart + (decelerateInterpolator.getInterpolation(((float) this.currentProgressTime) / 300.0f) * progressDiff);
                 }
             }
             invalidate();

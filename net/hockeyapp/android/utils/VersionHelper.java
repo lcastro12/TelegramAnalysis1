@@ -1,7 +1,8 @@
 package net.hockeyapp.android.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.pm.PackageManager.NameNotFoundException;
+import android.text.TextUtils;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,20 +12,21 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.regex.Pattern;
+import net.hockeyapp.android.C0051R;
 import net.hockeyapp.android.UpdateInfoListener;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class VersionHelper {
-    public static final String VERSION_MAX = "99.0";
-    private int currentVersionCode;
-    private UpdateInfoListener listener;
-    private JSONObject newest;
-    private ArrayList<JSONObject> sortedVersions;
+    private Context mContext;
+    private int mCurrentVersionCode;
+    private UpdateInfoListener mListener;
+    private JSONObject mNewest;
+    private ArrayList<JSONObject> mSortedVersions;
 
-    class C02881 implements Comparator<JSONObject> {
-        C02881() {
+    class C00661 implements Comparator<JSONObject> {
+        C00661() {
         }
 
         public int compare(JSONObject object1, JSONObject object2) {
@@ -37,18 +39,19 @@ public class VersionHelper {
     }
 
     public VersionHelper(Context context, String infoJSON, UpdateInfoListener listener) {
-        this.listener = listener;
-        loadVersions(context, infoJSON);
+        this.mContext = context;
+        this.mListener = listener;
+        loadVersions(infoJSON);
         sortVersions();
     }
 
-    private void loadVersions(Context context, String infoJSON) {
-        this.newest = new JSONObject();
-        this.sortedVersions = new ArrayList();
-        this.currentVersionCode = this.listener.getCurrentVersionCode();
+    private void loadVersions(String infoJSON) {
+        this.mNewest = new JSONObject();
+        this.mSortedVersions = new ArrayList();
+        this.mCurrentVersionCode = this.mListener.getCurrentVersionCode();
         try {
             JSONArray versions = new JSONArray(infoJSON);
-            int versionCode = this.listener.getCurrentVersionCode();
+            int versionCode = this.mCurrentVersionCode;
             for (int index = 0; index < versions.length(); index++) {
                 boolean largerVersionCode;
                 JSONObject entry = versions.getJSONObject(index);
@@ -58,16 +61,16 @@ public class VersionHelper {
                     largerVersionCode = false;
                 }
                 boolean newerApkFile;
-                if (entry.getInt("version") == versionCode && isNewerThanLastUpdateTime(context, entry.getLong("timestamp"))) {
+                if (entry.getInt("version") == versionCode && isNewerThanLastUpdateTime(this.mContext, entry.getLong("timestamp"))) {
                     newerApkFile = true;
                 } else {
                     newerApkFile = false;
                 }
                 if (largerVersionCode || newerApkFile) {
-                    this.newest = entry;
+                    this.mNewest = entry;
                     versionCode = entry.getInt("version");
                 }
-                this.sortedVersions.add(entry);
+                this.mSortedVersions.add(entry);
             }
         } catch (JSONException e) {
         } catch (NullPointerException e2) {
@@ -75,20 +78,21 @@ public class VersionHelper {
     }
 
     private void sortVersions() {
-        Collections.sort(this.sortedVersions, new C02881());
+        Collections.sort(this.mSortedVersions, new C00661());
     }
 
     public String getVersionString() {
-        return failSafeGetStringFromJSON(this.newest, "shortversion", "") + " (" + failSafeGetStringFromJSON(this.newest, "version", "") + ")";
+        return failSafeGetStringFromJSON(this.mNewest, "shortversion", TtmlNode.ANONYMOUS_REGION_ID) + " (" + failSafeGetStringFromJSON(this.mNewest, "version", TtmlNode.ANONYMOUS_REGION_ID) + ")";
     }
 
+    @SuppressLint({"SimpleDateFormat"})
     public String getFileDateString() {
-        return new SimpleDateFormat("dd.MM.yyyy").format(new Date(1000 * failSafeGetLongFromJSON(this.newest, "timestamp", 0)));
+        return new SimpleDateFormat("dd.MM.yyyy").format(new Date(1000 * failSafeGetLongFromJSON(this.mNewest, "timestamp", 0)));
     }
 
     public long getFileSizeBytes() {
-        boolean external = Boolean.valueOf(failSafeGetStringFromJSON(this.newest, "external", "false")).booleanValue();
-        long appSize = failSafeGetLongFromJSON(this.newest, "appsize", 0);
+        boolean external = Boolean.valueOf(failSafeGetStringFromJSON(this.mNewest, "external", "false")).booleanValue();
+        long appSize = failSafeGetLongFromJSON(this.mNewest, "appsize", 0);
         return (external && appSize == 0) ? -1 : appSize;
     }
 
@@ -113,17 +117,17 @@ public class VersionHelper {
         result.append("<html>");
         result.append("<body style='padding: 0px 0px 20px 0px'>");
         int count = 0;
-        Iterator it = this.sortedVersions.iterator();
+        Iterator it = this.mSortedVersions.iterator();
         while (it.hasNext()) {
             JSONObject version = (JSONObject) it.next();
             if (count > 0) {
                 result.append(getSeparator());
                 if (showRestore) {
-                    result.append(getRestoreButton(count, version));
+                    result.append(getRestoreButton(version));
                 }
             }
             result.append(getVersionLine(count, version));
-            result.append(getVersionNotes(count, version));
+            result.append(getVersionNotes(version));
             count++;
         }
         result.append("</body>");
@@ -135,19 +139,18 @@ public class VersionHelper {
         return "<hr style='border-top: 1px solid #c8c8c8; border-bottom: 0px; margin: 40px 10px 0px 10px;' />";
     }
 
-    private String getRestoreButton(int count, JSONObject version) {
+    private String getRestoreButton(JSONObject version) {
         StringBuilder result = new StringBuilder();
-        String versionID = getVersionID(version);
-        if (versionID.length() > 0) {
-            result.append("<a href='restore:" + versionID + "'  style='background: #c8c8c8; color: #000; display: block; float: right; padding: 7px; margin: 0px 10px 10px; text-decoration: none;'>Restore</a>");
+        if (!TextUtils.isEmpty(getVersionID(version))) {
+            result.append(String.format("<a href='restore:%s' style='%s'>%s</a>", new Object[]{getVersionID(version), "background: #c8c8c8; color: #000; display: block; float: right; padding: 7px; margin: 0px 10px 10px; text-decoration: none;", this.mContext.getString(C0051R.string.hockeyapp_update_restore)}));
         }
         return result.toString();
     }
 
     private String getVersionID(JSONObject version) {
-        String versionID = "";
+        String versionID = TtmlNode.ANONYMOUS_REGION_ID;
         try {
-            versionID = version.getString("id");
+            versionID = version.getString(TtmlNode.ATTR_ID);
         } catch (JSONException e) {
         }
         return versionID;
@@ -155,17 +158,18 @@ public class VersionHelper {
 
     private String getVersionLine(int count, JSONObject version) {
         StringBuilder result = new StringBuilder();
-        int newestCode = getVersionCode(this.newest);
+        int newestCode = getVersionCode(this.mNewest);
         int versionCode = getVersionCode(version);
         String versionName = getVersionName(version);
         result.append("<div style='padding: 20px 10px 10px;'><strong>");
         if (count == 0) {
-            result.append("Newest version:");
+            result.append(this.mContext.getString(C0051R.string.hockeyapp_update_newest_version)).append(':');
         } else {
-            result.append("Version " + versionName + " (" + versionCode + "): ");
-            if (versionCode != newestCode && versionCode == this.currentVersionCode) {
-                this.currentVersionCode = -1;
-                result.append("[INSTALLED]");
+            String versionString = String.format(this.mContext.getString(C0051R.string.hockeyapp_update_version), new Object[]{versionName});
+            result.append(String.format("%s (%s): ", new Object[]{versionString, Integer.valueOf(versionCode)}));
+            if (versionCode != newestCode && versionCode == this.mCurrentVersionCode) {
+                this.mCurrentVersionCode = -1;
+                result.append(String.format("[%s]", new Object[]{this.mContext.getString(C0051R.string.hockeyapp_update_already_installed)}));
             }
         }
         result.append("</strong></div>");
@@ -182,7 +186,7 @@ public class VersionHelper {
     }
 
     private String getVersionName(JSONObject version) {
-        String versionName = "";
+        String versionName = TtmlNode.ANONYMOUS_REGION_ID;
         try {
             versionName = version.getString("shortversion");
         } catch (JSONException e) {
@@ -190,12 +194,12 @@ public class VersionHelper {
         return versionName;
     }
 
-    private String getVersionNotes(int count, JSONObject version) {
+    private String getVersionNotes(JSONObject version) {
         StringBuilder result = new StringBuilder();
-        String notes = failSafeGetStringFromJSON(version, "notes", "");
+        String notes = failSafeGetStringFromJSON(version, "notes", TtmlNode.ANONYMOUS_REGION_ID);
         result.append("<div style='padding: 0px 10px;'>");
         if (notes.trim().length() == 0) {
-            result.append("<em>No information.</em>");
+            result.append(String.format("<em>%s</em>", new Object[]{this.mContext.getString(C0051R.string.hockeyapp_update_no_info)}));
         } else {
             result.append(notes);
         }
@@ -208,8 +212,8 @@ public class VersionHelper {
             return 0;
         }
         try {
-            Scanner leftScanner = new Scanner(left.replaceAll("\\-.*", ""));
-            Scanner rightScanner = new Scanner(right.replaceAll("\\-.*", ""));
+            Scanner leftScanner = new Scanner(left.replaceAll("\\-.*", TtmlNode.ANONYMOUS_REGION_ID));
+            Scanner rightScanner = new Scanner(right.replaceAll("\\-.*", TtmlNode.ANONYMOUS_REGION_ID));
             leftScanner.useDelimiter("\\.");
             rightScanner.useDelimiter("\\.");
             while (leftScanner.hasNextInt() && rightScanner.hasNextInt()) {
@@ -243,8 +247,8 @@ public class VersionHelper {
                 return true;
             }
             return false;
-        } catch (NameNotFoundException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            HockeyLog.error("Failed to get application info", e);
             return false;
         }
     }
@@ -256,8 +260,14 @@ public class VersionHelper {
         if (version.equalsIgnoreCase("M")) {
             return "6.0";
         }
+        if (version.equalsIgnoreCase("N")) {
+            return "7.0";
+        }
+        if (version.equalsIgnoreCase("O")) {
+            return "8.0";
+        }
         if (Pattern.matches("^[a-zA-Z]+", version)) {
-            return VERSION_MAX;
+            return "99.0";
         }
         return version;
     }

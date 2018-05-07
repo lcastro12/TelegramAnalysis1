@@ -14,25 +14,35 @@ import java.util.regex.Pattern;
 public class Utilities {
     public static volatile DispatchQueue globalQueue = new DispatchQueue("globalQueue");
     protected static final char[] hexArray = "0123456789ABCDEF".toCharArray();
-    public static Pattern pattern = Pattern.compile("[0-9]+");
+    public static Pattern pattern = Pattern.compile("[\\-0-9]+");
     public static volatile DispatchQueue phoneBookQueue = new DispatchQueue("photoBookQueue");
     public static SecureRandom random = new SecureRandom();
     public static volatile DispatchQueue searchQueue = new DispatchQueue("searchQueue");
     public static volatile DispatchQueue stageQueue = new DispatchQueue("stageQueue");
 
+    public static native void aesCtrDecryption(ByteBuffer byteBuffer, byte[] bArr, byte[] bArr2, int i, int i2);
+
+    public static native void aesCtrDecryptionByteArray(byte[] bArr, byte[] bArr2, byte[] bArr3, int i, int i2, int i3);
+
     private static native void aesIgeEncryption(ByteBuffer byteBuffer, byte[] bArr, byte[] bArr2, boolean z, int i, int i2);
 
-    public static native void blurBitmap(Object obj, int i, int i2);
+    public static native void blurBitmap(Object obj, int i, int i2, int i3, int i4, int i5);
 
     public static native void calcCDT(ByteBuffer byteBuffer, int i, int i2, ByteBuffer byteBuffer2);
 
+    public static native void clearDir(String str, int i, long j);
+
     public static native int convertVideoFrame(ByteBuffer byteBuffer, ByteBuffer byteBuffer2, int i, int i2, int i3, int i4, int i5);
 
-    public static native void loadBitmap(String str, Bitmap bitmap, int i, int i2, int i3, int i4);
+    public static native long getDirSize(String str, int i);
 
     public static native boolean loadWebpImage(Bitmap bitmap, ByteBuffer byteBuffer, int i, Options options, boolean z);
 
     public static native int pinBitmap(Bitmap bitmap);
+
+    public static native String readlink(String str);
+
+    public static native void unpinBitmap(Bitmap bitmap);
 
     static {
         try {
@@ -42,7 +52,7 @@ public class Utilities {
             sUrandomIn.close();
             random.setSeed(buffer);
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
     }
 
@@ -62,7 +72,24 @@ public class Utilities {
             }
             return val;
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
+            return val;
+        }
+    }
+
+    public static Long parseLong(String value) {
+        if (value == null) {
+            return Long.valueOf(0);
+        }
+        Long val = Long.valueOf(0);
+        try {
+            Matcher matcher = pattern.matcher(value);
+            if (matcher.find()) {
+                return Long.valueOf(Long.parseLong(matcher.group(0)));
+            }
+            return val;
+        } catch (Throwable e) {
+            FileLog.m3e(e);
             return val;
         }
     }
@@ -77,7 +104,7 @@ public class Utilities {
 
     public static String bytesToHex(byte[] bytes) {
         if (bytes == null) {
-            return "";
+            return TtmlNode.ANONYMOUS_REGION_ID;
         }
         char[] hexChars = new char[(bytes.length * 2)];
         for (int j = 0; j < bytes.length; j++) {
@@ -145,7 +172,7 @@ public class Utilities {
     }
 
     public static boolean arraysEquals(byte[] arr1, int offset1, byte[] arr2, int offset2) {
-        if (arr1 == null || arr2 == null || offset1 < 0 || offset2 < 0 || arr1.length - offset1 != arr2.length - offset2 || arr1.length - offset1 < 0 || arr2.length - offset2 < 0) {
+        if (arr1 == null || arr2 == null || offset1 < 0 || offset2 < 0 || arr1.length - offset1 > arr2.length - offset2 || arr1.length - offset1 < 0 || arr2.length - offset2 < 0) {
             return false;
         }
         boolean result = true;
@@ -163,7 +190,7 @@ public class Utilities {
             md.update(convertme, offset, len);
             return md.digest();
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
             return new byte[20];
         }
     }
@@ -171,17 +198,15 @@ public class Utilities {
     public static byte[] computeSHA1(ByteBuffer convertme, int offset, int len) {
         int oldp = convertme.position();
         int oldl = convertme.limit();
-        byte[] digest;
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             convertme.position(offset);
             convertme.limit(len);
             md.update(convertme);
-            digest = md.digest();
+            byte[] digest = md.digest();
             return digest;
         } catch (Throwable e) {
-            digest = "tmessages";
-            FileLog.m611e((String) digest, e);
+            FileLog.m3e(e);
             return new byte[20];
         } finally {
             convertme.limit(oldl);
@@ -197,14 +222,38 @@ public class Utilities {
         return computeSHA1(convertme, 0, convertme.length);
     }
 
+    public static byte[] computeSHA256(byte[] convertme) {
+        return computeSHA256(convertme, 0, convertme.length);
+    }
+
     public static byte[] computeSHA256(byte[] convertme, int offset, int len) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(convertme, offset, len);
             return md.digest();
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
-            return null;
+            FileLog.m3e(e);
+            return new byte[32];
+        }
+    }
+
+    public static byte[] computeSHA256(byte[] b1, int o1, int l1, ByteBuffer b2, int o2, int l2) {
+        int oldp = b2.position();
+        int oldl = b2.limit();
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(b1, o1, l1);
+            b2.position(o2);
+            b2.limit(l2);
+            md.update(b2);
+            byte[] digest = md.digest();
+            return digest;
+        } catch (Throwable e) {
+            FileLog.m3e(e);
+            return new byte[32];
+        } finally {
+            b2.limit(oldl);
+            b2.position(oldp);
         }
     }
 
@@ -218,12 +267,12 @@ public class Utilities {
             try {
                 byte[] array = MessageDigest.getInstance("MD5").digest(md5.getBytes());
                 StringBuilder sb = new StringBuilder();
-                for (byte anArray : array) {
-                    sb.append(Integer.toHexString((anArray & 255) | 256).substring(1, 3));
+                for (byte b : array) {
+                    sb.append(Integer.toHexString((b & 255) | 256).substring(1, 3));
                 }
                 str = sb.toString();
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
         }
         return str;

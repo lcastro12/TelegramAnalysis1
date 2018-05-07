@@ -14,13 +14,13 @@ public class FastDateFormat extends Format implements DateParser, DatePrinter {
     public static final int LONG = 1;
     public static final int MEDIUM = 2;
     public static final int SHORT = 3;
-    private static final FormatCache<FastDateFormat> cache = new C14901();
+    private static final FormatCache<FastDateFormat> cache = new C07791();
     private static final long serialVersionUID = 2;
     private final FastDateParser parser;
     private final FastDatePrinter printer;
 
-    static class C14901 extends FormatCache<FastDateFormat> {
-        C14901() {
+    static class C07791 extends FormatCache<FastDateFormat> {
+        C07791() {
         }
 
         protected FastDateFormat createInstance(String pattern, TimeZone timeZone, Locale locale) {

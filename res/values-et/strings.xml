@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="auth_client_needs_enabling_title">Rakenduse kasutamiseks peavad olema lubatud Google Play teenused.</string>
-    <string name="auth_client_needs_installation_title">Rakenduse kasutamiseks peavad olema installitud Google Play teenused.</string>
-    <string name="auth_client_needs_update_title">Rakenduse kasutamiseks tuleb värskendada Google Play teenuseid.</string>
-    <string name="auth_client_play_services_err_notification_msg">Viga Google Play teenustes</string>
-    <string name="auth_client_requested_by_msg">Päringu esitas: %1$s</string>
-    <string name="auth_client_using_bad_version_title">Rakendus püüdis kasutada Google Play teenuste sobimatut versiooni.</string>
-    <string name="common_google_play_services_enable_button">Lubage Google Play teenused</string>
-    <string name="common_google_play_services_enable_text">See rakendus ei tööta, kui te ei luba Google Play teenuseid.</string>
-    <string name="common_google_play_services_enable_title">Lubage Google Play teenused</string>
-    <string name="common_google_play_services_install_button">Hankige Google Play teenused</string>
-    <string name="common_google_play_services_install_text_phone">Selle rakenduse käitamiseks on vaja Google Play teenuseid, mida teie telefonis pole.</string>
-    <string name="common_google_play_services_install_text_tablet">Selle rakenduse käitamiseks on vaja Google Play teenuseid, mida teie tahvelarvutis pole.</string>
-    <string name="common_google_play_services_install_title">Hankige Google Play teenused</string>
-    <string name="common_google_play_services_invalid_account_text">Määratud kontot pole selles seadmes olemas. Valige muu konto.</string>
-    <string name="common_google_play_services_invalid_account_title">Vale konto</string>
-    <string name="common_google_play_services_network_error_text">Google Play teenustega ühenduse loomiseks on vajalik andmesideühendus.</string>
-    <string name="common_google_play_services_network_error_title">Võrgu viga</string>
-    <string name="common_google_play_services_unknown_issue">Google Play teenuste tundmatu probleem.</string>
-    <string name="common_google_play_services_unsupported_text">Teie seade ei toeta Google Play teenuseid, millele mõni teie rakendustest toetub. Abi saamiseks võtke ühendust tootjaga.</string>
-    <string name="common_google_play_services_unsupported_title">Google Play teenused</string>
+    <string name="common_google_play_services_enable_button">Luba</string>
+    <string name="common_google_play_services_enable_text">Rakendus %1$s töötab ainult siis, kui lubate Google Play teenused.</string>
+    <string name="common_google_play_services_enable_title">Google Play teenuste lubamine</string>
+    <string name="common_google_play_services_install_button">Installi</string>
+    <string name="common_google_play_services_install_text">Rakendus %1$s töötab ainult koos Google Play teenustega, mida teie seadmes pole.</string>
+    <string name="common_google_play_services_install_title">Google Play teenuste hankimine</string>
+    <string name="common_google_play_services_notification_channel_name">Google Play teenuste saadavalolek</string>
+    <string name="common_google_play_services_notification_ticker">Viga Google Play teenustes</string>
+    <string name="common_google_play_services_unknown_issue">Rakendusel %1$s on probleeme Google Play teenustega. Proovige uuesti.</string>
+    <string name="common_google_play_services_unsupported_text">Rakendus %1$s töötab ainult koos Google Play teenustega, mida teie seadmes ei toetata.</string>
     <string name="common_google_play_services_update_button">Värskenda</string>
-    <string name="common_google_play_services_update_text">Seda rakendust ei saa käitada, kui te ei värskenda Google Play teenuseid.</string>
-    <string name="common_google_play_services_update_title">Värskendage Google Play teenuseid</string>
+    <string name="common_google_play_services_update_text">Rakenduse %1$s töötamiseks peate värskendama Google Play teenuseid.</string>
+    <string name="common_google_play_services_update_title">Google Play teenuste värskendamine</string>
+    <string name="common_google_play_services_updating_text">Rakendus %1$s töötab ainult koos Google Play teenustega, mida praegu värskendatakse.</string>
+    <string name="common_google_play_services_wear_update_text">Vajalik on Google Play teenuste uus versioon. See värskendab end peagi.</string>
+    <string name="common_open_on_phone">Ava telefonis</string>
     <string name="common_signin_button_text">Logi sisse</string>
-    <string name="common_signin_button_text_long">Logi sisse Google\'iga</string>
+    <string name="common_signin_button_text_long">Logi sisse Google\'i kontoga</string>
+    <string name="fcm_fallback_notification_channel_label">Muu</string>
+    <string name="status_bar_notification_info_overflow">999+</string>
+    <string name="wallet_buy_button_place_holder">Osta Google\'iga</string>
 </resources>

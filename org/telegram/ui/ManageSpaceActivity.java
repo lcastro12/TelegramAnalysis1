@@ -3,6 +3,8 @@ package org.telegram.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Shader.TileMode;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -12,32 +14,29 @@ import android.view.View.OnTouchListener;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.ImageView.ScaleType;
 import android.widget.RelativeLayout;
 import java.util.ArrayList;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.C0553R;
-import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ActionBar.ActionBarLayout;
 import org.telegram.ui.ActionBar.ActionBarLayout.ActionBarLayoutDelegate;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.DrawerLayoutContainer;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Components.LayoutHelper;
 
 public class ManageSpaceActivity extends Activity implements ActionBarLayoutDelegate {
     private static ArrayList<BaseFragment> layerFragmentsStack = new ArrayList();
     private static ArrayList<BaseFragment> mainFragmentsStack = new ArrayList();
     private ActionBarLayout actionBarLayout;
-    private int currentConnectionState;
     protected DrawerLayoutContainer drawerLayoutContainer;
     private boolean finished;
     private ActionBarLayout layersActionBarLayout;
 
-    class C10961 implements OnTouchListener {
-        C10961() {
+    class C19771 implements OnTouchListener {
+        C19771() {
         }
 
         public boolean onTouch(View v, MotionEvent event) {
@@ -65,26 +64,21 @@ public class ManageSpaceActivity extends Activity implements ActionBarLayoutDele
         }
     }
 
-    class C10972 implements OnClickListener {
-        C10972() {
+    class C19782 implements OnClickListener {
+        C19782() {
         }
 
         public void onClick(View v) {
         }
     }
 
-    class C10983 implements OnGlobalLayoutListener {
-        C10983() {
+    class C19793 implements OnGlobalLayoutListener {
+        C19793() {
         }
 
         public void onGlobalLayout() {
             ManageSpaceActivity.this.needLayout();
-            if (ManageSpaceActivity.this.actionBarLayout == null) {
-                return;
-            }
-            if (VERSION.SDK_INT < 16) {
-                ManageSpaceActivity.this.actionBarLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-            } else {
+            if (ManageSpaceActivity.this.actionBarLayout != null) {
                 ManageSpaceActivity.this.actionBarLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
             }
         }
@@ -94,13 +88,14 @@ public class ManageSpaceActivity extends Activity implements ActionBarLayoutDele
         boolean z = true;
         ApplicationLoader.postInitApplication();
         requestWindowFeature(1);
-        setTheme(C0553R.style.Theme.TMessages);
-        getWindow().setBackgroundDrawableResource(C0553R.drawable.transparent);
+        setTheme(C0488R.style.Theme.TMessages);
+        getWindow().setBackgroundDrawableResource(C0488R.drawable.transparent);
         super.onCreate(savedInstanceState);
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
             AndroidUtilities.statusBarHeight = getResources().getDimensionPixelSize(resourceId);
         }
+        Theme.createDialogsResources(this);
         this.actionBarLayout = new ActionBarLayout(this);
         this.drawerLayoutContainer = new DrawerLayoutContainer(this);
         this.drawerLayoutContainer.setAllowOpenDrawer(false, false);
@@ -113,38 +108,23 @@ public class ManageSpaceActivity extends Activity implements ActionBarLayoutDele
             layoutParams1.width = -1;
             layoutParams1.height = -1;
             launchLayout.setLayoutParams(layoutParams1);
-            ImageView backgroundTablet = new ImageView(this);
-            backgroundTablet.setScaleType(ScaleType.CENTER_CROP);
-            backgroundTablet.setImageResource(C0553R.drawable.cats);
-            launchLayout.addView(backgroundTablet);
-            RelativeLayout.LayoutParams relativeLayoutParams = (RelativeLayout.LayoutParams) backgroundTablet.getLayoutParams();
-            relativeLayoutParams.width = -1;
-            relativeLayoutParams.height = -1;
-            backgroundTablet.setLayoutParams(relativeLayoutParams);
-            launchLayout.addView(this.actionBarLayout);
-            relativeLayoutParams = (RelativeLayout.LayoutParams) this.actionBarLayout.getLayoutParams();
-            relativeLayoutParams.width = -1;
-            relativeLayoutParams.height = -1;
-            this.actionBarLayout.setLayoutParams(relativeLayoutParams);
+            View backgroundTablet = new View(this);
+            BitmapDrawable drawable = (BitmapDrawable) getResources().getDrawable(C0488R.drawable.catstile);
+            drawable.setTileModeXY(TileMode.REPEAT, TileMode.REPEAT);
+            backgroundTablet.setBackgroundDrawable(drawable);
+            launchLayout.addView(backgroundTablet, LayoutHelper.createRelative(-1, -1));
+            launchLayout.addView(this.actionBarLayout, LayoutHelper.createRelative(-1, -1));
             FrameLayout shadowTablet = new FrameLayout(this);
-            shadowTablet.setBackgroundColor(2130706432);
-            launchLayout.addView(shadowTablet);
-            relativeLayoutParams = (RelativeLayout.LayoutParams) shadowTablet.getLayoutParams();
-            relativeLayoutParams.width = -1;
-            relativeLayoutParams.height = -1;
-            shadowTablet.setLayoutParams(relativeLayoutParams);
-            shadowTablet.setOnTouchListener(new C10961());
-            shadowTablet.setOnClickListener(new C10972());
+            shadowTablet.setBackgroundColor(Theme.ACTION_BAR_PHOTO_VIEWER_COLOR);
+            launchLayout.addView(shadowTablet, LayoutHelper.createRelative(-1, -1));
+            shadowTablet.setOnTouchListener(new C19771());
+            shadowTablet.setOnClickListener(new C19782());
             this.layersActionBarLayout = new ActionBarLayout(this);
             this.layersActionBarLayout.setRemoveActionBarExtraHeight(true);
             this.layersActionBarLayout.setBackgroundView(shadowTablet);
             this.layersActionBarLayout.setUseAlphaAnimations(true);
-            this.layersActionBarLayout.setBackgroundResource(C0553R.drawable.boxshadow);
-            launchLayout.addView(this.layersActionBarLayout);
-            relativeLayoutParams = (RelativeLayout.LayoutParams) this.layersActionBarLayout.getLayoutParams();
-            relativeLayoutParams.width = AndroidUtilities.dp(530.0f);
-            relativeLayoutParams.height = AndroidUtilities.dp(528.0f);
-            this.layersActionBarLayout.setLayoutParams(relativeLayoutParams);
+            this.layersActionBarLayout.setBackgroundResource(C0488R.drawable.boxshadow);
+            launchLayout.addView(this.layersActionBarLayout, LayoutHelper.createRelative(530, 528));
             this.layersActionBarLayout.init(layerFragmentsStack);
             this.layersActionBarLayout.setDelegate(this);
             this.layersActionBarLayout.setDrawerLayoutContainer(this.drawerLayoutContainer);
@@ -155,8 +135,7 @@ public class ManageSpaceActivity extends Activity implements ActionBarLayoutDele
         this.actionBarLayout.setDrawerLayoutContainer(this.drawerLayoutContainer);
         this.actionBarLayout.init(mainFragmentsStack);
         this.actionBarLayout.setDelegate(this);
-        NotificationCenter.getInstance().postNotificationName(NotificationCenter.closeOtherAppActivities, this);
-        this.currentConnectionState = ConnectionsManager.getInstance().getConnectionState();
+        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeOtherAppActivities, this);
         Intent intent = getIntent();
         if (savedInstanceState == null) {
             z = false;
@@ -237,7 +216,7 @@ public class ManageSpaceActivity extends Activity implements ActionBarLayoutDele
 
     public void fixLayout() {
         if (AndroidUtilities.isTablet() && this.actionBarLayout != null) {
-            this.actionBarLayout.getViewTreeObserver().addOnGlobalLayoutListener(new C10983());
+            this.actionBarLayout.getViewTreeObserver().addOnGlobalLayoutListener(new C19793());
         }
     }
 
@@ -263,21 +242,9 @@ public class ManageSpaceActivity extends Activity implements ActionBarLayoutDele
     }
 
     public void onConfigurationChanged(Configuration newConfig) {
-        AndroidUtilities.checkDisplaySize();
+        AndroidUtilities.checkDisplaySize(this, newConfig);
         super.onConfigurationChanged(newConfig);
         fixLayout();
-    }
-
-    private void updateCurrentConnectionState() {
-        String text = null;
-        if (this.currentConnectionState == 2) {
-            text = LocaleController.getString("WaitingForNetwork", C0553R.string.WaitingForNetwork);
-        } else if (this.currentConnectionState == 1) {
-            text = LocaleController.getString("Connecting", C0553R.string.Connecting);
-        } else if (this.currentConnectionState == 4) {
-            text = LocaleController.getString("Updating", C0553R.string.Updating);
-        }
-        this.actionBarLayout.setTitleOverlayText(text);
     }
 
     public void onBackPressed() {
@@ -329,10 +296,9 @@ public class ManageSpaceActivity extends Activity implements ActionBarLayoutDele
         return true;
     }
 
-    public void onRebuildAllFragments(ActionBarLayout layout) {
+    public void onRebuildAllFragments(ActionBarLayout layout, boolean last) {
         if (AndroidUtilities.isTablet() && layout == this.layersActionBarLayout) {
-            this.actionBarLayout.rebuildAllFragmentViews(true);
-            this.actionBarLayout.showLastFragment();
+            this.actionBarLayout.rebuildAllFragmentViews(last, last);
         }
     }
 }

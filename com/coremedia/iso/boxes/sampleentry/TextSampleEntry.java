@@ -1,6 +1,5 @@
 package com.coremedia.iso.boxes.sampleentry;
 
-import android.support.v4.media.session.PlaybackStateCompat;
 import com.coremedia.iso.BoxParser;
 import com.coremedia.iso.IsoTypeReader;
 import com.coremedia.iso.IsoTypeWriter;
@@ -272,12 +271,12 @@ public class TextSampleEntry extends AbstractSampleEntry {
     }
 
     public boolean isContinuousKaraoke() {
-        return (this.displayFlags & PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH) == PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH;
+        return (this.displayFlags & 2048) == 2048;
     }
 
     public void setContinuousKaraoke(boolean continuousKaraoke) {
         if (continuousKaraoke) {
-            this.displayFlags |= PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH;
+            this.displayFlags |= 2048;
         } else {
             this.displayFlags &= -2049;
         }

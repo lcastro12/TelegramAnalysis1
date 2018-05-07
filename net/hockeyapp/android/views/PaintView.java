@@ -1,10 +1,8 @@
 package net.hockeyapp.android.views;
 
-import android.content.ContentResolver;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.BitmapFactory.Options;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Paint.Cap;
@@ -13,24 +11,23 @@ import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.support.v4.internal.view.SupportMenu;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ImageView;
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Stack;
+import net.hockeyapp.android.utils.HockeyLog;
+import net.hockeyapp.android.utils.ImageUtils;
 
+@SuppressLint({"ViewConstructor"})
 public class PaintView extends ImageView {
-    private static final float TOUCH_TOLERANCE = 4.0f;
     private float mX;
     private float mY;
     private Paint paint = new Paint();
     private Path path = new Path();
     private Stack<Path> paths = new Stack();
 
-    class C02931 extends AsyncTask<Object, Void, Bitmap> {
-        C02931() {
+    class C00721 extends AsyncTask<Object, Void, Bitmap> {
+        C00721() {
         }
 
         protected void onPreExecute() {
@@ -39,9 +36,9 @@ public class PaintView extends ImageView {
 
         protected Bitmap doInBackground(Object... args) {
             try {
-                return PaintView.decodeSampledBitmapFromResource(args[0].getContentResolver(), args[1], args[2].intValue(), args[3].intValue());
-            } catch (Exception e) {
-                Log.e("HockeyApp", "Could not load image into ImageView.", e);
+                return ImageUtils.decodeSampledBitmap(args[0], args[1], args[2].intValue(), args[3].intValue());
+            } catch (Throwable e) {
+                HockeyLog.error("Could not load image into ImageView.", e);
                 return null;
             }
         }
@@ -53,54 +50,17 @@ public class PaintView extends ImageView {
         }
     }
 
-    public static int determineOrientation(ContentResolver resolver, Uri imageUri) {
-        Options options = new Options();
-        options.inJustDecodeBounds = true;
-        try {
-            BitmapFactory.decodeStream(resolver.openInputStream(imageUri), null, options);
-            if (((float) options.outWidth) / ((float) options.outHeight) > 1.0f) {
-                return 0;
-            }
-            return 1;
-        } catch (IOException e) {
-            Log.e("HockeyApp", "Unable to determine necessary screen orientation.", e);
-            return 1;
-        }
-    }
-
-    private static int calculateInSampleSize(Options options, int reqWidth, int reqHeight) {
-        int height = options.outHeight;
-        int width = options.outWidth;
-        int inSampleSize = 1;
-        if (height > reqHeight || width > reqWidth) {
-            int halfHeight = height / 2;
-            int halfWidth = width / 2;
-            while (halfHeight / inSampleSize > reqHeight && halfWidth / inSampleSize > reqWidth) {
-                inSampleSize *= 2;
-            }
-        }
-        return inSampleSize;
-    }
-
-    private static Bitmap decodeSampledBitmapFromResource(ContentResolver resolver, Uri imageUri, int reqWidth, int reqHeight) throws IOException {
-        Options options = new Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeStream(resolver.openInputStream(imageUri), null, options);
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-        options.inJustDecodeBounds = false;
-        return BitmapFactory.decodeStream(resolver.openInputStream(imageUri), null, options);
-    }
-
+    @SuppressLint({"StaticFieldLeak"})
     public PaintView(Context context, Uri imageUri, int displayWidth, int displayHeight) {
         super(context);
         this.paint.setAntiAlias(true);
         this.paint.setDither(true);
-        this.paint.setColor(SupportMenu.CATEGORY_MASK);
+        this.paint.setColor(-65536);
         this.paint.setStyle(Style.STROKE);
         this.paint.setStrokeJoin(Join.ROUND);
         this.paint.setStrokeCap(Cap.ROUND);
         this.paint.setStrokeWidth(12.0f);
-        new C02931().execute(new Object[]{context, imageUri, Integer.valueOf(displayWidth), Integer.valueOf(displayHeight)});
+        new C00721().execute(new Object[]{context, imageUri, Integer.valueOf(displayWidth), Integer.valueOf(displayHeight)});
     }
 
     public void clearImage() {
@@ -138,7 +98,7 @@ public class PaintView extends ImageView {
     private void touchMove(float x, float y) {
         float dx = Math.abs(x - this.mX);
         float dy = Math.abs(y - this.mY);
-        if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+        if (dx >= 4.0f || dy >= 4.0f) {
             this.path.quadTo(this.mX, this.mY, (this.mX + x) / 2.0f, (this.mY + y) / 2.0f);
             this.mX = x;
             this.mY = y;
@@ -151,6 +111,7 @@ public class PaintView extends ImageView {
         this.path = new Path();
     }
 
+    @SuppressLint({"ClickableViewAccessibility"})
     public boolean onTouchEvent(MotionEvent event) {
         float x = event.getX();
         float y = event.getY();

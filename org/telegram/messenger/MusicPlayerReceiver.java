@@ -3,7 +3,6 @@ package org.telegram.messenger;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.support.v4.media.TransportMediator;
 import android.view.KeyEvent;
 
 public class MusicPlayerReceiver extends BroadcastReceiver {
@@ -15,11 +14,11 @@ public class MusicPlayerReceiver extends BroadcastReceiver {
                     switch (keyEvent.getKeyCode()) {
                         case 79:
                         case 85:
-                            if (MediaController.getInstance().isAudioPaused()) {
-                                MediaController.getInstance().playAudio(MediaController.getInstance().getPlayingMessageObject());
+                            if (MediaController.getInstance().isMessagePaused()) {
+                                MediaController.getInstance().playMessage(MediaController.getInstance().getPlayingMessageObject());
                                 return;
                             } else {
-                                MediaController.getInstance().pauseAudio(MediaController.getInstance().getPlayingMessageObject());
+                                MediaController.getInstance().pauseMessage(MediaController.getInstance().getPlayingMessageObject());
                                 return;
                             }
                         case 86:
@@ -30,11 +29,11 @@ public class MusicPlayerReceiver extends BroadcastReceiver {
                         case 88:
                             MediaController.getInstance().playPreviousMessage();
                             return;
-                        case TransportMediator.KEYCODE_MEDIA_PLAY /*126*/:
-                            MediaController.getInstance().playAudio(MediaController.getInstance().getPlayingMessageObject());
+                        case 126:
+                            MediaController.getInstance().playMessage(MediaController.getInstance().getPlayingMessageObject());
                             return;
-                        case TransportMediator.KEYCODE_MEDIA_PAUSE /*127*/:
-                            MediaController.getInstance().pauseAudio(MediaController.getInstance().getPlayingMessageObject());
+                        case 127:
+                            MediaController.getInstance().pauseMessage(MediaController.getInstance().getPlayingMessageObject());
                             return;
                         default:
                             return;
@@ -42,9 +41,9 @@ public class MusicPlayerReceiver extends BroadcastReceiver {
                 }
             }
         } else if (intent.getAction().equals(MusicPlayerService.NOTIFY_PLAY)) {
-            MediaController.getInstance().playAudio(MediaController.getInstance().getPlayingMessageObject());
+            MediaController.getInstance().playMessage(MediaController.getInstance().getPlayingMessageObject());
         } else if (intent.getAction().equals(MusicPlayerService.NOTIFY_PAUSE) || intent.getAction().equals("android.media.AUDIO_BECOMING_NOISY")) {
-            MediaController.getInstance().pauseAudio(MediaController.getInstance().getPlayingMessageObject());
+            MediaController.getInstance().pauseMessage(MediaController.getInstance().getPlayingMessageObject());
         } else if (intent.getAction().equals(MusicPlayerService.NOTIFY_NEXT)) {
             MediaController.getInstance().playNextMessage();
         } else if (intent.getAction().equals(MusicPlayerService.NOTIFY_CLOSE)) {

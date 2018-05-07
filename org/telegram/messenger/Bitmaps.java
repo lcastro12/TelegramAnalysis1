@@ -12,11 +12,11 @@ import android.graphics.RectF;
 import android.os.Build.VERSION;
 
 public class Bitmaps {
-    private static final ThreadLocal<byte[]> jpegData = new C03081();
+    private static final ThreadLocal<byte[]> jpegData = new C00841();
     private static volatile Matrix sScaleMatrix;
 
-    static class C03081 extends ThreadLocal<byte[]> {
-        C03081() {
+    static class C00841 extends ThreadLocal<byte[]> {
+        C00841() {
         }
 
         protected byte[] initialValue() {
@@ -24,7 +24,7 @@ public class Bitmaps {
         }
     }
 
-    static /* synthetic */ class C03092 {
+    static /* synthetic */ class C00852 {
         static final /* synthetic */ int[] $SwitchMap$android$graphics$Bitmap$Config = new int[Config.values().length];
 
         static {
@@ -49,9 +49,7 @@ public class Bitmaps {
 
     public static Bitmap createBitmap(int width, int height, Config config) {
         Bitmap bitmap;
-        if (VERSION.SDK_INT < 14 || VERSION.SDK_INT >= 21) {
-            bitmap = Bitmap.createBitmap(width, height, config);
-        } else {
+        if (VERSION.SDK_INT < 21) {
             Options options = new Options();
             options.inDither = true;
             options.inPreferredConfig = config;
@@ -67,6 +65,8 @@ public class Bitmaps {
             Utilities.pinBitmap(bitmap);
             bitmap.setHasAlpha(true);
             bitmap.eraseColor(0);
+        } else {
+            bitmap = Bitmap.createBitmap(width, height, config);
         }
         if (config == Config.ARGB_8888 || config == Config.ARGB_4444) {
             bitmap.eraseColor(0);
@@ -91,6 +91,9 @@ public class Bitmaps {
     }
 
     public static Bitmap createBitmap(Bitmap source, int x, int y, int width, int height, Matrix m, boolean filter) {
+        if (VERSION.SDK_INT >= 21) {
+            return Bitmap.createBitmap(source, x, y, width, height, m, filter);
+        }
         checkXYSign(x, y);
         checkWidthHeight(width, height);
         if (x + width > source.getWidth()) {
@@ -110,9 +113,9 @@ public class Bitmaps {
             Config newConfig = Config.ARGB_8888;
             Config config = source.getConfig();
             if (config != null) {
-                switch (C03092.$SwitchMap$android$graphics$Bitmap$Config[config.ordinal()]) {
+                switch (C00852.$SwitchMap$android$graphics$Bitmap$Config[config.ordinal()]) {
                     case 1:
-                        newConfig = Config.RGB_565;
+                        newConfig = Config.ARGB_8888;
                         break;
                     case 2:
                         newConfig = Config.ALPHA_8;
@@ -144,9 +147,7 @@ public class Bitmaps {
                 }
             }
             bitmap.setDensity(source.getDensity());
-            if (VERSION.SDK_INT >= 12) {
-                bitmap.setHasAlpha(source.hasAlpha());
-            }
+            bitmap.setHasAlpha(source.hasAlpha());
             if (VERSION.SDK_INT >= 19) {
                 bitmap.setPremultiplied(source.isPremultiplied());
             }
@@ -165,6 +166,9 @@ public class Bitmaps {
     }
 
     public static Bitmap createScaledBitmap(Bitmap src, int dstWidth, int dstHeight, boolean filter) {
+        if (VERSION.SDK_INT >= 21) {
+            return Bitmap.createScaledBitmap(src, dstWidth, dstHeight, filter);
+        }
         Matrix m;
         synchronized (Bitmap.class) {
             m = sScaleMatrix;

@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.CountDownLatch;
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.tgnet.TLRPC.Chat;
 import org.telegram.tgnet.TLRPC.User;
@@ -32,21 +32,22 @@ public class TgChooserTargetService extends ChooserTargetService {
     private Paint roundPaint;
 
     public List<ChooserTarget> onGetChooserTargets(ComponentName targetActivityName, IntentFilter matchedFilter) {
+        final int currentAccount = UserConfig.selectedAccount;
         final List<ChooserTarget> targets = new ArrayList();
-        if (UserConfig.isClientActivated()) {
+        if (UserConfig.getInstance(currentAccount).isClientActivated() && MessagesController.getGlobalMainSettings().getBoolean("direct_share", true)) {
             ImageLoader imageLoader = ImageLoader.getInstance();
-            final Semaphore semaphore = new Semaphore(0);
+            final CountDownLatch countDownLatch = new CountDownLatch(1);
             final ComponentName componentName = new ComponentName(getPackageName(), LaunchActivity.class.getCanonicalName());
-            MessagesStorage.getInstance().getStorageQueue().postRunnable(new Runnable() {
+            MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(new Runnable() {
                 public void run() {
                     ArrayList<Integer> dialogs = new ArrayList();
                     ArrayList<Chat> chats = new ArrayList();
                     ArrayList<User> users = new ArrayList();
                     try {
                         ArrayList<Integer> usersToLoad = new ArrayList();
-                        usersToLoad.add(Integer.valueOf(UserConfig.getClientUserId()));
+                        usersToLoad.add(Integer.valueOf(UserConfig.getInstance(currentAccount).getClientUserId()));
                         ArrayList<Integer> chatsToLoad = new ArrayList();
-                        SQLiteCursor cursor = MessagesStorage.getInstance().getDatabase().queryFinalized(String.format(Locale.US, "SELECT did FROM dialogs ORDER BY date DESC LIMIT %d,%d", new Object[]{Integer.valueOf(0), Integer.valueOf(30)}), new Object[0]);
+                        SQLiteCursor cursor = MessagesStorage.getInstance(currentAccount).getDatabase().queryFinalized(String.format(Locale.US, "SELECT did FROM dialogs ORDER BY date DESC LIMIT %d,%d", new Object[]{Integer.valueOf(0), Integer.valueOf(30)}), new Object[0]);
                         while (cursor.next()) {
                             long id = cursor.longValue(0);
                             int lower_id = (int) id;
@@ -67,13 +68,13 @@ public class TgChooserTargetService extends ChooserTargetService {
                         }
                         cursor.dispose();
                         if (!chatsToLoad.isEmpty()) {
-                            MessagesStorage.getInstance().getChatsInternal(TextUtils.join(",", chatsToLoad), chats);
+                            MessagesStorage.getInstance(currentAccount).getChatsInternal(TextUtils.join(",", chatsToLoad), chats);
                         }
                         if (!usersToLoad.isEmpty()) {
-                            MessagesStorage.getInstance().getUsersInternal(TextUtils.join(",", usersToLoad), users);
+                            MessagesStorage.getInstance(currentAccount).getUsersInternal(TextUtils.join(",", usersToLoad), users);
                         }
                     } catch (Throwable e) {
-                        FileLog.m611e("tmessages", e);
+                        FileLog.m3e(e);
                     }
                     for (int a = 0; a < dialogs.size(); a++) {
                         Bundle extras = new Bundle();
@@ -112,18 +113,18 @@ public class TgChooserTargetService extends ChooserTargetService {
                         }
                         if (name != null) {
                             if (icon == null) {
-                                icon = Icon.createWithResource(ApplicationLoader.applicationContext, C0553R.drawable.logo_avatar);
+                                icon = Icon.createWithResource(ApplicationLoader.applicationContext, C0488R.drawable.logo_avatar);
                             }
                             targets.add(new ChooserTarget(name, icon, 1.0f, componentName, extras));
                         }
                     }
-                    semaphore.release();
+                    countDownLatch.countDown();
                 }
             });
             try {
-                semaphore.acquire();
+                countDownLatch.await();
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
         }
         return targets;
@@ -147,7 +148,7 @@ public class TgChooserTargetService extends ChooserTargetService {
                 return Icon.createWithBitmap(result);
             }
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
         return null;
     }

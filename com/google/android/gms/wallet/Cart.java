@@ -2,89 +2,63 @@ package com.google.android.gms.wallet;
 
 import android.os.Parcel;
 import android.os.Parcelable.Creator;
-import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
+import com.google.android.gms.common.internal.ReflectedParcelable;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
 import java.util.ArrayList;
-import java.util.List;
 
-public class Cart implements SafeParcelable {
-    public static final Creator<Cart> CREATOR = new C0255b();
-    private final int iM;
-    String tD;
-    String tE;
-    ArrayList<LineItem> tF;
+public final class Cart extends AbstractSafeParcelable implements ReflectedParcelable {
+    public static final Creator<Cart> CREATOR = new zzg();
+    String zzan;
+    String zzao;
+    ArrayList<LineItem> zzap;
 
     public final class Builder {
-        final /* synthetic */ Cart tG;
+        private final /* synthetic */ Cart zzaq;
 
         private Builder(Cart cart) {
-            this.tG = cart;
+            this.zzaq = cart;
         }
 
-        public Builder addLineItem(LineItem lineItem) {
-            this.tG.tF.add(lineItem);
+        public final Builder addLineItem(LineItem lineItem) {
+            this.zzaq.zzap.add(lineItem);
             return this;
         }
 
-        public Cart build() {
-            return this.tG;
+        public final Cart build() {
+            return this.zzaq;
         }
 
-        public Builder setCurrencyCode(String currencyCode) {
-            this.tG.tE = currencyCode;
+        public final Builder setCurrencyCode(String str) {
+            this.zzaq.zzao = str;
             return this;
         }
 
-        public Builder setLineItems(List<LineItem> lineItems) {
-            this.tG.tF.clear();
-            this.tG.tF.addAll(lineItems);
-            return this;
-        }
-
-        public Builder setTotalPrice(String totalPrice) {
-            this.tG.tD = totalPrice;
+        public final Builder setTotalPrice(String str) {
+            this.zzaq.zzan = str;
             return this;
         }
     }
 
-    public Cart() {
-        this.iM = 1;
-        this.tF = new ArrayList();
+    Cart() {
+        this.zzap = new ArrayList();
     }
 
-    Cart(int versionCode, String totalPrice, String currencyCode, ArrayList<LineItem> lineItems) {
-        this.iM = versionCode;
-        this.tD = totalPrice;
-        this.tE = currencyCode;
-        this.tF = lineItems;
+    Cart(String str, String str2, ArrayList<LineItem> arrayList) {
+        this.zzan = str;
+        this.zzao = str2;
+        this.zzap = arrayList;
     }
 
     public static Builder newBuilder() {
-        Cart cart = new Cart();
-        cart.getClass();
         return new Builder();
     }
 
-    public int describeContents() {
-        return 0;
-    }
-
-    public String getCurrencyCode() {
-        return this.tE;
-    }
-
-    public ArrayList<LineItem> getLineItems() {
-        return this.tF;
-    }
-
-    public String getTotalPrice() {
-        return this.tD;
-    }
-
-    public int getVersionCode() {
-        return this.iM;
-    }
-
-    public void writeToParcel(Parcel dest, int flags) {
-        C0255b.m778a(this, dest, flags);
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeString(parcel, 2, this.zzan, false);
+        SafeParcelWriter.writeString(parcel, 3, this.zzao, false);
+        SafeParcelWriter.writeTypedList(parcel, 4, this.zzap, false);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

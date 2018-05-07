@@ -1,38 +1,36 @@
 package org.telegram.SQLite;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
+import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLog;
 import org.telegram.tgnet.NativeByteBuffer;
 
 public class SQLitePreparedStatement {
-    private static HashMap<SQLitePreparedStatement, String> hashMap;
     private boolean finalizeAfterQuery = false;
     private boolean isFinalized = false;
-    private int queryArgsCount;
-    private int sqliteStatementHandle;
+    private long sqliteStatementHandle;
 
-    native void bindByteBuffer(int i, int i2, ByteBuffer byteBuffer, int i3) throws SQLiteException;
+    native void bindByteBuffer(long j, int i, ByteBuffer byteBuffer, int i2) throws SQLiteException;
 
-    native void bindDouble(int i, int i2, double d) throws SQLiteException;
+    native void bindDouble(long j, int i, double d) throws SQLiteException;
 
-    native void bindInt(int i, int i2, int i3) throws SQLiteException;
+    native void bindInt(long j, int i, int i2) throws SQLiteException;
 
-    native void bindLong(int i, int i2, long j) throws SQLiteException;
+    native void bindLong(long j, int i, long j2) throws SQLiteException;
 
-    native void bindNull(int i, int i2) throws SQLiteException;
+    native void bindNull(long j, int i) throws SQLiteException;
 
-    native void bindString(int i, int i2, String str) throws SQLiteException;
+    native void bindString(long j, int i, String str) throws SQLiteException;
 
-    native void finalize(int i) throws SQLiteException;
+    native void finalize(long j) throws SQLiteException;
 
-    native int prepare(int i, String str) throws SQLiteException;
+    native long prepare(long j, String str) throws SQLiteException;
 
-    native void reset(int i) throws SQLiteException;
+    native void reset(long j) throws SQLiteException;
 
-    native int step(int i) throws SQLiteException;
+    native int step(long j) throws SQLiteException;
 
-    public int getStatementHandle() {
+    public long getStatementHandle() {
         return this.sqliteStatementHandle;
     }
 
@@ -42,7 +40,7 @@ public class SQLitePreparedStatement {
     }
 
     public SQLiteCursor query(Object[] args) throws SQLiteException {
-        if (args == null || args.length != this.queryArgsCount) {
+        if (args == null) {
             throw new IllegalArgumentException();
         }
         checkFinalized();
@@ -97,7 +95,9 @@ public class SQLitePreparedStatement {
                 this.isFinalized = true;
                 finalize(this.sqliteStatementHandle);
             } catch (SQLiteException e) {
-                FileLog.m610e("tmessages", e.getMessage(), e);
+                if (BuildVars.LOGS_ENABLED) {
+                    FileLog.m2e(e.getMessage(), e);
+                }
             }
         }
     }
@@ -124,5 +124,9 @@ public class SQLitePreparedStatement {
 
     public void bindLong(int index, long value) throws SQLiteException {
         bindLong(this.sqliteStatementHandle, index, value);
+    }
+
+    public void bindNull(int index) throws SQLiteException {
+        bindNull(this.sqliteStatementHandle, index);
     }
 }

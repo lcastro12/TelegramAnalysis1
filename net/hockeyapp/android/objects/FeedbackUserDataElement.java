@@ -5,13 +5,9 @@ public enum FeedbackUserDataElement {
     OPTIONAL(1),
     REQUIRED(2);
     
-    private final int value;
+    private final int mValue;
 
     private FeedbackUserDataElement(int value) {
-        this.value = value;
-    }
-
-    public int getValue() {
-        return this.value;
+        this.mValue = value;
     }
 }

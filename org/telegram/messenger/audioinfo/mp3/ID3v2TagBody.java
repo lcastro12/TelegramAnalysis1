@@ -38,21 +38,24 @@ public class ID3v2TagBody {
         if (frameHeader.isUnsynchronization()) {
             byte[] bytes = this.data.readFully(frameHeader.getBodySize());
             boolean ff = false;
-            byte[] arr$ = bytes;
-            int len$ = arr$.length;
-            int i$ = 0;
+            int length = bytes.length;
+            int i = 0;
             int len = 0;
-            while (i$ < len$) {
+            while (i < length) {
                 int len2;
-                byte b = arr$[i$];
+                byte b = bytes[i];
                 if (ff && b == (byte) 0) {
                     len2 = len;
                 } else {
                     len2 = len + 1;
                     bytes[len] = b;
                 }
-                ff = b == (byte) -1;
-                i$++;
+                if (b == (byte) -1) {
+                    ff = true;
+                } else {
+                    ff = false;
+                }
+                i++;
                 len = len2;
             }
             dataLength = len;

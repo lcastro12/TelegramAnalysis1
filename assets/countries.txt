@@ -98,6 +98,7 @@
 387;BA;Bosnia & Herzegovina;XX XXX XXX
 386;SI;Slovenia;XX XXX XXX
 385;HR;Croatia
+383;XK;Kosovo;XXXX XXXX
 382;ME;Montenegro
 381;RS;Serbia;XX XXX XXXX
 380;UA;Ukraine;XX XXX XX XX

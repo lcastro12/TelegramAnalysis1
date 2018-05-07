@@ -3,32 +3,43 @@ package com.google.android.gms.common;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.IntentSender.SendIntentException;
-import com.google.android.gms.internal.C0191r;
+import android.os.Parcel;
+import android.os.Parcelable.Creator;
+import com.google.android.gms.common.internal.Objects;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
 
-public final class ConnectionResult {
-    public static final ConnectionResult f9B = new ConnectionResult(0, null);
-    public static final int DEVELOPER_ERROR = 10;
-    public static final int INTERNAL_ERROR = 8;
-    public static final int INVALID_ACCOUNT = 5;
-    public static final int LICENSE_CHECK_FAILED = 11;
-    public static final int NETWORK_ERROR = 7;
-    public static final int RESOLUTION_REQUIRED = 6;
-    public static final int SERVICE_DISABLED = 3;
-    public static final int SERVICE_INVALID = 9;
-    public static final int SERVICE_MISSING = 1;
-    public static final int SERVICE_VERSION_UPDATE_REQUIRED = 2;
-    public static final int SIGN_IN_REQUIRED = 4;
-    public static final int SUCCESS = 0;
-    private final PendingIntent mPendingIntent;
-    private final int f10p;
+public final class ConnectionResult extends AbstractSafeParcelable {
+    public static final Creator<ConnectionResult> CREATOR = new ConnectionResultCreator();
+    public static final ConnectionResult RESULT_SUCCESS = new ConnectionResult(0);
+    private final int zzal;
+    private final int zzam;
+    private final PendingIntent zzan;
+    private final String zzao;
 
-    public ConnectionResult(int statusCode, PendingIntent pendingIntent) {
-        this.f10p = statusCode;
-        this.mPendingIntent = pendingIntent;
+    public ConnectionResult(int i) {
+        this(i, null, null);
     }
 
-    private String m17f() {
-        switch (this.f10p) {
+    ConnectionResult(int i, int i2, PendingIntent pendingIntent, String str) {
+        this.zzal = i;
+        this.zzam = i2;
+        this.zzan = pendingIntent;
+        this.zzao = str;
+    }
+
+    public ConnectionResult(int i, PendingIntent pendingIntent) {
+        this(i, pendingIntent, null);
+    }
+
+    public ConnectionResult(int i, PendingIntent pendingIntent, String str) {
+        this(1, i, pendingIntent, str);
+    }
+
+    static String zza(int i) {
+        switch (i) {
+            case -1:
+                return "UNKNOWN";
             case 0:
                 return "SUCCESS";
             case 1:
@@ -53,34 +64,84 @@ public final class ConnectionResult {
                 return "DEVELOPER_ERROR";
             case 11:
                 return "LICENSE_CHECK_FAILED";
+            case 13:
+                return "CANCELED";
+            case 14:
+                return "TIMEOUT";
+            case 15:
+                return "INTERRUPTED";
+            case 16:
+                return "API_UNAVAILABLE";
+            case 17:
+                return "SIGN_IN_FAILED";
+            case 18:
+                return "SERVICE_UPDATING";
+            case 19:
+                return "SERVICE_MISSING_PERMISSION";
+            case 20:
+                return "RESTRICTED_PROFILE";
+            case 21:
+                return "API_VERSION_UPDATE_REQUIRED";
+            case 99:
+                return "UNFINISHED";
+            case 1500:
+                return "DRIVE_EXTERNAL_STORAGE_REQUIRED";
             default:
-                return "unknown status code " + this.f10p;
+                return "UNKNOWN_ERROR_CODE(" + i + ")";
         }
     }
 
-    public int getErrorCode() {
-        return this.f10p;
+    public final boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof ConnectionResult)) {
+            return false;
+        }
+        ConnectionResult connectionResult = (ConnectionResult) obj;
+        return this.zzam == connectionResult.zzam && Objects.equal(this.zzan, connectionResult.zzan) && Objects.equal(this.zzao, connectionResult.zzao);
     }
 
-    public PendingIntent getResolution() {
-        return this.mPendingIntent;
+    public final int getErrorCode() {
+        return this.zzam;
     }
 
-    public boolean hasResolution() {
-        return (this.f10p == 0 || this.mPendingIntent == null) ? false : true;
+    public final String getErrorMessage() {
+        return this.zzao;
     }
 
-    public boolean isSuccess() {
-        return this.f10p == 0;
+    public final PendingIntent getResolution() {
+        return this.zzan;
     }
 
-    public void startResolutionForResult(Activity activity, int requestCode) throws SendIntentException {
+    public final boolean hasResolution() {
+        return (this.zzam == 0 || this.zzan == null) ? false : true;
+    }
+
+    public final int hashCode() {
+        return Objects.hashCode(Integer.valueOf(this.zzam), this.zzan, this.zzao);
+    }
+
+    public final boolean isSuccess() {
+        return this.zzam == 0;
+    }
+
+    public final void startResolutionForResult(Activity activity, int i) throws SendIntentException {
         if (hasResolution()) {
-            activity.startIntentSenderForResult(this.mPendingIntent.getIntentSender(), requestCode, null, 0, 0, 0);
+            activity.startIntentSenderForResult(this.zzan.getIntentSender(), i, null, 0, 0, 0);
         }
     }
 
-    public String toString() {
-        return C0191r.m514c(this).m512a("statusCode", m17f()).m512a("resolution", this.mPendingIntent).toString();
+    public final String toString() {
+        return Objects.toStringHelper(this).add("statusCode", zza(this.zzam)).add("resolution", this.zzan).add("message", this.zzao).toString();
+    }
+
+    public final void writeToParcel(Parcel parcel, int i) {
+        int beginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeInt(parcel, 1, this.zzal);
+        SafeParcelWriter.writeInt(parcel, 2, getErrorCode());
+        SafeParcelWriter.writeParcelable(parcel, 3, getResolution(), i, false);
+        SafeParcelWriter.writeString(parcel, 4, getErrorMessage(), false);
+        SafeParcelWriter.finishObjectHeader(parcel, beginObjectHeader);
     }
 }

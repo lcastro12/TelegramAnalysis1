@@ -2,98 +2,183 @@ package org.telegram.ui.Adapters;
 
 import android.content.Context;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.support.widget.RecyclerView.LayoutParams;
+import org.telegram.messenger.support.widget.RecyclerView.ViewHolder;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.DividerCell;
 import org.telegram.ui.Cells.DrawerActionCell;
+import org.telegram.ui.Cells.DrawerAddCell;
 import org.telegram.ui.Cells.DrawerProfileCell;
+import org.telegram.ui.Cells.DrawerUserCell;
 import org.telegram.ui.Cells.EmptyCell;
+import org.telegram.ui.Components.RecyclerListView.Holder;
+import org.telegram.ui.Components.RecyclerListView.SelectionAdapter;
 
-public class DrawerLayoutAdapter extends BaseAdapter {
+public class DrawerLayoutAdapter extends SelectionAdapter {
+    private ArrayList<Integer> accountNumbers = new ArrayList();
+    private boolean accountsShowed;
+    private ArrayList<Item> items = new ArrayList(11);
     private Context mContext;
+    private DrawerProfileCell profileCell;
+
+    class C09141 implements OnClickListener {
+        C09141() {
+        }
+
+        public void onClick(View v) {
+            DrawerLayoutAdapter.this.setAccountsShowed(((DrawerProfileCell) v).isAccountsShowed(), true);
+        }
+    }
+
+    class C09152 implements Comparator<Integer> {
+        C09152() {
+        }
+
+        public int compare(Integer o1, Integer o2) {
+            long l1 = (long) UserConfig.getInstance(o1.intValue()).loginTime;
+            long l2 = (long) UserConfig.getInstance(o2.intValue()).loginTime;
+            if (l1 > l2) {
+                return 1;
+            }
+            if (l1 < l2) {
+                return -1;
+            }
+            return 0;
+        }
+    }
+
+    private class Item {
+        public int icon;
+        public int id;
+        public String text;
+
+        public Item(int id, String text, int icon) {
+            this.icon = icon;
+            this.id = id;
+            this.text = text;
+        }
+
+        public void bind(DrawerActionCell actionCell) {
+            actionCell.setTextAndIcon(this.text, this.icon);
+        }
+    }
 
     public DrawerLayoutAdapter(Context context) {
+        boolean z = true;
         this.mContext = context;
+        if (UserConfig.getActivatedAccountsCount() <= 1 || !MessagesController.getGlobalMainSettings().getBoolean("accountsShowed", true)) {
+            z = false;
+        }
+        this.accountsShowed = z;
+        Theme.createDialogsResources(context);
+        resetItems();
     }
 
-    public boolean areAllItemsEnabled() {
-        return false;
+    private int getAccountRowsCount() {
+        int count = this.accountNumbers.size() + 1;
+        if (this.accountNumbers.size() < 3) {
+            return count + 1;
+        }
+        return count;
     }
 
-    public boolean isEnabled(int i) {
-        return (i == 0 || i == 1 || i == 5) ? false : true;
+    public int getItemCount() {
+        int count = this.items.size() + 2;
+        if (this.accountsShowed) {
+            return count + getAccountRowsCount();
+        }
+        return count;
     }
 
-    public int getCount() {
-        return UserConfig.isClientActivated() ? 10 : 0;
-    }
-
-    public Object getItem(int i) {
-        return null;
-    }
-
-    public long getItemId(int i) {
-        return (long) i;
-    }
-
-    public boolean hasStableIds() {
-        return true;
-    }
-
-    public View getView(int i, View view, ViewGroup viewGroup) {
-        int type = getItemViewType(i);
-        if (type == 0) {
-            if (view == null) {
-                view = new DrawerProfileCell(this.mContext);
+    public void setAccountsShowed(boolean value, boolean animated) {
+        if (this.accountsShowed != value) {
+            this.accountsShowed = value;
+            if (this.profileCell != null) {
+                this.profileCell.setAccountsShowed(this.accountsShowed);
             }
-            ((DrawerProfileCell) view).setUser(MessagesController.getInstance().getUser(Integer.valueOf(UserConfig.getClientUserId())));
-            return view;
-        } else if (type == 1) {
-            if (view == null) {
-                return new EmptyCell(this.mContext, AndroidUtilities.dp(8.0f));
-            }
-            return view;
-        } else if (type == 2) {
-            if (view == null) {
-                return new DividerCell(this.mContext);
-            }
-            return view;
-        } else if (type != 3) {
-            return view;
-        } else {
-            if (view == null) {
-                view = new DrawerActionCell(this.mContext);
-            }
-            DrawerActionCell actionCell = (DrawerActionCell) view;
-            if (i == 2) {
-                actionCell.setTextAndIcon(LocaleController.getString("NewGroup", C0553R.string.NewGroup), C0553R.drawable.menu_newgroup);
-                return view;
-            } else if (i == 3) {
-                actionCell.setTextAndIcon(LocaleController.getString("NewSecretChat", C0553R.string.NewSecretChat), C0553R.drawable.menu_secret);
-                return view;
-            } else if (i == 4) {
-                actionCell.setTextAndIcon(LocaleController.getString("NewChannel", C0553R.string.NewChannel), C0553R.drawable.menu_broadcast);
-                return view;
-            } else if (i == 6) {
-                actionCell.setTextAndIcon(LocaleController.getString("Contacts", C0553R.string.Contacts), C0553R.drawable.menu_contacts);
-                return view;
-            } else if (i == 7) {
-                actionCell.setTextAndIcon(LocaleController.getString("InviteFriends", C0553R.string.InviteFriends), C0553R.drawable.menu_invite);
-                return view;
-            } else if (i == 8) {
-                actionCell.setTextAndIcon(LocaleController.getString("Settings", C0553R.string.Settings), C0553R.drawable.menu_settings);
-                return view;
-            } else if (i != 9) {
-                return view;
+            MessagesController.getGlobalMainSettings().edit().putBoolean("accountsShowed", this.accountsShowed).commit();
+            if (!animated) {
+                notifyDataSetChanged();
+            } else if (this.accountsShowed) {
+                notifyItemRangeInserted(2, getAccountRowsCount());
             } else {
-                actionCell.setTextAndIcon(LocaleController.getString("TelegramFaq", C0553R.string.TelegramFaq), C0553R.drawable.menu_help);
-                return view;
+                notifyItemRangeRemoved(2, getAccountRowsCount());
             }
+        }
+    }
+
+    public boolean isAccountsShowed() {
+        return this.accountsShowed;
+    }
+
+    public void notifyDataSetChanged() {
+        resetItems();
+        super.notifyDataSetChanged();
+    }
+
+    public boolean isEnabled(ViewHolder holder) {
+        int itemType = holder.getItemViewType();
+        return itemType == 3 || itemType == 4 || itemType == 5;
+    }
+
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View view;
+        switch (viewType) {
+            case 0:
+                this.profileCell = new DrawerProfileCell(this.mContext);
+                this.profileCell.setOnArrowClickListener(new C09141());
+                view = this.profileCell;
+                break;
+            case 2:
+                view = new DividerCell(this.mContext);
+                break;
+            case 3:
+                view = new DrawerActionCell(this.mContext);
+                break;
+            case 4:
+                view = new DrawerUserCell(this.mContext);
+                break;
+            case 5:
+                view = new DrawerAddCell(this.mContext);
+                break;
+            default:
+                view = new EmptyCell(this.mContext, AndroidUtilities.dp(8.0f));
+                break;
+        }
+        view.setLayoutParams(new LayoutParams(-1, -2));
+        return new Holder(view);
+    }
+
+    public void onBindViewHolder(ViewHolder holder, int position) {
+        switch (holder.getItemViewType()) {
+            case 0:
+                ((DrawerProfileCell) holder.itemView).setUser(MessagesController.getInstance(UserConfig.selectedAccount).getUser(Integer.valueOf(UserConfig.getInstance(UserConfig.selectedAccount).getClientUserId())), this.accountsShowed);
+                holder.itemView.setBackgroundColor(Theme.getColor(Theme.key_avatar_backgroundActionBarBlue));
+                return;
+            case 3:
+                position -= 2;
+                if (this.accountsShowed) {
+                    position -= getAccountRowsCount();
+                }
+                DrawerActionCell drawerActionCell = holder.itemView;
+                ((Item) this.items.get(position)).bind(drawerActionCell);
+                drawerActionCell.setPadding(0, 0, 0, 0);
+                return;
+            case 4:
+                holder.itemView.setAccount(((Integer) this.accountNumbers.get(position - 2)).intValue());
+                return;
+            default:
+                return;
         }
     }
 
@@ -104,17 +189,64 @@ public class DrawerLayoutAdapter extends BaseAdapter {
         if (i == 1) {
             return 1;
         }
-        if (i == 5) {
+        i -= 2;
+        if (this.accountsShowed) {
+            if (i < this.accountNumbers.size()) {
+                return 4;
+            }
+            if (this.accountNumbers.size() < 3) {
+                if (i == this.accountNumbers.size()) {
+                    return 5;
+                }
+                if (i == this.accountNumbers.size() + 1) {
+                    return 2;
+                }
+            } else if (i == this.accountNumbers.size()) {
+                return 2;
+            }
+            i -= getAccountRowsCount();
+        }
+        if (i == 3) {
             return 2;
         }
         return 3;
     }
 
-    public int getViewTypeCount() {
-        return 4;
+    private void resetItems() {
+        this.accountNumbers.clear();
+        for (int a = 0; a < 3; a++) {
+            if (UserConfig.getInstance(a).isClientActivated()) {
+                this.accountNumbers.add(Integer.valueOf(a));
+            }
+        }
+        Collections.sort(this.accountNumbers, new C09152());
+        this.items.clear();
+        if (UserConfig.getInstance(UserConfig.selectedAccount).isClientActivated()) {
+            this.items.add(new Item(2, LocaleController.getString("NewGroup", C0488R.string.NewGroup), C0488R.drawable.menu_newgroup));
+            this.items.add(new Item(3, LocaleController.getString("NewSecretChat", C0488R.string.NewSecretChat), C0488R.drawable.menu_secret));
+            this.items.add(new Item(4, LocaleController.getString("NewChannel", C0488R.string.NewChannel), C0488R.drawable.menu_broadcast));
+            this.items.add(null);
+            this.items.add(new Item(6, LocaleController.getString("Contacts", C0488R.string.Contacts), C0488R.drawable.menu_contacts));
+            this.items.add(new Item(11, LocaleController.getString("SavedMessages", C0488R.string.SavedMessages), C0488R.drawable.menu_saved));
+            this.items.add(new Item(10, LocaleController.getString("Calls", C0488R.string.Calls), C0488R.drawable.menu_calls));
+            this.items.add(new Item(7, LocaleController.getString("InviteFriends", C0488R.string.InviteFriends), C0488R.drawable.menu_invite));
+            this.items.add(new Item(8, LocaleController.getString("Settings", C0488R.string.Settings), C0488R.drawable.menu_settings));
+            this.items.add(new Item(9, LocaleController.getString("TelegramFAQ", C0488R.string.TelegramFAQ), C0488R.drawable.menu_help));
+        }
     }
 
-    public boolean isEmpty() {
-        return !UserConfig.isClientActivated();
+    public int getId(int position) {
+        position -= 2;
+        if (this.accountsShowed) {
+            position -= getAccountRowsCount();
+        }
+        if (position < 0 || position >= this.items.size()) {
+            return -1;
+        }
+        Item item = (Item) this.items.get(position);
+        if (item != null) {
+            return item.id;
+        }
+        return -1;
     }
 }

@@ -2,24 +2,29 @@ package org.telegram.ui.Components;
 
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
-import android.graphics.Paint;
-import android.graphics.drawable.Drawable;
 import android.view.animation.DecelerateInterpolator;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.UserConfig;
+import org.telegram.ui.ActionBar.Theme;
 
-public class TypingDotsDrawable extends Drawable {
+public class TypingDotsDrawable extends StatusDrawable {
+    private int currentAccount = UserConfig.selectedAccount;
     private DecelerateInterpolator decelerateInterpolator = new DecelerateInterpolator();
     private float[] elapsedTimes = new float[]{0.0f, 0.0f, 0.0f};
     private boolean isChat = false;
     private long lastUpdateTime = 0;
-    private Paint paint = new Paint(1);
     private float[] scales = new float[3];
-    private float[] startTimes = new float[]{0.0f, 150.0f, BitmapDescriptorFactory.HUE_MAGENTA};
+    private float[] startTimes = new float[]{0.0f, 150.0f, 300.0f};
     private boolean started = false;
 
-    public TypingDotsDrawable() {
-        this.paint.setColor(-2627337);
+    class C16921 implements Runnable {
+        C16921() {
+        }
+
+        public void run() {
+            TypingDotsDrawable.this.checkUpdate();
+        }
     }
 
     public void setIsChat(boolean value) {
@@ -67,21 +72,31 @@ public class TypingDotsDrawable extends Drawable {
         }
         this.startTimes[0] = 0.0f;
         this.startTimes[1] = 150.0f;
-        this.startTimes[2] = BitmapDescriptorFactory.HUE_MAGENTA;
+        this.startTimes[2] = 300.0f;
         this.started = false;
     }
 
     public void draw(Canvas canvas) {
         int y;
         if (this.isChat) {
-            y = AndroidUtilities.dp(6.0f);
+            y = AndroidUtilities.dp(8.5f) + getBounds().top;
         } else {
-            y = AndroidUtilities.dp(7.0f);
+            y = AndroidUtilities.dp(9.3f) + getBounds().top;
         }
-        canvas.drawCircle((float) AndroidUtilities.dp(3.0f), (float) y, this.scales[0] * AndroidUtilities.density, this.paint);
-        canvas.drawCircle((float) AndroidUtilities.dp(9.0f), (float) y, this.scales[1] * AndroidUtilities.density, this.paint);
-        canvas.drawCircle((float) AndroidUtilities.dp(15.0f), (float) y, this.scales[2] * AndroidUtilities.density, this.paint);
-        if (this.started) {
+        Theme.chat_statusPaint.setAlpha(255);
+        canvas.drawCircle((float) AndroidUtilities.dp(3.0f), (float) y, this.scales[0] * AndroidUtilities.density, Theme.chat_statusPaint);
+        canvas.drawCircle((float) AndroidUtilities.dp(9.0f), (float) y, this.scales[1] * AndroidUtilities.density, Theme.chat_statusPaint);
+        canvas.drawCircle((float) AndroidUtilities.dp(15.0f), (float) y, this.scales[2] * AndroidUtilities.density, Theme.chat_statusPaint);
+        checkUpdate();
+    }
+
+    private void checkUpdate() {
+        if (!this.started) {
+            return;
+        }
+        if (NotificationCenter.getInstance(this.currentAccount).isAnimationInProgress()) {
+            AndroidUtilities.runOnUIThread(new C16921(), 100);
+        } else {
             update();
         }
     }
@@ -93,7 +108,7 @@ public class TypingDotsDrawable extends Drawable {
     }
 
     public int getOpacity() {
-        return 0;
+        return -2;
     }
 
     public int getIntrinsicWidth() {
@@ -101,6 +116,6 @@ public class TypingDotsDrawable extends Drawable {
     }
 
     public int getIntrinsicHeight() {
-        return AndroidUtilities.dp(10.0f);
+        return AndroidUtilities.dp(18.0f);
     }
 }

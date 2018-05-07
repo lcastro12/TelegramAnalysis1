@@ -4,8 +4,8 @@ import android.content.Context;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
 import android.widget.TextView;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import org.telegram.messenger.AndroidUtilities;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 
 public class LetterSectionCell extends FrameLayout {
@@ -16,9 +16,9 @@ public class LetterSectionCell extends FrameLayout {
         setLayoutParams(new LayoutParams(AndroidUtilities.dp(54.0f), AndroidUtilities.dp(64.0f)));
         this.textView.setTextSize(1, 22.0f);
         this.textView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        this.textView.setTextColor(-8355712);
+        this.textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText4));
         this.textView.setGravity(17);
-        addView(this.textView, LayoutHelper.createFrame(-1, GroundOverlayOptions.NO_DIMENSION));
+        addView(this.textView, LayoutHelper.createFrame(-1, -1.0f));
     }
 
     public void setLetter(String letter) {

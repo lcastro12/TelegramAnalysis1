@@ -1,16 +1,24 @@
 package org.telegram.ui;
 
-import android.annotation.SuppressLint;
-import android.app.AlertDialog.Builder;
-import android.app.ProgressDialog;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputFilter.LengthFilter;
-import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
 import android.text.TextUtils.TruncateAt;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
@@ -19,16 +27,12 @@ import android.view.View.OnClickListener;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-import com.google.android.gms.location.LocationStatusCodes;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -40,13 +44,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.AnimationCompat.AnimatorListenerAdapterProxy;
-import org.telegram.messenger.AnimationCompat.AnimatorSetProxy;
-import org.telegram.messenger.AnimationCompat.ObjectAnimatorProxy;
-import org.telegram.messenger.AnimationCompat.ViewProxy;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.BuildVars;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -54,31 +53,49 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationCenter.NotificationCenterDelegate;
 import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.exoplayer2.DefaultLoadControl;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC.TL_account_changePhone;
 import org.telegram.tgnet.TLRPC.TL_account_sendChangePhoneCode;
-import org.telegram.tgnet.TLRPC.TL_account_sentChangePhoneCode;
-import org.telegram.tgnet.TLRPC.TL_auth_sendCall;
+import org.telegram.tgnet.TLRPC.TL_auth_cancelCode;
+import org.telegram.tgnet.TLRPC.TL_auth_codeTypeCall;
+import org.telegram.tgnet.TLRPC.TL_auth_codeTypeFlashCall;
+import org.telegram.tgnet.TLRPC.TL_auth_codeTypeSms;
+import org.telegram.tgnet.TLRPC.TL_auth_resendCode;
+import org.telegram.tgnet.TLRPC.TL_auth_sentCode;
+import org.telegram.tgnet.TLRPC.TL_auth_sentCodeTypeApp;
+import org.telegram.tgnet.TLRPC.TL_auth_sentCodeTypeCall;
+import org.telegram.tgnet.TLRPC.TL_auth_sentCodeTypeFlashCall;
+import org.telegram.tgnet.TLRPC.TL_auth_sentCodeTypeSms;
 import org.telegram.tgnet.TLRPC.TL_error;
 import org.telegram.tgnet.TLRPC.User;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
+import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.AlertDialog.Builder;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.ThemeDescription;
+import org.telegram.ui.Components.AlertsCreator;
+import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.HintEditText;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SlideView;
-import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.CountrySelectActivity.CountrySelectActivityDelegate;
 
 public class ChangePhoneActivity extends BaseFragment {
     private static final int done_button = 1;
+    private boolean checkPermissions = true;
     private int currentViewNum = 0;
-    private ProgressDialog progressDialog;
-    private SlideView[] views = new SlideView[2];
+    private View doneButton;
+    private Dialog permissionsDialog;
+    private ArrayList<String> permissionsItems = new ArrayList();
+    private AlertDialog progressDialog;
+    private SlideView[] views = new SlideView[5];
 
-    class C15171 extends ActionBarMenuOnItemClick {
-        C15171() {
+    class C11091 extends ActionBarMenuOnItemClick {
+        C11091() {
         }
 
         public void onItemClick(int id) {
@@ -91,54 +108,66 @@ public class ChangePhoneActivity extends BaseFragment {
     }
 
     public class LoginActivitySmsView extends SlideView implements NotificationCenterDelegate {
-        private EditText codeField;
-        private volatile int codeTime = 15000;
+        private EditTextBoldCursor codeField;
+        private volatile int codeTime = DefaultLoadControl.DEFAULT_MIN_BUFFER_MS;
         private Timer codeTimer;
         private TextView confirmTextView;
         private Bundle currentParams;
+        private int currentType;
+        private String emailPhone;
         private boolean ignoreOnTextChange;
         private double lastCodeTime;
         private double lastCurrentTime;
-        private String lastError = "";
-        private boolean nextPressed = false;
+        private String lastError = TtmlNode.ANONYMOUS_REGION_ID;
+        private int length;
+        private boolean nextPressed;
+        private int nextType;
+        private int openTime;
+        private String pattern = "*";
+        private String phone;
         private String phoneHash;
+        private TextView problemText;
+        private ProgressView progressView;
         private String requestPhone;
         private volatile int time = 60000;
         private TextView timeText;
         private Timer timeTimer;
+        private int timeout;
         private final Object timerSync = new Object();
-        private boolean waitingForSms = false;
+        private boolean waitingForEvent;
+        private TextView wrongNumber;
 
-        class C08024 extends TimerTask {
+        class C11196 extends TimerTask {
 
-            class C08011 implements Runnable {
-                C08011() {
+            class C11181 implements Runnable {
+                C11181() {
                 }
 
                 public void run() {
-                    if (LoginActivitySmsView.this.codeTime <= LocationStatusCodes.GEOFENCE_NOT_AVAILABLE) {
+                    if (LoginActivitySmsView.this.codeTime <= 1000) {
+                        LoginActivitySmsView.this.problemText.setVisibility(0);
                         LoginActivitySmsView.this.destroyCodeTimer();
                     }
                 }
             }
 
-            C08024() {
+            C11196() {
             }
 
             public void run() {
                 double currentTime = (double) System.currentTimeMillis();
-                LoginActivitySmsView.access$1626(LoginActivitySmsView.this, currentTime - LoginActivitySmsView.this.lastCodeTime);
+                LoginActivitySmsView.this.codeTime = (int) (((double) LoginActivitySmsView.this.codeTime) - (currentTime - LoginActivitySmsView.this.lastCodeTime));
                 LoginActivitySmsView.this.lastCodeTime = currentTime;
-                AndroidUtilities.runOnUIThread(new C08011());
+                AndroidUtilities.runOnUIThread(new C11181());
             }
         }
 
-        class C08055 extends TimerTask {
+        class C11237 extends TimerTask {
 
-            class C08041 implements Runnable {
+            class C11221 implements Runnable {
 
-                class C15191 implements RequestDelegate {
-                    C15191() {
+                class C11211 implements RequestDelegate {
+                    C11211() {
                     }
 
                     public void run(TLObject response, final TL_error error) {
@@ -152,123 +181,104 @@ public class ChangePhoneActivity extends BaseFragment {
                     }
                 }
 
-                C08041() {
+                C11221() {
                 }
 
                 public void run() {
-                    if (LoginActivitySmsView.this.time >= LocationStatusCodes.GEOFENCE_NOT_AVAILABLE) {
-                        int seconds = (LoginActivitySmsView.this.time / LocationStatusCodes.GEOFENCE_NOT_AVAILABLE) - (((LoginActivitySmsView.this.time / LocationStatusCodes.GEOFENCE_NOT_AVAILABLE) / 60) * 60);
-                        LoginActivitySmsView.this.timeText.setText(LocaleController.formatString("CallText", C0553R.string.CallText, Integer.valueOf(minutes), Integer.valueOf(seconds)));
+                    if (LoginActivitySmsView.this.time >= 1000) {
+                        int seconds = (LoginActivitySmsView.this.time / 1000) - (((LoginActivitySmsView.this.time / 1000) / 60) * 60);
+                        if (LoginActivitySmsView.this.nextType == 4 || LoginActivitySmsView.this.nextType == 3) {
+                            LoginActivitySmsView.this.timeText.setText(LocaleController.formatString("CallText", C0488R.string.CallText, Integer.valueOf(minutes), Integer.valueOf(seconds)));
+                        } else if (LoginActivitySmsView.this.nextType == 2) {
+                            LoginActivitySmsView.this.timeText.setText(LocaleController.formatString("SmsText", C0488R.string.SmsText, Integer.valueOf(minutes), Integer.valueOf(seconds)));
+                        }
+                        if (LoginActivitySmsView.this.progressView != null) {
+                            LoginActivitySmsView.this.progressView.setProgress(1.0f - (((float) LoginActivitySmsView.this.time) / ((float) LoginActivitySmsView.this.timeout)));
+                            return;
+                        }
                         return;
                     }
-                    LoginActivitySmsView.this.timeText.setText(LocaleController.getString("Calling", C0553R.string.Calling));
+                    if (LoginActivitySmsView.this.progressView != null) {
+                        LoginActivitySmsView.this.progressView.setProgress(1.0f);
+                    }
                     LoginActivitySmsView.this.destroyTimer();
-                    LoginActivitySmsView.this.createCodeTimer();
-                    TL_auth_sendCall req = new TL_auth_sendCall();
-                    req.phone_number = LoginActivitySmsView.this.requestPhone;
-                    req.phone_code_hash = LoginActivitySmsView.this.phoneHash;
-                    ConnectionsManager.getInstance().sendRequest(req, new C15191(), 2);
+                    if (LoginActivitySmsView.this.currentType == 3) {
+                        AndroidUtilities.setWaitingForCall(false);
+                        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveCall);
+                        LoginActivitySmsView.this.waitingForEvent = false;
+                        LoginActivitySmsView.this.destroyCodeTimer();
+                        LoginActivitySmsView.this.resendCode();
+                    } else if (LoginActivitySmsView.this.currentType != 2) {
+                    } else {
+                        if (LoginActivitySmsView.this.nextType == 4) {
+                            LoginActivitySmsView.this.timeText.setText(LocaleController.getString("Calling", C0488R.string.Calling));
+                            LoginActivitySmsView.this.createCodeTimer();
+                            TL_auth_resendCode req = new TL_auth_resendCode();
+                            req.phone_number = LoginActivitySmsView.this.requestPhone;
+                            req.phone_code_hash = LoginActivitySmsView.this.phoneHash;
+                            ConnectionsManager.getInstance(ChangePhoneActivity.this.currentAccount).sendRequest(req, new C11211(), 2);
+                        } else if (LoginActivitySmsView.this.nextType == 3) {
+                            AndroidUtilities.setWaitingForSms(false);
+                            NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveSmsCode);
+                            LoginActivitySmsView.this.waitingForEvent = false;
+                            LoginActivitySmsView.this.destroyCodeTimer();
+                            LoginActivitySmsView.this.resendCode();
+                        }
+                    }
                 }
             }
 
-            C08055() {
+            C11237() {
             }
 
             public void run() {
-                double currentTime = (double) System.currentTimeMillis();
-                LoginActivitySmsView.access$1926(LoginActivitySmsView.this, currentTime - LoginActivitySmsView.this.lastCurrentTime);
-                LoginActivitySmsView.this.lastCurrentTime = currentTime;
-                AndroidUtilities.runOnUIThread(new C08041());
+                if (LoginActivitySmsView.this.timeTimer != null) {
+                    double currentTime = (double) System.currentTimeMillis();
+                    LoginActivitySmsView.this.time = (int) (((double) LoginActivitySmsView.this.time) - (currentTime - LoginActivitySmsView.this.lastCurrentTime));
+                    LoginActivitySmsView.this.lastCurrentTime = currentTime;
+                    AndroidUtilities.runOnUIThread(new C11221());
+                }
             }
         }
 
-        class C15206 implements RequestDelegate {
-            C15206() {
-            }
-
-            public void run(final TLObject response, final TL_error error) {
-                AndroidUtilities.runOnUIThread(new Runnable() {
-                    public void run() {
-                        ChangePhoneActivity.this.needHideProgress();
-                        LoginActivitySmsView.this.nextPressed = false;
-                        if (error == null) {
-                            User user = response;
-                            LoginActivitySmsView.this.destroyTimer();
-                            LoginActivitySmsView.this.destroyCodeTimer();
-                            UserConfig.setCurrentUser(user);
-                            UserConfig.saveConfig(true);
-                            ArrayList<User> users = new ArrayList();
-                            users.add(user);
-                            MessagesStorage.getInstance().putUsersAndChats(users, null, true, true);
-                            MessagesController.getInstance().putUser(user, false);
-                            ChangePhoneActivity.this.finishFragment();
-                            return;
-                        }
-                        LoginActivitySmsView.this.lastError = error.text;
-                        LoginActivitySmsView.this.createTimer();
-                        if (error.text.contains("PHONE_NUMBER_INVALID")) {
-                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("InvalidPhoneNumber", C0553R.string.InvalidPhoneNumber));
-                        } else if (error.text.contains("PHONE_CODE_EMPTY") || error.text.contains("PHONE_CODE_INVALID")) {
-                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("InvalidCode", C0553R.string.InvalidCode));
-                        } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
-                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("CodeExpired", C0553R.string.CodeExpired));
-                        } else if (error.text.startsWith("FLOOD_WAIT")) {
-                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("FloodWait", C0553R.string.FloodWait));
-                        } else {
-                            ChangePhoneActivity.this.needShowAlert(error.text);
-                        }
-                    }
-                });
-            }
-        }
-
-        static /* synthetic */ int access$1626(LoginActivitySmsView x0, double x1) {
-            int i = (int) (((double) x0.codeTime) - x1);
-            x0.codeTime = i;
-            return i;
-        }
-
-        static /* synthetic */ int access$1926(LoginActivitySmsView x0, double x1) {
-            int i = (int) (((double) x0.time) - x1);
-            x0.time = i;
-            return i;
-        }
-
-        public LoginActivitySmsView(Context context) {
+        public LoginActivitySmsView(Context context, int type) {
             super(context);
+            this.currentType = type;
             setOrientation(1);
             this.confirmTextView = new TextView(context);
-            this.confirmTextView.setTextColor(-9079435);
+            this.confirmTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
             this.confirmTextView.setTextSize(1, 14.0f);
-            this.confirmTextView.setGravity(3);
+            this.confirmTextView.setGravity(LocaleController.isRTL ? 5 : 3);
             this.confirmTextView.setLineSpacing((float) AndroidUtilities.dp(2.0f), 1.0f);
-            addView(this.confirmTextView);
-            LayoutParams layoutParams = (LayoutParams) this.confirmTextView.getLayoutParams();
-            layoutParams.width = -2;
-            layoutParams.height = -2;
-            layoutParams.gravity = 3;
-            layoutParams.leftMargin = AndroidUtilities.dp(24.0f);
-            layoutParams.rightMargin = AndroidUtilities.dp(24.0f);
-            this.confirmTextView.setLayoutParams(layoutParams);
-            this.codeField = new EditText(context);
-            this.codeField.setTextColor(-14606047);
-            this.codeField.setHint(LocaleController.getString("Code", C0553R.string.Code));
-            AndroidUtilities.clearCursorDrawable(this.codeField);
-            this.codeField.setHintTextColor(-6842473);
+            if (this.currentType == 3) {
+                FrameLayout frameLayout = new FrameLayout(context);
+                ImageView imageView = new ImageView(context);
+                imageView.setImageResource(C0488R.drawable.phone_activate);
+                if (LocaleController.isRTL) {
+                    frameLayout.addView(imageView, LayoutHelper.createFrame(64, 76.0f, 19, 2.0f, 2.0f, 0.0f, 0.0f));
+                    frameLayout.addView(this.confirmTextView, LayoutHelper.createFrame(-1, -2.0f, LocaleController.isRTL ? 5 : 3, 82.0f, 0.0f, 0.0f, 0.0f));
+                } else {
+                    frameLayout.addView(this.confirmTextView, LayoutHelper.createFrame(-1, -2.0f, LocaleController.isRTL ? 5 : 3, 0.0f, 0.0f, 82.0f, 0.0f));
+                    frameLayout.addView(imageView, LayoutHelper.createFrame(64, 76.0f, 21, 0.0f, 2.0f, 0.0f, 2.0f));
+                }
+                addView(frameLayout, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3));
+            } else {
+                addView(this.confirmTextView, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3));
+            }
+            this.codeField = new EditTextBoldCursor(context);
+            this.codeField.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            this.codeField.setHint(LocaleController.getString("Code", C0488R.string.Code));
+            this.codeField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            this.codeField.setCursorSize(AndroidUtilities.dp(20.0f));
+            this.codeField.setCursorWidth(1.5f);
+            this.codeField.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
+            this.codeField.setBackgroundDrawable(Theme.createEditTextDrawable(context, false));
             this.codeField.setImeOptions(268435461);
             this.codeField.setTextSize(1, 18.0f);
             this.codeField.setInputType(3);
             this.codeField.setMaxLines(1);
             this.codeField.setPadding(0, 0, 0, 0);
-            addView(this.codeField);
-            layoutParams = (LayoutParams) this.codeField.getLayoutParams();
-            layoutParams.width = -1;
-            layoutParams.height = AndroidUtilities.dp(36.0f);
-            layoutParams.gravity = 1;
-            layoutParams.topMargin = AndroidUtilities.dp(20.0f);
-            layoutParams.leftMargin = AndroidUtilities.dp(24.0f);
-            layoutParams.rightMargin = AndroidUtilities.dp(24.0f);
-            this.codeField.setLayoutParams(layoutParams);
+            addView(this.codeField, LayoutHelper.createLinear(-1, 36, 1, 0, 20, 0, 0));
             this.codeField.addTextChangedListener(new TextWatcher(ChangePhoneActivity.this) {
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 }
@@ -277,7 +287,7 @@ public class ChangePhoneActivity extends BaseFragment {
                 }
 
                 public void afterTextChanged(Editable s) {
-                    if (!LoginActivitySmsView.this.ignoreOnTextChange && LoginActivitySmsView.this.codeField.length() == 5) {
+                    if (!LoginActivitySmsView.this.ignoreOnTextChange && LoginActivitySmsView.this.length != 0 && LoginActivitySmsView.this.codeField.length() == LoginActivitySmsView.this.length) {
                         LoginActivitySmsView.this.onNextPressed();
                     }
                 }
@@ -291,96 +301,219 @@ public class ChangePhoneActivity extends BaseFragment {
                     return true;
                 }
             });
+            if (this.currentType == 3) {
+                this.codeField.setEnabled(false);
+                this.codeField.setInputType(0);
+                this.codeField.setVisibility(8);
+            }
             this.timeText = new TextView(context);
             this.timeText.setTextSize(1, 14.0f);
-            this.timeText.setTextColor(-9079435);
+            this.timeText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
             this.timeText.setLineSpacing((float) AndroidUtilities.dp(2.0f), 1.0f);
-            this.timeText.setGravity(3);
-            addView(this.timeText);
-            layoutParams = (LayoutParams) this.timeText.getLayoutParams();
-            layoutParams.width = -2;
-            layoutParams.height = -2;
-            layoutParams.gravity = 3;
-            layoutParams.topMargin = AndroidUtilities.dp(BitmapDescriptorFactory.HUE_ORANGE);
-            layoutParams.leftMargin = AndroidUtilities.dp(24.0f);
-            layoutParams.rightMargin = AndroidUtilities.dp(24.0f);
-            this.timeText.setLayoutParams(layoutParams);
+            this.timeText.setGravity(LocaleController.isRTL ? 5 : 3);
+            addView(this.timeText, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 0, 30, 0, 0));
+            if (this.currentType == 3) {
+                this.progressView = new ProgressView(context);
+                addView(this.progressView, LayoutHelper.createLinear(-1, 3, 0.0f, 12.0f, 0.0f, 0.0f));
+            }
+            this.problemText = new TextView(context);
+            this.problemText.setText(LocaleController.getString("DidNotGetTheCode", C0488R.string.DidNotGetTheCode));
+            this.problemText.setGravity(LocaleController.isRTL ? 5 : 3);
+            this.problemText.setTextSize(1, 14.0f);
+            this.problemText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
+            this.problemText.setLineSpacing((float) AndroidUtilities.dp(2.0f), 1.0f);
+            this.problemText.setPadding(0, AndroidUtilities.dp(2.0f), 0, AndroidUtilities.dp(12.0f));
+            addView(this.problemText, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 0, 20, 0, 0));
+            this.problemText.setOnClickListener(new OnClickListener(ChangePhoneActivity.this) {
+                public void onClick(View v) {
+                    if (!LoginActivitySmsView.this.nextPressed) {
+                        if (LoginActivitySmsView.this.nextType == 0 || LoginActivitySmsView.this.nextType == 4) {
+                            try {
+                                PackageInfo pInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
+                                String version = String.format(Locale.US, "%s (%d)", new Object[]{pInfo.versionName, Integer.valueOf(pInfo.versionCode)});
+                                Intent mailer = new Intent("android.intent.action.SEND");
+                                mailer.setType("message/rfc822");
+                                mailer.putExtra("android.intent.extra.EMAIL", new String[]{"sms@stel.com"});
+                                mailer.putExtra("android.intent.extra.SUBJECT", "Android registration/login issue " + version + " " + LoginActivitySmsView.this.emailPhone);
+                                mailer.putExtra("android.intent.extra.TEXT", "Phone: " + LoginActivitySmsView.this.requestPhone + "\nApp version: " + version + "\nOS version: SDK " + VERSION.SDK_INT + "\nDevice Name: " + Build.MANUFACTURER + Build.MODEL + "\nLocale: " + Locale.getDefault() + "\nError: " + LoginActivitySmsView.this.lastError);
+                                LoginActivitySmsView.this.getContext().startActivity(Intent.createChooser(mailer, "Send email..."));
+                                return;
+                            } catch (Exception e) {
+                                AlertsCreator.showSimpleAlert(ChangePhoneActivity.this, LocaleController.getString("NoMailInstalled", C0488R.string.NoMailInstalled));
+                                return;
+                            }
+                        }
+                        LoginActivitySmsView.this.resendCode();
+                    }
+                }
+            });
             LinearLayout linearLayout = new LinearLayout(context);
-            linearLayout.setGravity(80);
-            addView(linearLayout);
-            layoutParams = (LayoutParams) linearLayout.getLayoutParams();
-            layoutParams.width = -1;
-            layoutParams.height = -1;
-            linearLayout.setLayoutParams(layoutParams);
-            TextView wrongNumber = new TextView(context);
-            wrongNumber.setGravity(3);
-            wrongNumber.setTextColor(-11697229);
-            wrongNumber.setTextSize(1, 14.0f);
-            wrongNumber.setLineSpacing((float) AndroidUtilities.dp(2.0f), 1.0f);
-            wrongNumber.setPadding(0, AndroidUtilities.dp(24.0f), 0, 0);
-            linearLayout.addView(wrongNumber);
-            layoutParams = (LayoutParams) wrongNumber.getLayoutParams();
-            layoutParams.width = -2;
-            layoutParams.height = -2;
-            layoutParams.gravity = 83;
-            layoutParams.bottomMargin = AndroidUtilities.dp(10.0f);
-            layoutParams.leftMargin = AndroidUtilities.dp(24.0f);
-            layoutParams.rightMargin = AndroidUtilities.dp(24.0f);
-            wrongNumber.setLayoutParams(layoutParams);
-            wrongNumber.setText(LocaleController.getString("WrongNumber", C0553R.string.WrongNumber));
-            wrongNumber.setOnClickListener(new OnClickListener(ChangePhoneActivity.this) {
+            linearLayout.setGravity((LocaleController.isRTL ? 5 : 3) | 16);
+            addView(linearLayout, LayoutHelper.createLinear(-1, -1, LocaleController.isRTL ? 5 : 3));
+            this.wrongNumber = new TextView(context);
+            this.wrongNumber.setGravity((LocaleController.isRTL ? 5 : 3) | 1);
+            this.wrongNumber.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
+            this.wrongNumber.setTextSize(1, 14.0f);
+            this.wrongNumber.setLineSpacing((float) AndroidUtilities.dp(2.0f), 1.0f);
+            this.wrongNumber.setPadding(0, AndroidUtilities.dp(24.0f), 0, 0);
+            linearLayout.addView(this.wrongNumber, LayoutHelper.createLinear(-2, -2, (LocaleController.isRTL ? 5 : 3) | 80, 0, 0, 0, 10));
+            this.wrongNumber.setText(LocaleController.getString("WrongNumber", C0488R.string.WrongNumber));
+            this.wrongNumber.setOnClickListener(new OnClickListener(ChangePhoneActivity.this) {
+
+                class C11141 implements RequestDelegate {
+                    C11141() {
+                    }
+
+                    public void run(TLObject response, TL_error error) {
+                    }
+                }
+
                 public void onClick(View view) {
+                    TL_auth_cancelCode req = new TL_auth_cancelCode();
+                    req.phone_number = LoginActivitySmsView.this.requestPhone;
+                    req.phone_code_hash = LoginActivitySmsView.this.phoneHash;
+                    ConnectionsManager.getInstance(ChangePhoneActivity.this.currentAccount).sendRequest(req, new C11141(), 2);
                     LoginActivitySmsView.this.onBackPressed();
                     ChangePhoneActivity.this.setPage(0, true, null, true);
                 }
             });
         }
 
-        public String getHeaderName() {
-            return LocaleController.getString("YourCode", C0553R.string.YourCode);
+        private void resendCode() {
+            final Bundle params = new Bundle();
+            params.putString("phone", this.phone);
+            params.putString("ephone", this.emailPhone);
+            params.putString("phoneFormated", this.requestPhone);
+            this.nextPressed = true;
+            ChangePhoneActivity.this.needShowProgress();
+            final TL_auth_resendCode req = new TL_auth_resendCode();
+            req.phone_number = this.requestPhone;
+            req.phone_code_hash = this.phoneHash;
+            ConnectionsManager.getInstance(ChangePhoneActivity.this.currentAccount).sendRequest(req, new RequestDelegate() {
+                public void run(final TLObject response, final TL_error error) {
+                    AndroidUtilities.runOnUIThread(new Runnable() {
+                        public void run() {
+                            LoginActivitySmsView.this.nextPressed = false;
+                            if (error == null) {
+                                ChangePhoneActivity.this.fillNextCodeParams(params, (TL_auth_sentCode) response);
+                            } else {
+                                AlertsCreator.processError(ChangePhoneActivity.this.currentAccount, error, ChangePhoneActivity.this, req, new Object[0]);
+                                if (error.text.contains("PHONE_CODE_EXPIRED")) {
+                                    LoginActivitySmsView.this.onBackPressed();
+                                    ChangePhoneActivity.this.setPage(0, true, null, true);
+                                }
+                            }
+                            ChangePhoneActivity.this.needHideProgress();
+                        }
+                    });
+                }
+            }, 2);
         }
 
-        public void setParams(Bundle params) {
+        public String getHeaderName() {
+            return LocaleController.getString("YourCode", C0488R.string.YourCode);
+        }
+
+        public void onCancelPressed() {
+            this.nextPressed = false;
+        }
+
+        public void setParams(Bundle params, boolean restore) {
+            int i = 0;
             if (params != null) {
-                this.codeField.setText("");
-                AndroidUtilities.setWaitingForSms(true);
-                NotificationCenter.getInstance().addObserver(this, NotificationCenter.didReceiveSmsCode);
+                this.codeField.setText(TtmlNode.ANONYMOUS_REGION_ID);
+                this.waitingForEvent = true;
+                if (this.currentType == 2) {
+                    AndroidUtilities.setWaitingForSms(true);
+                    NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didReceiveSmsCode);
+                } else if (this.currentType == 3) {
+                    AndroidUtilities.setWaitingForCall(true);
+                    NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didReceiveCall);
+                }
                 this.currentParams = params;
-                this.waitingForSms = true;
-                String phone = params.getString("phone");
+                this.phone = params.getString("phone");
+                this.emailPhone = params.getString("ephone");
                 this.requestPhone = params.getString("phoneFormated");
                 this.phoneHash = params.getString("phoneHash");
-                this.time = params.getInt("calltime");
-                if (phone != null) {
-                    String number = PhoneFormat.getInstance().format(phone);
-                    String str = String.format(Locale.US, LocaleController.getString("SentSmsCode", C0553R.string.SentSmsCode) + " %s", new Object[]{number});
-                    try {
-                        SpannableStringBuilder stringBuilder = new SpannableStringBuilder(str);
-                        TypefaceSpan span = new TypefaceSpan(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-                        int idx = str.indexOf(number);
-                        stringBuilder.setSpan(span, idx, number.length() + idx, 18);
-                        this.confirmTextView.setText(stringBuilder);
-                    } catch (Throwable e) {
-                        FileLog.m611e("tmessages", e);
-                        this.confirmTextView.setText(str);
+                int i2 = params.getInt("timeout");
+                this.time = i2;
+                this.timeout = i2;
+                this.openTime = (int) (System.currentTimeMillis() / 1000);
+                this.nextType = params.getInt("nextType");
+                this.pattern = params.getString("pattern");
+                this.length = params.getInt("length");
+                if (this.length != 0) {
+                    this.codeField.setFilters(new InputFilter[]{new LengthFilter(this.length)});
+                } else {
+                    this.codeField.setFilters(new InputFilter[0]);
+                }
+                if (this.progressView != null) {
+                    ProgressView progressView = this.progressView;
+                    if (this.nextType != 0) {
+                        i2 = 0;
+                    } else {
+                        i2 = 8;
                     }
-                    AndroidUtilities.showKeyboard(this.codeField);
-                    this.codeField.requestFocus();
+                    progressView.setVisibility(i2);
+                }
+                if (this.phone != null) {
+                    String number = PhoneFormat.getInstance().format(this.phone);
+                    CharSequence str = TtmlNode.ANONYMOUS_REGION_ID;
+                    if (this.currentType == 1) {
+                        str = AndroidUtilities.replaceTags(LocaleController.getString("SentAppCode", C0488R.string.SentAppCode));
+                    } else if (this.currentType == 2) {
+                        str = AndroidUtilities.replaceTags(LocaleController.formatString("SentSmsCode", C0488R.string.SentSmsCode, LocaleController.addNbsp(number)));
+                    } else if (this.currentType == 3) {
+                        str = AndroidUtilities.replaceTags(LocaleController.formatString("SentCallCode", C0488R.string.SentCallCode, LocaleController.addNbsp(number)));
+                    } else if (this.currentType == 4) {
+                        str = AndroidUtilities.replaceTags(LocaleController.formatString("SentCallOnly", C0488R.string.SentCallOnly, LocaleController.addNbsp(number)));
+                    }
+                    this.confirmTextView.setText(str);
+                    if (this.currentType != 3) {
+                        AndroidUtilities.showKeyboard(this.codeField);
+                        this.codeField.requestFocus();
+                    } else {
+                        AndroidUtilities.hideKeyboard(this.codeField);
+                    }
                     destroyTimer();
                     destroyCodeTimer();
-                    this.timeText.setText(LocaleController.formatString("CallText", C0553R.string.CallText, Integer.valueOf(1), Integer.valueOf(0)));
                     this.lastCurrentTime = (double) System.currentTimeMillis();
-                    createTimer();
+                    if (this.currentType == 1) {
+                        this.problemText.setVisibility(0);
+                        this.timeText.setVisibility(8);
+                    } else if (this.currentType == 3 && (this.nextType == 4 || this.nextType == 2)) {
+                        this.problemText.setVisibility(8);
+                        this.timeText.setVisibility(0);
+                        if (this.nextType == 4) {
+                            this.timeText.setText(LocaleController.formatString("CallText", C0488R.string.CallText, Integer.valueOf(1), Integer.valueOf(0)));
+                        } else if (this.nextType == 2) {
+                            this.timeText.setText(LocaleController.formatString("SmsText", C0488R.string.SmsText, Integer.valueOf(1), Integer.valueOf(0)));
+                        }
+                        createTimer();
+                    } else if (this.currentType == 2 && (this.nextType == 4 || this.nextType == 3)) {
+                        this.timeText.setVisibility(0);
+                        this.timeText.setText(LocaleController.formatString("CallText", C0488R.string.CallText, Integer.valueOf(2), Integer.valueOf(0)));
+                        TextView textView = this.problemText;
+                        if (this.time >= 1000) {
+                            i = 8;
+                        }
+                        textView.setVisibility(i);
+                        createTimer();
+                    } else {
+                        this.timeText.setVisibility(8);
+                        this.problemText.setVisibility(8);
+                        createCodeTimer();
+                    }
                 }
             }
         }
 
         private void createCodeTimer() {
             if (this.codeTimer == null) {
-                this.codeTime = 15000;
+                this.codeTime = DefaultLoadControl.DEFAULT_MIN_BUFFER_MS;
                 this.codeTimer = new Timer();
                 this.lastCodeTime = (double) System.currentTimeMillis();
-                this.codeTimer.schedule(new C08024(), 0, 1000);
+                this.codeTimer.schedule(new C11196(), 0, 1000);
             }
         }
 
@@ -393,14 +526,14 @@ public class ChangePhoneActivity extends BaseFragment {
                     }
                 }
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
         }
 
         private void createTimer() {
             if (this.timeTimer == null) {
                 this.timeTimer = new Timer();
-                this.timeTimer.schedule(new C08055(), 0, 1000);
+                this.timeTimer.schedule(new C11237(), 0, 1000);
             }
         }
 
@@ -413,23 +546,66 @@ public class ChangePhoneActivity extends BaseFragment {
                     }
                 }
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
         }
 
         public void onNextPressed() {
             if (!this.nextPressed) {
                 this.nextPressed = true;
-                this.waitingForSms = false;
-                AndroidUtilities.setWaitingForSms(false);
-                NotificationCenter.getInstance().removeObserver(this, NotificationCenter.didReceiveSmsCode);
-                TL_account_changePhone req = new TL_account_changePhone();
+                if (this.currentType == 2) {
+                    AndroidUtilities.setWaitingForSms(false);
+                    NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveSmsCode);
+                } else if (this.currentType == 3) {
+                    AndroidUtilities.setWaitingForCall(false);
+                    NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveCall);
+                }
+                this.waitingForEvent = false;
+                final TL_account_changePhone req = new TL_account_changePhone();
                 req.phone_number = this.requestPhone;
                 req.phone_code = this.codeField.getText().toString();
                 req.phone_code_hash = this.phoneHash;
                 destroyTimer();
                 ChangePhoneActivity.this.needShowProgress();
-                ConnectionsManager.getInstance().sendRequest(req, new C15206(), 2);
+                ConnectionsManager.getInstance(ChangePhoneActivity.this.currentAccount).sendRequest(req, new RequestDelegate() {
+                    public void run(final TLObject response, final TL_error error) {
+                        AndroidUtilities.runOnUIThread(new Runnable() {
+                            public void run() {
+                                ChangePhoneActivity.this.needHideProgress();
+                                LoginActivitySmsView.this.nextPressed = false;
+                                if (error == null) {
+                                    User user = response;
+                                    LoginActivitySmsView.this.destroyTimer();
+                                    LoginActivitySmsView.this.destroyCodeTimer();
+                                    UserConfig.getInstance(ChangePhoneActivity.this.currentAccount).setCurrentUser(user);
+                                    UserConfig.getInstance(ChangePhoneActivity.this.currentAccount).saveConfig(true);
+                                    ArrayList<User> users = new ArrayList();
+                                    users.add(user);
+                                    MessagesStorage.getInstance(ChangePhoneActivity.this.currentAccount).putUsersAndChats(users, null, true, true);
+                                    MessagesController.getInstance(ChangePhoneActivity.this.currentAccount).putUser(user, false);
+                                    ChangePhoneActivity.this.finishFragment();
+                                    NotificationCenter.getInstance(ChangePhoneActivity.this.currentAccount).postNotificationName(NotificationCenter.mainUserInfoChanged, new Object[0]);
+                                    return;
+                                }
+                                LoginActivitySmsView.this.lastError = error.text;
+                                if ((LoginActivitySmsView.this.currentType == 3 && (LoginActivitySmsView.this.nextType == 4 || LoginActivitySmsView.this.nextType == 2)) || (LoginActivitySmsView.this.currentType == 2 && (LoginActivitySmsView.this.nextType == 4 || LoginActivitySmsView.this.nextType == 3))) {
+                                    LoginActivitySmsView.this.createTimer();
+                                }
+                                if (LoginActivitySmsView.this.currentType == 2) {
+                                    AndroidUtilities.setWaitingForSms(true);
+                                    NotificationCenter.getGlobalInstance().addObserver(LoginActivitySmsView.this, NotificationCenter.didReceiveSmsCode);
+                                } else if (LoginActivitySmsView.this.currentType == 3) {
+                                    AndroidUtilities.setWaitingForCall(true);
+                                    NotificationCenter.getGlobalInstance().addObserver(LoginActivitySmsView.this, NotificationCenter.didReceiveCall);
+                                }
+                                LoginActivitySmsView.this.waitingForEvent = true;
+                                if (LoginActivitySmsView.this.currentType != 3) {
+                                    AlertsCreator.processError(ChangePhoneActivity.this.currentAccount, error, ChangePhoneActivity.this, req, new Object[0]);
+                                }
+                            }
+                        });
+                    }
+                }, 2);
             }
         }
 
@@ -437,18 +613,28 @@ public class ChangePhoneActivity extends BaseFragment {
             destroyTimer();
             destroyCodeTimer();
             this.currentParams = null;
-            AndroidUtilities.setWaitingForSms(false);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.didReceiveSmsCode);
-            this.waitingForSms = false;
+            if (this.currentType == 2) {
+                AndroidUtilities.setWaitingForSms(false);
+                NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveSmsCode);
+            } else if (this.currentType == 3) {
+                AndroidUtilities.setWaitingForCall(false);
+                NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveCall);
+            }
+            this.waitingForEvent = false;
         }
 
         public void onDestroyActivity() {
             super.onDestroyActivity();
-            AndroidUtilities.setWaitingForSms(false);
-            NotificationCenter.getInstance().removeObserver(this, NotificationCenter.didReceiveSmsCode);
+            if (this.currentType == 2) {
+                AndroidUtilities.setWaitingForSms(false);
+                NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveSmsCode);
+            } else if (this.currentType == 3) {
+                AndroidUtilities.setWaitingForCall(false);
+                NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didReceiveCall);
+            }
+            this.waitingForEvent = false;
             destroyTimer();
             destroyCodeTimer();
-            this.waitingForSms = false;
         }
 
         public void onShow() {
@@ -459,17 +645,28 @@ public class ChangePhoneActivity extends BaseFragment {
             }
         }
 
-        public void didReceivedNotification(int id, Object... args) {
-            if (id == NotificationCenter.didReceiveSmsCode && this.waitingForSms && this.codeField != null) {
-                this.ignoreOnTextChange = true;
-                this.codeField.setText("" + args[0]);
-                onNextPressed();
+        public void didReceivedNotification(int id, int account, Object... args) {
+            if (this.waitingForEvent && this.codeField != null) {
+                if (id == NotificationCenter.didReceiveSmsCode) {
+                    this.ignoreOnTextChange = true;
+                    this.codeField.setText(TtmlNode.ANONYMOUS_REGION_ID + args[0]);
+                    this.ignoreOnTextChange = false;
+                    onNextPressed();
+                } else if (id == NotificationCenter.didReceiveCall) {
+                    String num = TtmlNode.ANONYMOUS_REGION_ID + args[0];
+                    if (AndroidUtilities.checkPhonePattern(this.pattern, num)) {
+                        this.ignoreOnTextChange = true;
+                        this.codeField.setText(num);
+                        this.ignoreOnTextChange = false;
+                        onNextPressed();
+                    }
+                }
             }
         }
     }
 
     public class PhoneView extends SlideView implements OnItemSelectedListener {
-        private EditText codeField;
+        private EditTextBoldCursor codeField;
         private HashMap<String, String> codesMap = new HashMap();
         private ArrayList<String> countriesArray = new ArrayList();
         private HashMap<String, String> countriesMap = new HashMap();
@@ -481,6 +678,9 @@ public class ChangePhoneActivity extends BaseFragment {
         private boolean nextPressed = false;
         private HintEditText phoneField;
         private HashMap<String, String> phoneFormatMap = new HashMap();
+        private TextView textView;
+        private TextView textView2;
+        private View view;
 
         public PhoneView(Context context) {
             super(context);
@@ -488,20 +688,20 @@ public class ChangePhoneActivity extends BaseFragment {
             this.countryButton = new TextView(context);
             this.countryButton.setTextSize(1, 18.0f);
             this.countryButton.setPadding(AndroidUtilities.dp(12.0f), AndroidUtilities.dp(10.0f), AndroidUtilities.dp(12.0f), 0);
-            this.countryButton.setTextColor(-14606047);
+            this.countryButton.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
             this.countryButton.setMaxLines(1);
             this.countryButton.setSingleLine(true);
             this.countryButton.setEllipsize(TruncateAt.END);
-            this.countryButton.setGravity(3);
-            this.countryButton.setBackgroundResource(C0553R.drawable.spinner_states);
-            addView(this.countryButton, LayoutHelper.createLinear(-1, 36, 20.0f, 0.0f, 20.0f, 14.0f));
+            this.countryButton.setGravity((LocaleController.isRTL ? 5 : 3) | 1);
+            this.countryButton.setBackgroundResource(C0488R.drawable.spinner_states);
+            addView(this.countryButton, LayoutHelper.createLinear(-1, 36, 0.0f, 0.0f, 0.0f, 14.0f));
             final ChangePhoneActivity changePhoneActivity = ChangePhoneActivity.this;
             this.countryButton.setOnClickListener(new OnClickListener() {
 
-                class C15211 implements CountrySelectActivityDelegate {
+                class C11271 implements CountrySelectActivityDelegate {
 
-                    class C08071 implements Runnable {
-                        C08071() {
+                    class C11261 implements Runnable {
+                        C11261() {
                         }
 
                         public void run() {
@@ -509,46 +709,49 @@ public class ChangePhoneActivity extends BaseFragment {
                         }
                     }
 
-                    C15211() {
+                    C11271() {
                     }
 
-                    public void didSelectCountry(String name) {
+                    public void didSelectCountry(String name, String shortName) {
                         PhoneView.this.selectCountry(name);
-                        AndroidUtilities.runOnUIThread(new C08071(), 300);
+                        AndroidUtilities.runOnUIThread(new C11261(), 300);
                         PhoneView.this.phoneField.requestFocus();
                         PhoneView.this.phoneField.setSelection(PhoneView.this.phoneField.length());
                     }
                 }
 
                 public void onClick(View view) {
-                    CountrySelectActivity fragment = new CountrySelectActivity();
-                    fragment.setCountrySelectActivityDelegate(new C15211());
+                    CountrySelectActivity fragment = new CountrySelectActivity(true);
+                    fragment.setCountrySelectActivityDelegate(new C11271());
                     ChangePhoneActivity.this.presentFragment(fragment);
                 }
             });
-            View view = new View(context);
-            view.setPadding(AndroidUtilities.dp(12.0f), 0, AndroidUtilities.dp(12.0f), 0);
-            view.setBackgroundColor(-2368549);
-            addView(view, LayoutHelper.createLinear(-1, 1, 24.0f, -17.5f, 24.0f, 0.0f));
-            view = new LinearLayout(context);
-            view.setOrientation(0);
-            addView(view, LayoutHelper.createLinear(-1, -2, 0.0f, 20.0f, 0.0f, 0.0f));
-            view = new TextView(context);
-            view.setText("+");
-            view.setTextColor(-14606047);
-            view.setTextSize(1, 18.0f);
-            view.addView(view, LayoutHelper.createLinear(-2, -2, 24.0f, 0.0f, 0.0f, 0.0f));
-            this.codeField = new EditText(context);
+            this.view = new View(context);
+            this.view.setPadding(AndroidUtilities.dp(12.0f), 0, AndroidUtilities.dp(12.0f), 0);
+            this.view.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayLine));
+            addView(this.view, LayoutHelper.createLinear(-1, 1, 4.0f, -17.5f, 4.0f, 0.0f));
+            View linearLayout = new LinearLayout(context);
+            linearLayout.setOrientation(0);
+            addView(linearLayout, LayoutHelper.createLinear(-1, -2, 0.0f, 20.0f, 0.0f, 0.0f));
+            this.textView = new TextView(context);
+            this.textView.setText("+");
+            this.textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            this.textView.setTextSize(1, 18.0f);
+            linearLayout.addView(this.textView, LayoutHelper.createLinear(-2, -2));
+            this.codeField = new EditTextBoldCursor(context);
             this.codeField.setInputType(3);
-            this.codeField.setTextColor(-14606047);
-            AndroidUtilities.clearCursorDrawable(this.codeField);
+            this.codeField.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            this.codeField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            this.codeField.setCursorSize(AndroidUtilities.dp(20.0f));
+            this.codeField.setCursorWidth(1.5f);
+            this.codeField.setBackgroundDrawable(Theme.createEditTextDrawable(context, false));
             this.codeField.setPadding(AndroidUtilities.dp(10.0f), 0, 0, 0);
             this.codeField.setTextSize(1, 18.0f);
             this.codeField.setMaxLines(1);
             this.codeField.setGravity(19);
             this.codeField.setImeOptions(268435461);
             this.codeField.setFilters(new InputFilter[]{new LengthFilter(5)});
-            view.addView(this.codeField, LayoutHelper.createLinear(55, 36, -9.0f, 0.0f, 16.0f, 0.0f));
+            linearLayout.addView(this.codeField, LayoutHelper.createLinear(55, 36, -9.0f, 0.0f, 16.0f, 0.0f));
             final ChangePhoneActivity changePhoneActivity2 = ChangePhoneActivity.this;
             this.codeField.addTextChangedListener(new TextWatcher() {
                 public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
@@ -558,67 +761,66 @@ public class ChangePhoneActivity extends BaseFragment {
                 }
 
                 public void afterTextChanged(Editable editable) {
-                    if (PhoneView.this.ignoreOnTextChange) {
-                        PhoneView.this.ignoreOnTextChange = false;
-                        return;
-                    }
-                    PhoneView.this.ignoreOnTextChange = true;
-                    String text = PhoneFormat.stripExceptNumbers(PhoneView.this.codeField.getText().toString());
-                    PhoneView.this.codeField.setText(text);
-                    if (text.length() == 0) {
-                        PhoneView.this.countryButton.setText(LocaleController.getString("ChooseCountry", C0553R.string.ChooseCountry));
-                        PhoneView.this.phoneField.setHintText(null);
-                        PhoneView.this.countryState = 1;
-                        return;
-                    }
-                    boolean ok = false;
-                    String textToSet = null;
-                    if (text.length() > 4) {
+                    if (!PhoneView.this.ignoreOnTextChange) {
                         PhoneView.this.ignoreOnTextChange = true;
-                        for (int a = 4; a >= 1; a--) {
-                            String sub = text.substring(0, a);
-                            if (((String) PhoneView.this.codesMap.get(sub)) != null) {
-                                ok = true;
-                                textToSet = text.substring(a, text.length()) + PhoneView.this.phoneField.getText().toString();
-                                text = sub;
-                                PhoneView.this.codeField.setText(sub);
-                                break;
+                        String text = PhoneFormat.stripExceptNumbers(PhoneView.this.codeField.getText().toString());
+                        PhoneView.this.codeField.setText(text);
+                        if (text.length() == 0) {
+                            PhoneView.this.countryButton.setText(LocaleController.getString("ChooseCountry", C0488R.string.ChooseCountry));
+                            PhoneView.this.phoneField.setHintText(null);
+                            PhoneView.this.countryState = 1;
+                        } else {
+                            boolean ok = false;
+                            String textToSet = null;
+                            if (text.length() > 4) {
+                                PhoneView.this.ignoreOnTextChange = true;
+                                for (int a = 4; a >= 1; a--) {
+                                    String sub = text.substring(0, a);
+                                    if (((String) PhoneView.this.codesMap.get(sub)) != null) {
+                                        ok = true;
+                                        textToSet = text.substring(a, text.length()) + PhoneView.this.phoneField.getText().toString();
+                                        text = sub;
+                                        PhoneView.this.codeField.setText(sub);
+                                        break;
+                                    }
+                                }
+                                if (!ok) {
+                                    PhoneView.this.ignoreOnTextChange = true;
+                                    textToSet = text.substring(1, text.length()) + PhoneView.this.phoneField.getText().toString();
+                                    EditTextBoldCursor access$400 = PhoneView.this.codeField;
+                                    text = text.substring(0, 1);
+                                    access$400.setText(text);
+                                }
+                            }
+                            String country = (String) PhoneView.this.codesMap.get(text);
+                            if (country != null) {
+                                int index = PhoneView.this.countriesArray.indexOf(country);
+                                if (index != -1) {
+                                    PhoneView.this.ignoreSelection = true;
+                                    PhoneView.this.countryButton.setText((CharSequence) PhoneView.this.countriesArray.get(index));
+                                    String hint = (String) PhoneView.this.phoneFormatMap.get(text);
+                                    PhoneView.this.phoneField.setHintText(hint != null ? hint.replace('X', '–') : null);
+                                    PhoneView.this.countryState = 0;
+                                } else {
+                                    PhoneView.this.countryButton.setText(LocaleController.getString("WrongCountry", C0488R.string.WrongCountry));
+                                    PhoneView.this.phoneField.setHintText(null);
+                                    PhoneView.this.countryState = 2;
+                                }
+                            } else {
+                                PhoneView.this.countryButton.setText(LocaleController.getString("WrongCountry", C0488R.string.WrongCountry));
+                                PhoneView.this.phoneField.setHintText(null);
+                                PhoneView.this.countryState = 2;
+                            }
+                            if (!ok) {
+                                PhoneView.this.codeField.setSelection(PhoneView.this.codeField.getText().length());
+                            }
+                            if (textToSet != null) {
+                                PhoneView.this.phoneField.requestFocus();
+                                PhoneView.this.phoneField.setText(textToSet);
+                                PhoneView.this.phoneField.setSelection(PhoneView.this.phoneField.length());
                             }
                         }
-                        if (!ok) {
-                            PhoneView.this.ignoreOnTextChange = true;
-                            textToSet = text.substring(1, text.length()) + PhoneView.this.phoneField.getText().toString();
-                            EditText access$400 = PhoneView.this.codeField;
-                            text = text.substring(0, 1);
-                            access$400.setText(text);
-                        }
-                    }
-                    String country = (String) PhoneView.this.codesMap.get(text);
-                    if (country != null) {
-                        int index = PhoneView.this.countriesArray.indexOf(country);
-                        if (index != -1) {
-                            PhoneView.this.ignoreSelection = true;
-                            PhoneView.this.countryButton.setText((CharSequence) PhoneView.this.countriesArray.get(index));
-                            String hint = (String) PhoneView.this.phoneFormatMap.get(text);
-                            PhoneView.this.phoneField.setHintText(hint != null ? hint.replace('X', '–') : null);
-                            PhoneView.this.countryState = 0;
-                        } else {
-                            PhoneView.this.countryButton.setText(LocaleController.getString("WrongCountry", C0553R.string.WrongCountry));
-                            PhoneView.this.phoneField.setHintText(null);
-                            PhoneView.this.countryState = 2;
-                        }
-                    } else {
-                        PhoneView.this.countryButton.setText(LocaleController.getString("WrongCountry", C0553R.string.WrongCountry));
-                        PhoneView.this.phoneField.setHintText(null);
-                        PhoneView.this.countryState = 2;
-                    }
-                    if (!ok) {
-                        PhoneView.this.codeField.setSelection(PhoneView.this.codeField.getText().length());
-                    }
-                    if (textToSet != null) {
-                        PhoneView.this.phoneField.requestFocus();
-                        PhoneView.this.phoneField.setText(textToSet);
-                        PhoneView.this.phoneField.setSelection(PhoneView.this.phoneField.length());
+                        PhoneView.this.ignoreOnTextChange = false;
                     }
                 }
             });
@@ -635,15 +837,18 @@ public class ChangePhoneActivity extends BaseFragment {
             });
             this.phoneField = new HintEditText(context);
             this.phoneField.setInputType(3);
-            this.phoneField.setTextColor(-14606047);
-            this.phoneField.setHintTextColor(-6842473);
+            this.phoneField.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            this.phoneField.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
+            this.phoneField.setBackgroundDrawable(Theme.createEditTextDrawable(context, false));
             this.phoneField.setPadding(0, 0, 0, 0);
-            AndroidUtilities.clearCursorDrawable(this.phoneField);
+            this.phoneField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+            this.phoneField.setCursorSize(AndroidUtilities.dp(20.0f));
+            this.phoneField.setCursorWidth(1.5f);
             this.phoneField.setTextSize(1, 18.0f);
             this.phoneField.setMaxLines(1);
             this.phoneField.setGravity(19);
             this.phoneField.setImeOptions(268435461);
-            view.addView(this.phoneField, LayoutHelper.createLinear(-1, 36, 0.0f, 0.0f, 24.0f, 0.0f));
+            linearLayout.addView(this.phoneField, LayoutHelper.createFrame(-1, 36.0f));
             final ChangePhoneActivity changePhoneActivity222 = ChangePhoneActivity.this;
             this.phoneField.addTextChangedListener(new TextWatcher() {
                 private int actionPosition;
@@ -727,13 +932,13 @@ public class ChangePhoneActivity extends BaseFragment {
                     return true;
                 }
             });
-            view = new TextView(context);
-            view.setText(LocaleController.getString("ChangePhoneHelp", C0553R.string.ChangePhoneHelp));
-            view.setTextColor(-9079435);
-            view.setTextSize(1, 14.0f);
-            view.setGravity(3);
-            view.setLineSpacing((float) AndroidUtilities.dp(2.0f), 1.0f);
-            addView(view, LayoutHelper.createLinear(-2, -2, 3, 24, 28, 24, 10));
+            this.textView2 = new TextView(context);
+            this.textView2.setText(LocaleController.getString("ChangePhoneHelp", C0488R.string.ChangePhoneHelp));
+            this.textView2.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
+            this.textView2.setTextSize(1, 14.0f);
+            this.textView2.setGravity(LocaleController.isRTL ? 5 : 3);
+            this.textView2.setLineSpacing((float) AndroidUtilities.dp(2.0f), 1.0f);
+            addView(this.textView2, LayoutHelper.createLinear(-2, -2, LocaleController.isRTL ? 5 : 3, 0, 28, 0, 10));
             HashMap<String, String> languageMap = new HashMap();
             try {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(getResources().getAssets().open("countries.txt")));
@@ -753,7 +958,7 @@ public class ChangePhoneActivity extends BaseFragment {
                 }
                 bufferedReader.close();
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
             final ChangePhoneActivity changePhoneActivity22222 = ChangePhoneActivity.this;
             Collections.sort(this.countriesArray, new Comparator<String>() {
@@ -768,7 +973,7 @@ public class ChangePhoneActivity extends BaseFragment {
                     country = telephonyManager.getSimCountryIso().toUpperCase();
                 }
             } catch (Throwable e2) {
-                FileLog.m611e("tmessages", e2);
+                FileLog.m3e(e2);
             }
             if (country != null) {
                 String countryName = (String) languageMap.get(country);
@@ -778,7 +983,7 @@ public class ChangePhoneActivity extends BaseFragment {
                 }
             }
             if (this.codeField.length() == 0) {
-                this.countryButton.setText(LocaleController.getString("ChooseCountry", C0553R.string.ChooseCountry));
+                this.countryButton.setText(LocaleController.getString("ChooseCountry", C0488R.string.ChooseCountry));
                 this.phoneField.setHintText(null);
                 this.countryState = 1;
             }
@@ -801,6 +1006,7 @@ public class ChangePhoneActivity extends BaseFragment {
                 String hint = (String) this.phoneFormatMap.get(code);
                 this.phoneField.setHintText(hint != null ? hint.replace('X', '–') : null);
                 this.countryState = 0;
+                this.ignoreOnTextChange = false;
             }
         }
 
@@ -811,53 +1017,104 @@ public class ChangePhoneActivity extends BaseFragment {
             }
             this.ignoreOnTextChange = true;
             this.codeField.setText((CharSequence) this.countriesMap.get((String) this.countriesArray.get(i)));
+            this.ignoreOnTextChange = false;
+        }
+
+        public void onCancelPressed() {
+            this.nextPressed = false;
         }
 
         public void onNothingSelected(AdapterView<?> adapterView) {
         }
 
         public void onNextPressed() {
-            if (!this.nextPressed) {
+            if (ChangePhoneActivity.this.getParentActivity() != null && !this.nextPressed) {
+                TelephonyManager tm = (TelephonyManager) ApplicationLoader.applicationContext.getSystemService("phone");
+                boolean simcardAvailable = (tm.getSimState() == 1 || tm.getPhoneType() == 0) ? false : true;
+                boolean allowCall = true;
+                if (VERSION.SDK_INT >= 23 && simcardAvailable) {
+                    allowCall = ChangePhoneActivity.this.getParentActivity().checkSelfPermission("android.permission.READ_PHONE_STATE") == 0;
+                    boolean allowSms = ChangePhoneActivity.this.getParentActivity().checkSelfPermission("android.permission.RECEIVE_SMS") == 0;
+                    if (ChangePhoneActivity.this.checkPermissions) {
+                        ChangePhoneActivity.this.permissionsItems.clear();
+                        if (!allowCall) {
+                            ChangePhoneActivity.this.permissionsItems.add("android.permission.READ_PHONE_STATE");
+                        }
+                        if (!allowSms) {
+                            ChangePhoneActivity.this.permissionsItems.add("android.permission.RECEIVE_SMS");
+                            if (VERSION.SDK_INT >= 23) {
+                                ChangePhoneActivity.this.permissionsItems.add("android.permission.READ_SMS");
+                            }
+                        }
+                        if (!ChangePhoneActivity.this.permissionsItems.isEmpty()) {
+                            SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+                            if (preferences.getBoolean("firstlogin", true) || ChangePhoneActivity.this.getParentActivity().shouldShowRequestPermissionRationale("android.permission.READ_PHONE_STATE") || ChangePhoneActivity.this.getParentActivity().shouldShowRequestPermissionRationale("android.permission.RECEIVE_SMS")) {
+                                preferences.edit().putBoolean("firstlogin", false).commit();
+                                Builder builder = new Builder(ChangePhoneActivity.this.getParentActivity());
+                                builder.setTitle(LocaleController.getString("AppName", C0488R.string.AppName));
+                                builder.setPositiveButton(LocaleController.getString("OK", C0488R.string.OK), null);
+                                if (ChangePhoneActivity.this.permissionsItems.size() == 2) {
+                                    builder.setMessage(LocaleController.getString("AllowReadCallAndSms", C0488R.string.AllowReadCallAndSms));
+                                } else if (allowSms) {
+                                    builder.setMessage(LocaleController.getString("AllowReadCall", C0488R.string.AllowReadCall));
+                                } else {
+                                    builder.setMessage(LocaleController.getString("AllowReadSms", C0488R.string.AllowReadSms));
+                                }
+                                ChangePhoneActivity.this.permissionsDialog = ChangePhoneActivity.this.showDialog(builder.create());
+                                return;
+                            }
+                            ChangePhoneActivity.this.getParentActivity().requestPermissions((String[]) ChangePhoneActivity.this.permissionsItems.toArray(new String[ChangePhoneActivity.this.permissionsItems.size()]), 6);
+                            return;
+                        }
+                    }
+                }
                 if (this.countryState == 1) {
-                    ChangePhoneActivity.this.needShowAlert(LocaleController.getString("ChooseCountry", C0553R.string.ChooseCountry));
-                } else if (this.countryState == 2 && !BuildVars.DEBUG_VERSION) {
-                    ChangePhoneActivity.this.needShowAlert(LocaleController.getString("WrongCountry", C0553R.string.WrongCountry));
+                    AlertsCreator.showSimpleAlert(ChangePhoneActivity.this, LocaleController.getString("ChooseCountry", C0488R.string.ChooseCountry));
                 } else if (this.codeField.length() == 0) {
-                    ChangePhoneActivity.this.needShowAlert(LocaleController.getString("InvalidPhoneNumber", C0553R.string.InvalidPhoneNumber));
+                    AlertsCreator.showSimpleAlert(ChangePhoneActivity.this, LocaleController.getString("InvalidPhoneNumber", C0488R.string.InvalidPhoneNumber));
                 } else {
-                    TL_account_sendChangePhoneCode req = new TL_account_sendChangePhoneCode();
-                    String phone = PhoneFormat.stripExceptNumbers("" + this.codeField.getText() + this.phoneField.getText());
+                    final TL_account_sendChangePhoneCode req = new TL_account_sendChangePhoneCode();
+                    String phone = PhoneFormat.stripExceptNumbers(TtmlNode.ANONYMOUS_REGION_ID + this.codeField.getText() + this.phoneField.getText());
                     req.phone_number = phone;
-                    final String phone2 = "+" + this.codeField.getText() + " " + this.phoneField.getText();
+                    boolean z = simcardAvailable && allowCall;
+                    req.allow_flashcall = z;
+                    if (req.allow_flashcall) {
+                        try {
+                            String number = tm.getLine1Number();
+                            if (TextUtils.isEmpty(number)) {
+                                req.current_number = false;
+                            } else {
+                                z = phone.contains(number) || number.contains(phone);
+                                req.current_number = z;
+                                if (!req.current_number) {
+                                    req.allow_flashcall = false;
+                                }
+                            }
+                        } catch (Throwable e) {
+                            req.allow_flashcall = false;
+                            FileLog.m3e(e);
+                        }
+                    }
                     final Bundle params = new Bundle();
-                    params.putString("phone", phone2);
+                    params.putString("phone", "+" + this.codeField.getText() + this.phoneField.getText());
+                    try {
+                        params.putString("ephone", "+" + PhoneFormat.stripExceptNumbers(this.codeField.getText().toString()) + " " + PhoneFormat.stripExceptNumbers(this.phoneField.getText().toString()));
+                    } catch (Throwable e2) {
+                        FileLog.m3e(e2);
+                        params.putString("ephone", "+" + phone);
+                    }
                     params.putString("phoneFormated", phone);
                     this.nextPressed = true;
                     ChangePhoneActivity.this.needShowProgress();
-                    ConnectionsManager.getInstance().sendRequest(req, new RequestDelegate() {
+                    ConnectionsManager.getInstance(ChangePhoneActivity.this.currentAccount).sendRequest(req, new RequestDelegate() {
                         public void run(final TLObject response, final TL_error error) {
                             AndroidUtilities.runOnUIThread(new Runnable() {
                                 public void run() {
                                     PhoneView.this.nextPressed = false;
                                     if (error == null) {
-                                        TL_account_sentChangePhoneCode res = response;
-                                        params.putString("phoneHash", res.phone_code_hash);
-                                        params.putInt("calltime", res.send_call_timeout * LocationStatusCodes.GEOFENCE_NOT_AVAILABLE);
-                                        ChangePhoneActivity.this.setPage(1, true, params, false);
-                                    } else if (error.text != null) {
-                                        if (error.text.contains("PHONE_NUMBER_INVALID")) {
-                                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("InvalidPhoneNumber", C0553R.string.InvalidPhoneNumber));
-                                        } else if (error.text.contains("PHONE_CODE_EMPTY") || error.text.contains("PHONE_CODE_INVALID")) {
-                                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("InvalidCode", C0553R.string.InvalidCode));
-                                        } else if (error.text.contains("PHONE_CODE_EXPIRED")) {
-                                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("CodeExpired", C0553R.string.CodeExpired));
-                                        } else if (error.text.startsWith("FLOOD_WAIT")) {
-                                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("FloodWait", C0553R.string.FloodWait));
-                                        } else if (error.text.startsWith("PHONE_NUMBER_OCCUPIED")) {
-                                            ChangePhoneActivity.this.needShowAlert(LocaleController.formatString("ChangePhoneNumberOccupied", C0553R.string.ChangePhoneNumberOccupied, phone2));
-                                        } else {
-                                            ChangePhoneActivity.this.needShowAlert(LocaleController.getString("ErrorOccurred", C0553R.string.ErrorOccurred));
-                                        }
+                                        ChangePhoneActivity.this.fillNextCodeParams(params, (TL_auth_sentCode) response);
+                                    } else {
+                                        AlertsCreator.processError(ChangePhoneActivity.this.currentAccount, error, ChangePhoneActivity.this, req, params.getString("phone"));
                                     }
                                     ChangePhoneActivity.this.needHideProgress();
                                 }
@@ -884,22 +1141,45 @@ public class ChangePhoneActivity extends BaseFragment {
         }
 
         public String getHeaderName() {
-            return LocaleController.getString("ChangePhoneNewNumber", C0553R.string.ChangePhoneNewNumber);
+            return LocaleController.getString("ChangePhoneNewNumber", C0488R.string.ChangePhoneNewNumber);
+        }
+    }
+
+    private class ProgressView extends View {
+        private Paint paint = new Paint();
+        private Paint paint2 = new Paint();
+        private float progress;
+
+        public ProgressView(Context context) {
+            super(context);
+            this.paint.setColor(Theme.getColor(Theme.key_login_progressInner));
+            this.paint2.setColor(Theme.getColor(Theme.key_login_progressOuter));
+        }
+
+        public void setProgress(float value) {
+            this.progress = value;
+            invalidate();
+        }
+
+        protected void onDraw(Canvas canvas) {
+            int start = (int) (((float) getMeasuredWidth()) * this.progress);
+            canvas.drawRect(0.0f, 0.0f, (float) start, (float) getMeasuredHeight(), this.paint2);
+            canvas.drawRect((float) start, 0.0f, (float) getMeasuredWidth(), (float) getMeasuredHeight(), this.paint);
         }
     }
 
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        for (SlideView v : this.views) {
-            if (v != null) {
-                v.onDestroyActivity();
+        for (int a = 0; a < this.views.length; a++) {
+            if (this.views[a] != null) {
+                this.views[a].onDestroyActivity();
             }
         }
         if (this.progressDialog != null) {
             try {
                 this.progressDialog.dismiss();
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
             this.progressDialog = null;
         }
@@ -907,37 +1187,25 @@ public class ChangePhoneActivity extends BaseFragment {
     }
 
     public View createView(Context context) {
-        this.actionBar.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
-        this.actionBar.setActionBarMenuOnItemClick(new C15171());
-        this.actionBar.createMenu().addItemWithWidth(1, C0553R.drawable.ic_done, AndroidUtilities.dp(56.0f));
+        this.actionBar.setTitle(LocaleController.getString("AppName", C0488R.string.AppName));
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_ab_back);
+        this.actionBar.setActionBarMenuOnItemClick(new C11091());
+        this.doneButton = this.actionBar.createMenu().addItemWithWidth(1, C0488R.drawable.ic_done, AndroidUtilities.dp(56.0f));
         this.fragmentView = new ScrollView(context);
         ScrollView scrollView = this.fragmentView;
         scrollView.setFillViewport(true);
         FrameLayout frameLayout = new FrameLayout(context);
-        scrollView.addView(frameLayout);
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) frameLayout.getLayoutParams();
-        layoutParams.width = -1;
-        layoutParams.height = -2;
-        layoutParams.gravity = 51;
-        frameLayout.setLayoutParams(layoutParams);
+        scrollView.addView(frameLayout, LayoutHelper.createScroll(-1, -2, 51));
         this.views[0] = new PhoneView(context);
-        this.views[0].setVisibility(0);
-        frameLayout.addView(this.views[0], LayoutHelper.createFrame(-1, -2.0f, 51, 16.0f, BitmapDescriptorFactory.HUE_ORANGE, 16.0f, 0.0f));
-        this.views[1] = new LoginActivitySmsView(context);
-        this.views[1].setVisibility(8);
-        frameLayout.addView(this.views[1], LayoutHelper.createFrame(-1, GroundOverlayOptions.NO_DIMENSION, 51, 16.0f, BitmapDescriptorFactory.HUE_ORANGE, 16.0f, 0.0f));
-        try {
-            if (this.views[0] == null || this.views[1] == null) {
-                FrameLayout parent = (FrameLayout) ((ScrollView) this.fragmentView).getChildAt(0);
-                for (int a = 0; a < this.views.length; a++) {
-                    if (this.views[a] == null) {
-                        this.views[a] = (SlideView) parent.getChildAt(a);
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+        this.views[1] = new LoginActivitySmsView(context, 1);
+        this.views[2] = new LoginActivitySmsView(context, 2);
+        this.views[3] = new LoginActivitySmsView(context, 3);
+        this.views[4] = new LoginActivitySmsView(context, 4);
+        int a = 0;
+        while (a < this.views.length) {
+            this.views[a].setVisibility(a == 0 ? 0 : 8);
+            frameLayout.addView(this.views[a], LayoutHelper.createFrame(-1, a == 0 ? -2.0f : -1.0f, 51, AndroidUtilities.isTablet() ? 26.0f : 18.0f, 30.0f, AndroidUtilities.isTablet() ? 26.0f : 18.0f, 0.0f));
+            a++;
         }
         this.actionBar.setTitle(this.views[0].getHeaderName());
         return this.fragmentView;
@@ -948,18 +1216,32 @@ public class ChangePhoneActivity extends BaseFragment {
         AndroidUtilities.requestAdjustResize(getParentActivity(), this.classGuid);
     }
 
+    public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == 6) {
+            this.checkPermissions = false;
+            if (this.currentViewNum == 0) {
+                this.views[this.currentViewNum].onNextPressed();
+            }
+        }
+    }
+
+    protected void onDialogDismiss(Dialog dialog) {
+        if (VERSION.SDK_INT >= 23 && dialog == this.permissionsDialog && !this.permissionsItems.isEmpty()) {
+            getParentActivity().requestPermissions((String[]) this.permissionsItems.toArray(new String[this.permissionsItems.size()]), 6);
+        }
+    }
+
     public boolean onBackPressed() {
         if (this.currentViewNum == 0) {
-            for (SlideView v : this.views) {
-                if (v != null) {
-                    v.onDestroyActivity();
+            for (int a = 0; a < this.views.length; a++) {
+                if (this.views[a] != null) {
+                    this.views[a].onDestroyActivity();
                 }
             }
             return true;
         }
-        if (this.currentViewNum == 1) {
-            setPage(0, true, null, true);
-        }
+        this.views[this.currentViewNum].onBackPressed();
+        setPage(0, true, null, true);
         return false;
     }
 
@@ -969,20 +1251,10 @@ public class ChangePhoneActivity extends BaseFragment {
         }
     }
 
-    public void needShowAlert(String text) {
-        if (text != null && getParentActivity() != null) {
-            Builder builder = new Builder(getParentActivity());
-            builder.setTitle(LocaleController.getString("AppName", C0553R.string.AppName));
-            builder.setMessage(text);
-            builder.setPositiveButton(LocaleController.getString("OK", C0553R.string.OK), null);
-            showDialog(builder.create());
-        }
-    }
-
     public void needShowProgress() {
         if (getParentActivity() != null && !getParentActivity().isFinishing() && this.progressDialog == null) {
-            this.progressDialog = new ProgressDialog(getParentActivity());
-            this.progressDialog.setMessage(LocaleController.getString("Loading", C0553R.string.Loading));
+            this.progressDialog = new AlertDialog(getParentActivity(), 1);
+            this.progressDialog.setMessage(LocaleController.getString("Loading", C0488R.string.Loading));
             this.progressDialog.setCanceledOnTouchOutside(false);
             this.progressDialog.setCancelable(false);
             this.progressDialog.show();
@@ -994,56 +1266,124 @@ public class ChangePhoneActivity extends BaseFragment {
             try {
                 this.progressDialog.dismiss();
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
             this.progressDialog = null;
         }
     }
 
     public void setPage(int page, boolean animated, Bundle params, boolean back) {
-        if (VERSION.SDK_INT > 10) {
-            float f;
-            final SlideView outView = this.views[this.currentViewNum];
-            final SlideView newView = this.views[page];
-            this.currentViewNum = page;
-            newView.setParams(params);
-            this.actionBar.setTitle(newView.getHeaderName());
-            newView.onShow();
-            ViewProxy.setX(newView, back ? (float) (-AndroidUtilities.displaySize.x) : (float) AndroidUtilities.displaySize.x);
-            AnimatorSetProxy animatorSet = new AnimatorSetProxy();
-            animatorSet.setInterpolator(new AccelerateDecelerateInterpolator());
-            animatorSet.setDuration(300);
-            Object[] objArr = new Object[2];
-            String str = "translationX";
-            float[] fArr = new float[1];
-            if (back) {
-                f = (float) AndroidUtilities.displaySize.x;
-            } else {
-                f = (float) (-AndroidUtilities.displaySize.x);
+        if (page == 3) {
+            this.doneButton.setVisibility(8);
+        } else {
+            if (page == 0) {
+                this.checkPermissions = true;
             }
-            fArr[0] = f;
-            objArr[0] = ObjectAnimatorProxy.ofFloat(outView, str, fArr);
-            objArr[1] = ObjectAnimatorProxy.ofFloat(newView, "translationX", 0.0f);
-            animatorSet.playTogether(objArr);
-            animatorSet.addListener(new AnimatorListenerAdapterProxy() {
-                public void onAnimationStart(Object animation) {
-                    newView.setVisibility(0);
-                }
+            this.doneButton.setVisibility(0);
+        }
+        final SlideView outView = this.views[this.currentViewNum];
+        final SlideView newView = this.views[page];
+        this.currentViewNum = page;
+        newView.setParams(params, false);
+        this.actionBar.setTitle(newView.getHeaderName());
+        newView.onShow();
+        newView.setX(back ? (float) (-AndroidUtilities.displaySize.x) : (float) AndroidUtilities.displaySize.x);
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.setInterpolator(new AccelerateDecelerateInterpolator());
+        animatorSet.setDuration(300);
+        Animator[] animatorArr = new Animator[2];
+        String str = "translationX";
+        float[] fArr = new float[1];
+        fArr[0] = back ? (float) AndroidUtilities.displaySize.x : (float) (-AndroidUtilities.displaySize.x);
+        animatorArr[0] = ObjectAnimator.ofFloat(outView, str, fArr);
+        animatorArr[1] = ObjectAnimator.ofFloat(newView, "translationX", new float[]{0.0f});
+        animatorSet.playTogether(animatorArr);
+        animatorSet.addListener(new AnimatorListenerAdapter() {
+            public void onAnimationStart(Animator animation) {
+                newView.setVisibility(0);
+            }
 
-                @SuppressLint({"NewApi"})
-                public void onAnimationEnd(Object animation) {
-                    outView.setVisibility(8);
-                    outView.setX(0.0f);
-                }
-            });
-            animatorSet.start();
+            public void onAnimationEnd(Animator animation) {
+                outView.setVisibility(8);
+                outView.setX(0.0f);
+            }
+        });
+        animatorSet.start();
+    }
+
+    private void fillNextCodeParams(Bundle params, TL_auth_sentCode res) {
+        params.putString("phoneHash", res.phone_code_hash);
+        if (res.next_type instanceof TL_auth_codeTypeCall) {
+            params.putInt("nextType", 4);
+        } else if (res.next_type instanceof TL_auth_codeTypeFlashCall) {
+            params.putInt("nextType", 3);
+        } else if (res.next_type instanceof TL_auth_codeTypeSms) {
+            params.putInt("nextType", 2);
+        }
+        if (res.type instanceof TL_auth_sentCodeTypeApp) {
+            params.putInt("type", 1);
+            params.putInt("length", res.type.length);
+            setPage(1, true, params, false);
             return;
         }
-        this.views[this.currentViewNum].setVisibility(8);
-        this.currentViewNum = page;
-        this.views[page].setParams(params);
-        this.views[page].setVisibility(0);
-        this.actionBar.setTitle(this.views[page].getHeaderName());
-        this.views[page].onShow();
+        if (res.timeout == 0) {
+            res.timeout = 60;
+        }
+        params.putInt("timeout", res.timeout * 1000);
+        if (res.type instanceof TL_auth_sentCodeTypeCall) {
+            params.putInt("type", 4);
+            params.putInt("length", res.type.length);
+            setPage(4, true, params, false);
+        } else if (res.type instanceof TL_auth_sentCodeTypeFlashCall) {
+            params.putInt("type", 3);
+            params.putString("pattern", res.type.pattern);
+            setPage(3, true, params, false);
+        } else if (res.type instanceof TL_auth_sentCodeTypeSms) {
+            params.putInt("type", 2);
+            params.putInt("length", res.type.length);
+            setPage(2, true, params, false);
+        }
+    }
+
+    public ThemeDescription[] getThemeDescriptions() {
+        PhoneView phoneView = this.views[0];
+        LoginActivitySmsView smsView1 = this.views[1];
+        LoginActivitySmsView smsView2 = this.views[2];
+        LoginActivitySmsView smsView3 = this.views[3];
+        LoginActivitySmsView smsView4 = this.views[4];
+        r15 = new ThemeDescription[57];
+        r15[25] = new ThemeDescription(smsView1.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressInner);
+        r15[26] = new ThemeDescription(smsView1.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressOuter);
+        r15[27] = new ThemeDescription(smsView2.confirmTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText6);
+        r15[28] = new ThemeDescription(smsView2.codeField, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        r15[29] = new ThemeDescription(smsView2.codeField, ThemeDescription.FLAG_HINTTEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteHintText);
+        r15[30] = new ThemeDescription(smsView2.codeField, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_windowBackgroundWhiteInputField);
+        r15[31] = new ThemeDescription(smsView2.codeField, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_windowBackgroundWhiteInputFieldActivated);
+        r15[32] = new ThemeDescription(smsView2.timeText, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText6);
+        r15[33] = new ThemeDescription(smsView2.problemText, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlueText4);
+        r15[34] = new ThemeDescription(smsView2.wrongNumber, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlueText4);
+        r15[35] = new ThemeDescription(smsView2.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressInner);
+        r15[36] = new ThemeDescription(smsView2.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressOuter);
+        r15[37] = new ThemeDescription(smsView3.confirmTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText6);
+        r15[38] = new ThemeDescription(smsView3.codeField, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        r15[39] = new ThemeDescription(smsView3.codeField, ThemeDescription.FLAG_HINTTEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteHintText);
+        r15[40] = new ThemeDescription(smsView3.codeField, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_windowBackgroundWhiteInputField);
+        r15[41] = new ThemeDescription(smsView3.codeField, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_windowBackgroundWhiteInputFieldActivated);
+        r15[42] = new ThemeDescription(smsView3.timeText, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText6);
+        r15[43] = new ThemeDescription(smsView3.problemText, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlueText4);
+        r15[44] = new ThemeDescription(smsView3.wrongNumber, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlueText4);
+        r15[45] = new ThemeDescription(smsView3.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressInner);
+        r15[46] = new ThemeDescription(smsView3.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressOuter);
+        r15[47] = new ThemeDescription(smsView4.confirmTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText6);
+        r15[48] = new ThemeDescription(smsView4.codeField, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        r15[49] = new ThemeDescription(smsView4.codeField, ThemeDescription.FLAG_HINTTEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteHintText);
+        r15[50] = new ThemeDescription(smsView1.codeField, ThemeDescription.FLAG_BACKGROUNDFILTER, null, null, null, null, Theme.key_windowBackgroundWhiteInputField);
+        r15[51] = new ThemeDescription(smsView4.codeField, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, null, null, null, null, Theme.key_windowBackgroundWhiteInputFieldActivated);
+        r15[52] = new ThemeDescription(smsView4.timeText, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText6);
+        r15[53] = new ThemeDescription(smsView4.problemText, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlueText4);
+        r15[54] = new ThemeDescription(smsView4.wrongNumber, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlueText4);
+        r15[55] = new ThemeDescription(smsView4.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressInner);
+        r15[56] = new ThemeDescription(smsView4.progressView, 0, new Class[]{ProgressView.class}, new String[]{"paint"}, null, null, null, Theme.key_login_progressOuter);
+        return r15;
     }
 }

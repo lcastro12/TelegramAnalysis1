@@ -5,20 +5,20 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.FrameLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.LocaleController;
+import org.telegram.ui.ActionBar.Theme;
 
 public class EmptyTextProgressView extends FrameLayout {
     private boolean inLayout;
-    private ProgressBar progressBar;
+    private RadialProgressView progressBar;
     private boolean showAtCenter;
     private TextView textView;
 
-    class C09161 implements OnTouchListener {
-        C09161() {
+    class C14771 implements OnTouchListener {
+        C14771() {
         }
 
         public boolean onTouch(View v, MotionEvent event) {
@@ -28,18 +28,18 @@ public class EmptyTextProgressView extends FrameLayout {
 
     public EmptyTextProgressView(Context context) {
         super(context);
-        this.progressBar = new ProgressBar(context);
+        this.progressBar = new RadialProgressView(context);
         this.progressBar.setVisibility(4);
         addView(this.progressBar, LayoutHelper.createFrame(-2, -2.0f));
         this.textView = new TextView(context);
         this.textView.setTextSize(1, 20.0f);
-        this.textView.setTextColor(-8355712);
+        this.textView.setTextColor(Theme.getColor(Theme.key_emptyListPlaceholder));
         this.textView.setGravity(17);
         this.textView.setVisibility(4);
         this.textView.setPadding(AndroidUtilities.dp(20.0f), 0, AndroidUtilities.dp(20.0f), 0);
-        this.textView.setText(LocaleController.getString("NoResult", C0553R.string.NoResult));
+        this.textView.setText(LocaleController.getString("NoResult", C0488R.string.NoResult));
         addView(this.textView, LayoutHelper.createFrame(-2, -2.0f));
-        setOnTouchListener(new C09161());
+        setOnTouchListener(new C14771());
     }
 
     public void showProgress() {
@@ -54,6 +54,14 @@ public class EmptyTextProgressView extends FrameLayout {
 
     public void setText(String text) {
         this.textView.setText(text);
+    }
+
+    public void setTextColor(int color) {
+        this.textView.setTextColor(color);
+    }
+
+    public void setProgressBarColor(int color) {
+        this.progressBar.setProgressColor(color);
     }
 
     public void setTextSize(int size) {
@@ -89,5 +97,9 @@ public class EmptyTextProgressView extends FrameLayout {
         if (!this.inLayout) {
             super.requestLayout();
         }
+    }
+
+    public boolean hasOverlappingRendering() {
+        return false;
     }
 }

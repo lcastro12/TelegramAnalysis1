@@ -11,10 +11,10 @@ import java.util.logging.Logger;
 
 public abstract class AbstractBoxParser implements BoxParser {
     private static Logger LOG = Logger.getLogger(AbstractBoxParser.class.getName());
-    ThreadLocal<ByteBuffer> header = new C01251();
+    ThreadLocal<ByteBuffer> header = new C00181();
 
-    class C01251 extends ThreadLocal<ByteBuffer> {
-        C01251() {
+    class C00181 extends ThreadLocal<ByteBuffer> {
+        C00181() {
         }
 
         protected ByteBuffer initialValue() {
@@ -57,7 +57,7 @@ public abstract class AbstractBoxParser implements BoxParser {
                         }
                         contentSize -= 16;
                     }
-                    Box box = createBox(type, usertype, parent instanceof Box ? ((Box) parent).getType() : "");
+                    Box box = createBox(type, usertype, parent instanceof Box ? ((Box) parent).getType() : TtmlNode.ANONYMOUS_REGION_ID);
                     box.setParent(parent);
                     ((ByteBuffer) this.header.get()).rewind();
                     box.parse(byteChannel, (ByteBuffer) this.header.get(), contentSize, this);

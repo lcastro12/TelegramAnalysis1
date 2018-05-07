@@ -9,7 +9,8 @@ import android.view.ViewGroup;
 public abstract class PagerAdapter {
     public static final int POSITION_NONE = -2;
     public static final int POSITION_UNCHANGED = -1;
-    private DataSetObservable mObservable = new DataSetObservable();
+    private final DataSetObservable mObservable = new DataSetObservable();
+    private DataSetObserver mViewPagerObserver;
 
     public abstract int getCount();
 
@@ -35,20 +36,25 @@ public abstract class PagerAdapter {
         finishUpdate((View) container);
     }
 
+    @Deprecated
     public void startUpdate(View container) {
     }
 
+    @Deprecated
     public Object instantiateItem(View container, int position) {
         throw new UnsupportedOperationException("Required method instantiateItem was not overridden");
     }
 
+    @Deprecated
     public void destroyItem(View container, int position, Object object) {
         throw new UnsupportedOperationException("Required method destroyItem was not overridden");
     }
 
+    @Deprecated
     public void setPrimaryItem(View container, int position, Object object) {
     }
 
+    @Deprecated
     public void finishUpdate(View container) {
     }
 
@@ -64,6 +70,11 @@ public abstract class PagerAdapter {
     }
 
     public void notifyDataSetChanged() {
+        synchronized (this) {
+            if (this.mViewPagerObserver != null) {
+                this.mViewPagerObserver.onChanged();
+            }
+        }
         this.mObservable.notifyChanged();
     }
 
@@ -73,6 +84,12 @@ public abstract class PagerAdapter {
 
     public void unregisterDataSetObserver(DataSetObserver observer) {
         this.mObservable.unregisterObserver(observer);
+    }
+
+    void setViewPagerObserver(DataSetObserver observer) {
+        synchronized (this) {
+            this.mViewPagerObserver = observer;
+        }
     }
 
     public CharSequence getPageTitle(int position) {

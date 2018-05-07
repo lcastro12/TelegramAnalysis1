@@ -3,13 +3,14 @@ package org.telegram.messenger.audioinfo.mp3;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapFactory.Options;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.googlecode.mp4parser.authoring.tracks.h265.NalUnitTypes;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.telegram.messenger.audioinfo.AudioInfo;
+import org.telegram.messenger.exoplayer2.RendererCapabilities;
+import org.telegram.messenger.exoplayer2.metadata.id3.ApicFrame;
+import org.telegram.messenger.exoplayer2.metadata.id3.CommentFrame;
 import org.telegram.messenger.support.widget.helper.ItemTouchHelper.Callback;
 
 public class ID3v2Info extends AudioInfo {
@@ -48,7 +49,7 @@ public class ID3v2Info extends AudioInfo {
     public ID3v2Info(java.io.InputStream r11, java.util.logging.Level r12) throws java.io.IOException, org.telegram.messenger.audioinfo.mp3.ID3v2Exception {
         /* JADX: method processing error */
 /*
-Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dominator for block B:46:0x0085 in {18, 22, 38, 40, 42, 45, 47, 48, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64} preds:[]
+Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dominator for block B:46:0x0088 in {18, 22, 38, 40, 42, 45, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64} preds:[]
 	at jadx.core.dex.visitors.blocksmaker.BlockProcessor.computeDominators(BlockProcessor.java:129)
 	at jadx.core.dex.visitors.blocksmaker.BlockProcessor.processBlocksTree(BlockProcessor.java:48)
 	at jadx.core.dex.visitors.blocksmaker.BlockProcessor.rerun(BlockProcessor.java:44)
@@ -68,7 +69,7 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
         r10.<init>();
         r10.debugLevel = r12;
         r5 = isID3v2StartPosition(r11);
-        if (r5 == 0) goto L_0x0067;
+        if (r5 == 0) goto L_0x0069;
     L_0x000e:
         r4 = new org.telegram.messenger.audioinfo.mp3.ID3v2TagHeader;
         r4.<init>(r11);
@@ -85,49 +86,49 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
         r5 = java.lang.String.format(r5, r6);
         r10.version = r5;
         r3 = r4.tagBody(r11);
-    L_0x0039:
-        r6 = r3.getRemainingLength();	 Catch:{ ID3v2Exception -> 0x0085 }
-        r8 = 10;	 Catch:{ ID3v2Exception -> 0x0085 }
-        r5 = (r6 > r8 ? 1 : (r6 == r8 ? 0 : -1));	 Catch:{ ID3v2Exception -> 0x0085 }
-        if (r5 <= 0) goto L_0x004e;	 Catch:{ ID3v2Exception -> 0x0085 }
-    L_0x0043:
-        r2 = new org.telegram.messenger.audioinfo.mp3.ID3v2FrameHeader;	 Catch:{ ID3v2Exception -> 0x0085 }
-        r2.<init>(r3);	 Catch:{ ID3v2Exception -> 0x0085 }
-        r5 = r2.isPadding();	 Catch:{ ID3v2Exception -> 0x0085 }
-        if (r5 == 0) goto L_0x0068;
-    L_0x004e:
+    L_0x003b:
+        r6 = r3.getRemainingLength();	 Catch:{ ID3v2Exception -> 0x0088 }
+        r8 = 10;	 Catch:{ ID3v2Exception -> 0x0088 }
+        r5 = (r6 > r8 ? 1 : (r6 == r8 ? 0 : -1));	 Catch:{ ID3v2Exception -> 0x0088 }
+        if (r5 <= 0) goto L_0x0050;	 Catch:{ ID3v2Exception -> 0x0088 }
+    L_0x0045:
+        r2 = new org.telegram.messenger.audioinfo.mp3.ID3v2FrameHeader;	 Catch:{ ID3v2Exception -> 0x0088 }
+        r2.<init>(r3);	 Catch:{ ID3v2Exception -> 0x0088 }
+        r5 = r2.isPadding();	 Catch:{ ID3v2Exception -> 0x0088 }
+        if (r5 == 0) goto L_0x006a;
+    L_0x0050:
         r5 = r3.getData();
         r6 = r3.getRemainingLength();
         r5.skipFully(r6);
         r5 = r4.getFooterSize();
-        if (r5 <= 0) goto L_0x0067;
-    L_0x005f:
+        if (r5 <= 0) goto L_0x0069;
+    L_0x0061:
         r5 = r4.getFooterSize();
         r6 = (long) r5;
         r11.skip(r6);
-    L_0x0067:
+    L_0x0069:
         return;
-    L_0x0068:
-        r5 = r2.getBodySize();	 Catch:{ ID3v2Exception -> 0x0085 }
-        r6 = (long) r5;	 Catch:{ ID3v2Exception -> 0x0085 }
-        r8 = r3.getRemainingLength();	 Catch:{ ID3v2Exception -> 0x0085 }
-        r5 = (r6 > r8 ? 1 : (r6 == r8 ? 0 : -1));	 Catch:{ ID3v2Exception -> 0x0085 }
-        if (r5 <= 0) goto L_0x00ab;	 Catch:{ ID3v2Exception -> 0x0085 }
-    L_0x0075:
-        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x0085 }
-        r5 = r5.isLoggable(r12);	 Catch:{ ID3v2Exception -> 0x0085 }
-        if (r5 == 0) goto L_0x004e;	 Catch:{ ID3v2Exception -> 0x0085 }
-    L_0x007d:
-        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x0085 }
-        r6 = "ID3 frame claims to extend frames area";	 Catch:{ ID3v2Exception -> 0x0085 }
-        r5.log(r12, r6);	 Catch:{ ID3v2Exception -> 0x0085 }
-        goto L_0x004e;
-    L_0x0085:
+    L_0x006a:
+        r5 = r2.getBodySize();	 Catch:{ ID3v2Exception -> 0x0088 }
+        r6 = (long) r5;	 Catch:{ ID3v2Exception -> 0x0088 }
+        r8 = r3.getRemainingLength();	 Catch:{ ID3v2Exception -> 0x0088 }
+        r5 = (r6 > r8 ? 1 : (r6 == r8 ? 0 : -1));	 Catch:{ ID3v2Exception -> 0x0088 }
+        if (r5 <= 0) goto L_0x00af;	 Catch:{ ID3v2Exception -> 0x0088 }
+    L_0x0077:
+        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x0088 }
+        r5 = r5.isLoggable(r12);	 Catch:{ ID3v2Exception -> 0x0088 }
+        if (r5 == 0) goto L_0x0050;	 Catch:{ ID3v2Exception -> 0x0088 }
+    L_0x007f:
+        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x0088 }
+        r6 = "ID3 frame claims to extend frames area";	 Catch:{ ID3v2Exception -> 0x0088 }
+        r5.log(r12, r6);	 Catch:{ ID3v2Exception -> 0x0088 }
+        goto L_0x0050;
+    L_0x0088:
         r0 = move-exception;
         r5 = LOGGER;
         r5 = r5.isLoggable(r12);
-        if (r5 == 0) goto L_0x004e;
-    L_0x008e:
+        if (r5 == 0) goto L_0x0050;
+    L_0x0091:
         r5 = LOGGER;
         r6 = new java.lang.StringBuilder;
         r6.<init>();
@@ -137,55 +138,55 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
         r6 = r6.append(r7);
         r6 = r6.toString();
         r5.log(r12, r6);
-        goto L_0x004e;
-    L_0x00ab:
-        r5 = r2.isValid();	 Catch:{ ID3v2Exception -> 0x0085 }
-        if (r5 == 0) goto L_0x010a;	 Catch:{ ID3v2Exception -> 0x0085 }
-    L_0x00b1:
-        r5 = r2.isEncryption();	 Catch:{ ID3v2Exception -> 0x0085 }
-        if (r5 != 0) goto L_0x010a;	 Catch:{ ID3v2Exception -> 0x0085 }
-    L_0x00b7:
-        r1 = r3.frameBody(r2);	 Catch:{ ID3v2Exception -> 0x0085 }
-        r10.parseFrame(r1);	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
+        goto L_0x0050;
+    L_0x00af:
+        r5 = r2.isValid();	 Catch:{ ID3v2Exception -> 0x0088 }
+        if (r5 == 0) goto L_0x010f;	 Catch:{ ID3v2Exception -> 0x0088 }
+    L_0x00b5:
+        r5 = r2.isEncryption();	 Catch:{ ID3v2Exception -> 0x0088 }
+        if (r5 != 0) goto L_0x010f;	 Catch:{ ID3v2Exception -> 0x0088 }
+    L_0x00bb:
+        r1 = r3.frameBody(r2);	 Catch:{ ID3v2Exception -> 0x0088 }
+        r10.parseFrame(r1);	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
         r5 = r1.getData();
         r6 = r1.getRemainingLength();
         r5.skipFully(r6);
-        goto L_0x0039;
-    L_0x00cb:
+        goto L_0x003b;
+    L_0x00cf:
         r0 = move-exception;
-        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r5 = r5.isLoggable(r12);	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        if (r5 == 0) goto L_0x00f0;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-    L_0x00d4:
-        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r6 = "ID3 exception occured in frame %s: %s";	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r7 = 2;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r7 = new java.lang.Object[r7];	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r8 = 0;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r9 = r2.getFrameId();	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r7[r8] = r9;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r8 = 1;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r9 = r0.getMessage();	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r7[r8] = r9;	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r6 = java.lang.String.format(r6, r7);	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-        r5.log(r12, r6);	 Catch:{ ID3v2Exception -> 0x00cb, all -> 0x00fd }
-    L_0x00f0:
+        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r5 = r5.isLoggable(r12);	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        if (r5 == 0) goto L_0x00f5;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+    L_0x00d8:
+        r5 = LOGGER;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r6 = "ID3 exception occured in frame %s: %s";	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r7 = 2;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r7 = new java.lang.Object[r7];	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r8 = 0;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r9 = r2.getFrameId();	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r7[r8] = r9;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r8 = 1;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r9 = r0.getMessage();	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r7[r8] = r9;	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r6 = java.lang.String.format(r6, r7);	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+        r5.log(r12, r6);	 Catch:{ ID3v2Exception -> 0x00cf, all -> 0x0102 }
+    L_0x00f5:
         r5 = r1.getData();
         r6 = r1.getRemainingLength();
         r5.skipFully(r6);
-        goto L_0x0039;	 Catch:{ ID3v2Exception -> 0x0085 }
-    L_0x00fd:
-        r5 = move-exception;	 Catch:{ ID3v2Exception -> 0x0085 }
-        r6 = r1.getData();	 Catch:{ ID3v2Exception -> 0x0085 }
-        r8 = r1.getRemainingLength();	 Catch:{ ID3v2Exception -> 0x0085 }
-        r6.skipFully(r8);	 Catch:{ ID3v2Exception -> 0x0085 }
-        throw r5;	 Catch:{ ID3v2Exception -> 0x0085 }
-    L_0x010a:
-        r5 = r3.getData();	 Catch:{ ID3v2Exception -> 0x0085 }
-        r6 = r2.getBodySize();	 Catch:{ ID3v2Exception -> 0x0085 }
-        r6 = (long) r6;	 Catch:{ ID3v2Exception -> 0x0085 }
-        r5.skipFully(r6);	 Catch:{ ID3v2Exception -> 0x0085 }
-        goto L_0x0039;
+        goto L_0x003b;	 Catch:{ ID3v2Exception -> 0x0088 }
+    L_0x0102:
+        r5 = move-exception;	 Catch:{ ID3v2Exception -> 0x0088 }
+        r6 = r1.getData();	 Catch:{ ID3v2Exception -> 0x0088 }
+        r8 = r1.getRemainingLength();	 Catch:{ ID3v2Exception -> 0x0088 }
+        r6.skipFully(r8);	 Catch:{ ID3v2Exception -> 0x0088 }
+        throw r5;	 Catch:{ ID3v2Exception -> 0x0088 }
+    L_0x010f:
+        r5 = r3.getData();	 Catch:{ ID3v2Exception -> 0x0088 }
+        r6 = r2.getBodySize();	 Catch:{ ID3v2Exception -> 0x0088 }
+        r6 = (long) r6;	 Catch:{ ID3v2Exception -> 0x0088 }
+        r5.skipFully(r6);	 Catch:{ ID3v2Exception -> 0x0088 }
+        goto L_0x003b;
         */
         throw new UnsupportedOperationException("Method not decompiled: org.telegram.messenger.audioinfo.mp3.ID3v2Info.<init>(java.io.InputStream, java.util.logging.Level):void");
     }
@@ -309,13 +310,13 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
                 }
                 break;
             case 2015625:
-                if (frameId.equals("APIC")) {
+                if (frameId.equals(ApicFrame.ID)) {
                     obj = 1;
                     break;
                 }
                 break;
             case 2074380:
-                if (frameId.equals("COMM")) {
+                if (frameId.equals(CommentFrame.ID)) {
                     obj = 3;
                     break;
                 }
@@ -432,7 +433,7 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
                             opts.inJustDecodeBounds = false;
                             this.cover = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
                             if (this.cover != null) {
-                                float scale = ((float) Math.max(this.cover.getWidth(), this.cover.getHeight())) / BitmapDescriptorFactory.HUE_GREEN;
+                                float scale = ((float) Math.max(this.cover.getWidth(), this.cover.getHeight())) / 120.0f;
                                 if (scale > 0.0f) {
                                     this.smallCover = Bitmap.createScaledBitmap(this.cover, (int) (((float) this.cover.getWidth()) / scale), (int) (((float) this.cover.getHeight()) / scale), true);
                                 } else {
@@ -442,7 +443,7 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
                                     this.smallCover = this.cover;
                                 }
                             }
-                        } catch (Exception e) {
+                        } catch (Throwable e) {
                             e.printStackTrace();
                         }
                         this.coverPictureType = picture.type;
@@ -454,7 +455,7 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
             case 2:
             case 3:
                 CommentOrUnsynchronizedLyrics comm = parseCommentOrUnsynchronizedLyricsFrame(frame);
-                if (this.comment == null || comm.description == null || "".equals(comm.description)) {
+                if (this.comment == null || comm.description == null || TtmlNode.ANONYMOUS_REGION_ID.equals(comm.description)) {
                     this.comment = comm.text;
                     return;
                 }
@@ -576,7 +577,7 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
                 }
                 return;
             case 23:
-            case 24:
+            case RendererCapabilities.ADAPTIVE_SUPPORT_MASK /*24*/:
                 String trck = parseTextFrame(frame);
                 if (trck.length() > 0) {
                     index = trck.indexOf(47);
@@ -612,15 +613,15 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
                 }
                 return;
             case 25:
-            case NalUnitTypes.NAL_TYPE_RSV_VCL26 /*26*/:
+            case 26:
                 this.grouping = parseTextFrame(frame);
                 return;
-            case NalUnitTypes.NAL_TYPE_RSV_VCL27 /*27*/:
-            case NalUnitTypes.NAL_TYPE_RSV_VCL28 /*28*/:
+            case 27:
+            case 28:
                 this.title = parseTextFrame(frame);
                 return;
-            case NalUnitTypes.NAL_TYPE_RSV_VCL29 /*29*/:
-            case NalUnitTypes.NAL_TYPE_RSV_VCL30 /*30*/:
+            case 29:
+            case 30:
                 String tyer = parseTextFrame(frame);
                 if (tyer.length() > 0) {
                     try {
@@ -635,7 +636,7 @@ Error: jadx.core.utils.exceptions.JadxRuntimeException: Can't find immediate dom
                     }
                 }
                 return;
-            case NalUnitTypes.NAL_TYPE_RSV_VCL31 /*31*/:
+            case 31:
             case 32:
                 if (this.lyrics == null) {
                     this.lyrics = parseCommentOrUnsynchronizedLyricsFrame(frame).text;

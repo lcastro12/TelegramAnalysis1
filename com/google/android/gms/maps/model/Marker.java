@@ -1,206 +1,49 @@
 package com.google.android.gms.maps.model;
 
 import android.os.RemoteException;
-import com.google.android.gms.internal.C0192s;
-import com.google.android.gms.maps.model.internal.C0228d;
+import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.internal.maps.zzt;
 
 public final class Marker {
-    private final C0228d hq;
+    private final zzt zzdl;
 
-    public Marker(C0228d delegate) {
-        this.hq = (C0228d) C0192s.m521d(delegate);
+    public Marker(zzt com_google_android_gms_internal_maps_zzt) {
+        this.zzdl = (zzt) Preconditions.checkNotNull(com_google_android_gms_internal_maps_zzt);
     }
 
-    public boolean equals(Object other) {
-        if (!(other instanceof Marker)) {
+    public final boolean equals(Object obj) {
+        if (!(obj instanceof Marker)) {
             return false;
         }
         try {
-            return this.hq.mo1535h(((Marker) other).hq);
+            return this.zzdl.zzj(((Marker) obj).zzdl);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
     }
 
-    public String getId() {
+    public final LatLng getPosition() {
         try {
-            return this.hq.getId();
+            return this.zzdl.getPosition();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
     }
 
-    public LatLng getPosition() {
+    public final int hashCode() {
         try {
-            return this.hq.getPosition();
+            return this.zzdl.zzi();
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }
     }
 
-    public float getRotation() {
-        try {
-            return this.hq.getRotation();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
+    public final void setPosition(LatLng latLng) {
+        if (latLng == null) {
+            throw new IllegalArgumentException("latlng cannot be null - a position is required.");
         }
-    }
-
-    public String getSnippet() {
         try {
-            return this.hq.getSnippet();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public String getTitle() {
-        try {
-            return this.hq.getTitle();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public int hashCode() {
-        try {
-            return this.hq.hashCodeRemote();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void hideInfoWindow() {
-        try {
-            this.hq.hideInfoWindow();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isDraggable() {
-        try {
-            return this.hq.isDraggable();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isFlat() {
-        try {
-            return this.hq.isFlat();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isInfoWindowShown() {
-        try {
-            return this.hq.isInfoWindowShown();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public boolean isVisible() {
-        try {
-            return this.hq.isVisible();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void remove() {
-        try {
-            this.hq.remove();
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setAnchor(float anchorU, float anchorV) {
-        try {
-            this.hq.setAnchor(anchorU, anchorV);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setDraggable(boolean draggable) {
-        try {
-            this.hq.setDraggable(draggable);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setFlat(boolean flat) {
-        try {
-            this.hq.setFlat(flat);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setIcon(BitmapDescriptor icon) {
-        try {
-            this.hq.mo1529f(icon.aW());
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setInfoWindowAnchor(float anchorU, float anchorV) {
-        try {
-            this.hq.setInfoWindowAnchor(anchorU, anchorV);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setPosition(LatLng latlng) {
-        try {
-            this.hq.setPosition(latlng);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setRotation(float rotation) {
-        try {
-            this.hq.setRotation(rotation);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setSnippet(String snippet) {
-        try {
-            this.hq.setSnippet(snippet);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setTitle(String title) {
-        try {
-            this.hq.setTitle(title);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void setVisible(boolean visible) {
-        try {
-            this.hq.setVisible(visible);
-        } catch (RemoteException e) {
-            throw new RuntimeRemoteException(e);
-        }
-    }
-
-    public void showInfoWindow() {
-        try {
-            this.hq.showInfoWindow();
+            this.zzdl.setPosition(latLng);
         } catch (RemoteException e) {
             throw new RuntimeRemoteException(e);
         }

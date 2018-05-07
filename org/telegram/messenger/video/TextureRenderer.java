@@ -1,23 +1,19 @@
 package org.telegram.messenger.video;
 
-import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-@TargetApi(16)
 public class TextureRenderer {
     private static final int FLOAT_SIZE_BYTES = 4;
-    private static final String FRAGMENT_SHADER = "#extension GL_OES_EGL_image_external : require\nprecision mediump float;\nvarying vec2 vTextureCoord;\nuniform samplerExternalOES sTexture;\nvoid main() {\n  gl_FragColor = texture2D(sTexture, vTextureCoord);\n}\n";
+    private static final String FRAGMENT_SHADER = "#extension GL_OES_EGL_image_external : require\nprecision highp float;\nvarying vec2 vTextureCoord;\nuniform samplerExternalOES sTexture;\nvoid main() {\n  gl_FragColor = texture2D(sTexture, vTextureCoord);\n}\n";
     private static final int TRIANGLE_VERTICES_DATA_POS_OFFSET = 0;
     private static final int TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 20;
     private static final int TRIANGLE_VERTICES_DATA_UV_OFFSET = 3;
     private static final String VERTEX_SHADER = "uniform mat4 uMVPMatrix;\nuniform mat4 uSTMatrix;\nattribute vec4 aPosition;\nattribute vec4 aTextureCoord;\nvarying vec2 vTextureCoord;\nvoid main() {\n  gl_Position = uMVPMatrix * aPosition;\n  vTextureCoord = (uSTMatrix * aTextureCoord).xy;\n}\n";
-    private static final float[] mTriangleVerticesData = new float[]{GroundOverlayOptions.NO_DIMENSION, GroundOverlayOptions.NO_DIMENSION, 0.0f, 0.0f, 0.0f, 1.0f, GroundOverlayOptions.NO_DIMENSION, 0.0f, 1.0f, 0.0f, GroundOverlayOptions.NO_DIMENSION, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
     private float[] mMVPMatrix = new float[16];
     private int mProgram;
     private float[] mSTMatrix = new float[16];
@@ -27,10 +23,11 @@ public class TextureRenderer {
     private int maTextureHandle;
     private int muMVPMatrixHandle;
     private int muSTMatrixHandle;
-    private int rotationAngle = 0;
+    private int rotationAngle;
 
     public TextureRenderer(int rotation) {
         this.rotationAngle = rotation;
+        float[] mTriangleVerticesData = new float[]{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f};
         this.mTriangleVertices = ByteBuffer.allocateDirect(mTriangleVerticesData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         this.mTriangleVertices.put(mTriangleVerticesData).position(0);
         Matrix.setIdentityM(this.mSTMatrix, 0);
@@ -98,22 +95,14 @@ public class TextureRenderer {
         this.mTextureID = textures[0];
         GLES20.glBindTexture(36197, this.mTextureID);
         checkGlError("glBindTexture mTextureID");
-        GLES20.glTexParameterf(36197, 10241, 9728.0f);
-        GLES20.glTexParameterf(36197, 10240, 9729.0f);
+        GLES20.glTexParameteri(36197, 10241, 9729);
+        GLES20.glTexParameteri(36197, 10240, 9729);
         GLES20.glTexParameteri(36197, 10242, 33071);
         GLES20.glTexParameteri(36197, 10243, 33071);
         checkGlError("glTexParameter");
         Matrix.setIdentityM(this.mMVPMatrix, 0);
         if (this.rotationAngle != 0) {
             Matrix.rotateM(this.mMVPMatrix, 0, (float) this.rotationAngle, 0.0f, 0.0f, 1.0f);
-        }
-    }
-
-    public void changeFragmentShader(String fragmentShader) {
-        GLES20.glDeleteProgram(this.mProgram);
-        this.mProgram = createProgram(VERTEX_SHADER, fragmentShader);
-        if (this.mProgram == 0) {
-            throw new RuntimeException("failed creating program");
         }
     }
 

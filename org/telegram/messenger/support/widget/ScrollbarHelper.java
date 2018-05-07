@@ -12,7 +12,14 @@ class ScrollbarHelper {
         if (lm.getChildCount() == 0 || state.getItemCount() == 0 || startChild == null || endChild == null) {
             return 0;
         }
-        int itemsBefore = reverseLayout ? Math.max(0, (state.getItemCount() - Math.max(lm.getPosition(startChild), lm.getPosition(endChild))) - 1) : Math.max(0, Math.min(lm.getPosition(startChild), lm.getPosition(endChild)));
+        int itemsBefore;
+        int minPosition = Math.min(lm.getPosition(startChild), lm.getPosition(endChild));
+        int maxPosition = Math.max(lm.getPosition(startChild), lm.getPosition(endChild));
+        if (reverseLayout) {
+            itemsBefore = Math.max(0, (state.getItemCount() - maxPosition) - 1);
+        } else {
+            itemsBefore = Math.max(0, minPosition);
+        }
         if (!smoothScrollbarEnabled) {
             return itemsBefore;
         }

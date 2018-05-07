@@ -12,10 +12,12 @@ import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.ActionBar.ThemeDescription;
 
 public class ChannelIntroActivity extends BaseFragment {
     private TextView createChannelText;
@@ -23,28 +25,8 @@ public class ChannelIntroActivity extends BaseFragment {
     private ImageView imageView;
     private TextView whatIsChannelText;
 
-    class C08523 implements OnTouchListener {
-        C08523() {
-        }
-
-        public boolean onTouch(View v, MotionEvent event) {
-            return true;
-        }
-    }
-
-    class C08534 implements OnClickListener {
-        C08534() {
-        }
-
-        public void onClick(View v) {
-            Bundle args = new Bundle();
-            args.putInt("step", 0);
-            ChannelIntroActivity.this.presentFragment(new ChannelCreateActivity(args), true);
-        }
-    }
-
-    class C15321 extends ActionBarMenuOnItemClick {
-        C15321() {
+    class C12301 extends ActionBarMenuOnItemClick {
+        C12301() {
         }
 
         public void onItemClick(int id) {
@@ -54,15 +36,36 @@ public class ChannelIntroActivity extends BaseFragment {
         }
     }
 
+    class C12323 implements OnTouchListener {
+        C12323() {
+        }
+
+        public boolean onTouch(View v, MotionEvent event) {
+            return true;
+        }
+    }
+
+    class C12334 implements OnClickListener {
+        C12334() {
+        }
+
+        public void onClick(View v) {
+            Bundle args = new Bundle();
+            args.putInt("step", 0);
+            ChannelIntroActivity.this.presentFragment(new ChannelCreateActivity(args), true);
+        }
+    }
+
     public View createView(Context context) {
-        this.actionBar.setBackgroundColor(-1);
-        this.actionBar.setBackButtonImage(C0553R.drawable.pl_back);
-        this.actionBar.setItemsBackground(C0553R.drawable.bar_selector_audio);
+        this.actionBar.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_ab_back);
+        this.actionBar.setItemsColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2), false);
+        this.actionBar.setItemsBackgroundColor(Theme.getColor(Theme.key_actionBarWhiteSelector), false);
         this.actionBar.setCastShadows(false);
         if (!AndroidUtilities.isTablet()) {
             this.actionBar.showActionModeTop();
         }
-        this.actionBar.setActionBarMenuOnItemClick(new C15321());
+        this.actionBar.setActionBarMenuOnItemClick(new C12301());
         this.fragmentView = new ViewGroup(context) {
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 int width = MeasureSpec.getSize(widthMeasureSpec);
@@ -108,33 +111,45 @@ public class ChannelIntroActivity extends BaseFragment {
                 ChannelIntroActivity.this.createChannelText.layout(0, y, ChannelIntroActivity.this.createChannelText.getMeasuredWidth(), ChannelIntroActivity.this.createChannelText.getMeasuredHeight() + y);
             }
         };
-        this.fragmentView.setBackgroundColor(-1);
+        this.fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         ViewGroup viewGroup = this.fragmentView;
-        viewGroup.setOnTouchListener(new C08523());
+        viewGroup.setOnTouchListener(new C12323());
         this.imageView = new ImageView(context);
-        this.imageView.setImageResource(C0553R.drawable.channelintro);
+        this.imageView.setImageResource(C0488R.drawable.channelintro);
         this.imageView.setScaleType(ScaleType.FIT_CENTER);
         viewGroup.addView(this.imageView);
         this.whatIsChannelText = new TextView(context);
-        this.whatIsChannelText.setTextColor(-14606047);
+        this.whatIsChannelText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
         this.whatIsChannelText.setGravity(1);
         this.whatIsChannelText.setTextSize(1, 24.0f);
-        this.whatIsChannelText.setText(LocaleController.getString("ChannelAlertTitle", C0553R.string.ChannelAlertTitle));
+        this.whatIsChannelText.setText(LocaleController.getString("ChannelAlertTitle", C0488R.string.ChannelAlertTitle));
         viewGroup.addView(this.whatIsChannelText);
         this.descriptionText = new TextView(context);
-        this.descriptionText.setTextColor(-8882056);
+        this.descriptionText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText6));
         this.descriptionText.setGravity(1);
         this.descriptionText.setTextSize(1, 16.0f);
-        this.descriptionText.setText(LocaleController.getString("ChannelAlertText", C0553R.string.ChannelAlertText));
+        this.descriptionText.setText(LocaleController.getString("ChannelAlertText", C0488R.string.ChannelAlertText));
         viewGroup.addView(this.descriptionText);
         this.createChannelText = new TextView(context);
-        this.createChannelText.setTextColor(-11759926);
+        this.createChannelText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText5));
         this.createChannelText.setGravity(17);
         this.createChannelText.setTextSize(1, 16.0f);
         this.createChannelText.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-        this.createChannelText.setText(LocaleController.getString("ChannelAlertCreate", C0553R.string.ChannelAlertCreate));
+        this.createChannelText.setText(LocaleController.getString("ChannelAlertCreate", C0488R.string.ChannelAlertCreate));
         viewGroup.addView(this.createChannelText);
-        this.createChannelText.setOnClickListener(new C08534());
+        this.createChannelText.setOnClickListener(new C12334());
         return this.fragmentView;
+    }
+
+    public ThemeDescription[] getThemeDescriptions() {
+        ThemeDescription[] themeDescriptionArr = new ThemeDescription[7];
+        themeDescriptionArr[0] = new ThemeDescription(this.fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite);
+        themeDescriptionArr[1] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite);
+        themeDescriptionArr[2] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_ITEMSCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText2);
+        themeDescriptionArr[3] = new ThemeDescription(this.actionBar, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_actionBarWhiteSelector);
+        themeDescriptionArr[4] = new ThemeDescription(this.whatIsChannelText, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlackText);
+        themeDescriptionArr[5] = new ThemeDescription(this.descriptionText, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteGrayText6);
+        themeDescriptionArr[6] = new ThemeDescription(this.createChannelText, ThemeDescription.FLAG_AB_SELECTORCOLOR, null, null, null, null, Theme.key_windowBackgroundWhiteBlueText5);
+        return themeDescriptionArr;
     }
 }

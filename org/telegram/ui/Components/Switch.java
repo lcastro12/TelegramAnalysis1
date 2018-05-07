@@ -1,5 +1,7 @@
 package org.telegram.ui.Components;
 
+import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.PorterDuff.Mode;
@@ -8,17 +10,15 @@ import android.graphics.Rect;
 import android.graphics.Region.Op;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
+import android.support.annotation.Keep;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 import android.widget.CompoundButton;
-import com.google.android.gms.location.LocationStatusCodes;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.AnimationCompat.ObjectAnimatorProxy;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.LocaleController;
+import org.telegram.ui.ActionBar.Theme;
 
 public class Switch extends CompoundButton {
     private static final int THUMB_ANIMATION_DURATION = 250;
@@ -27,7 +27,7 @@ public class Switch extends CompoundButton {
     private static final int TOUCH_MODE_IDLE = 0;
     private boolean attachedToWindow;
     private int mMinFlingVelocity;
-    private ObjectAnimatorProxy mPositionAnimator;
+    private ObjectAnimator mPositionAnimator;
     private boolean mSplitTrack;
     private int mSwitchBottom;
     private int mSwitchHeight;
@@ -74,16 +74,16 @@ public class Switch extends CompoundButton {
 
     public Switch(Context context) {
         super(context);
-        this.mThumbDrawable = context.getResources().getDrawable(C0553R.drawable.switch_thumb);
+        this.mThumbDrawable = context.getResources().getDrawable(C0488R.drawable.switch_thumb);
         if (this.mThumbDrawable != null) {
             this.mThumbDrawable.setCallback(this);
         }
-        this.mTrackDrawable = context.getResources().getDrawable(C0553R.drawable.switch_track);
+        this.mTrackDrawable = context.getResources().getDrawable(C0488R.drawable.switch_track);
         if (this.mTrackDrawable != null) {
             this.mTrackDrawable.setCallback(this);
         }
         if (AndroidUtilities.density < 1.0f) {
-            this.mSwitchMinWidth = AndroidUtilities.dp(BitmapDescriptorFactory.HUE_ORANGE);
+            this.mSwitchMinWidth = AndroidUtilities.dp(30.0f);
         } else {
             this.mSwitchMinWidth = 0;
         }
@@ -134,10 +134,6 @@ public class Switch extends CompoundButton {
         requestLayout();
     }
 
-    public void setTrackResource(int resId) {
-        setTrackDrawable(getContext().getDrawable(resId));
-    }
-
     public Drawable getTrackDrawable() {
         return this.mTrackDrawable;
     }
@@ -151,10 +147,6 @@ public class Switch extends CompoundButton {
             thumb.setCallback(this);
         }
         requestLayout();
-    }
-
-    public void setThumbResource(int resId) {
-        setThumbDrawable(getContext().getDrawable(resId));
     }
 
     public Drawable getThumbDrawable() {
@@ -261,7 +253,7 @@ public class Switch extends CompoundButton {
                         if (thumbScrollRange != 0) {
                             dPos = thumbScrollOffset / ((float) thumbScrollRange);
                         } else {
-                            dPos = thumbScrollOffset > 0.0f ? 1.0f : GroundOverlayOptions.NO_DIMENSION;
+                            dPos = thumbScrollOffset > 0.0f ? 1.0f : -1.0f;
                         }
                         if (LocaleController.isRTL) {
                             dPos = -dPos;
@@ -297,7 +289,7 @@ public class Switch extends CompoundButton {
             commitChange = false;
         }
         if (commitChange) {
-            this.mVelocityTracker.computeCurrentVelocity(LocationStatusCodes.GEOFENCE_NOT_AVAILABLE);
+            this.mVelocityTracker.computeCurrentVelocity(1000);
             float xvel = this.mVelocityTracker.getXVelocity();
             if (Math.abs(xvel) <= ((float) this.mMinFlingVelocity)) {
                 newState = getTargetCheckedState();
@@ -317,7 +309,7 @@ public class Switch extends CompoundButton {
 
     private void animateThumbToCheckedState(boolean newCheckedState) {
         float targetPosition = newCheckedState ? 1.0f : 0.0f;
-        this.mPositionAnimator = ObjectAnimatorProxy.ofFloatProxy(this, "thumbPosition", targetPosition);
+        this.mPositionAnimator = ObjectAnimator.ofFloat(this, "thumbPosition", new float[]{targetPosition});
         this.mPositionAnimator.setDuration(250);
         this.mPositionAnimator.start();
     }
@@ -332,6 +324,7 @@ public class Switch extends CompoundButton {
         return this.thumbPosition > 0.5f;
     }
 
+    @Keep
     private void setThumbPosition(float position) {
         this.thumbPosition = position;
         invalidate();
@@ -348,6 +341,7 @@ public class Switch extends CompoundButton {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         this.attachedToWindow = true;
+        requestLayout();
     }
 
     protected void onDetachedFromWindow() {
@@ -370,10 +364,19 @@ public class Switch extends CompoundButton {
             setThumbPosition(checked ? 1.0f : 0.0f);
         }
         if (this.mTrackDrawable != null) {
-            this.mTrackDrawable.setColorFilter(new PorterDuffColorFilter(checked ? -6236422 : -3684409, Mode.MULTIPLY));
+            this.mTrackDrawable.setColorFilter(new PorterDuffColorFilter(checked ? Theme.getColor(Theme.key_switchTrackChecked) : Theme.getColor(Theme.key_switchTrack), Mode.MULTIPLY));
         }
         if (this.mThumbDrawable != null) {
-            this.mThumbDrawable.setColorFilter(new PorterDuffColorFilter(checked ? -12211217 : -1184275, Mode.MULTIPLY));
+            this.mThumbDrawable.setColorFilter(new PorterDuffColorFilter(checked ? Theme.getColor(Theme.key_switchThumbChecked) : Theme.getColor(Theme.key_switchThumb), Mode.MULTIPLY));
+        }
+    }
+
+    public void checkColorFilters() {
+        if (this.mTrackDrawable != null) {
+            this.mTrackDrawable.setColorFilter(new PorterDuffColorFilter(isChecked() ? Theme.getColor(Theme.key_switchTrackChecked) : Theme.getColor(Theme.key_switchTrack), Mode.MULTIPLY));
+        }
+        if (this.mThumbDrawable != null) {
+            this.mThumbDrawable.setColorFilter(new PorterDuffColorFilter(isChecked() ? Theme.getColor(Theme.key_switchThumbChecked) : Theme.getColor(Theme.key_switchThumb), Mode.MULTIPLY));
         }
     }
 
@@ -559,6 +562,7 @@ public class Switch extends CompoundButton {
         invalidate();
     }
 
+    @SuppressLint({"NewApi"})
     public void drawableHotspotChanged(float x, float y) {
         super.drawableHotspotChanged(x, y);
         if (this.mThumbDrawable != null) {

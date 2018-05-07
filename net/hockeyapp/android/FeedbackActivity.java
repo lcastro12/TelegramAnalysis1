@@ -1,227 +1,313 @@
 package net.hockeyapp.android;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
-import android.app.Dialog;
-import android.app.NotificationManager;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.Parcelable;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
+import android.view.View.OnFocusChangeListener;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.gms.location.LocationStatusCodes;
-import com.google.android.gms.plus.PlusShare;
-import java.text.ParseException;
+import java.lang.ref.WeakReference;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 import net.hockeyapp.android.adapters.MessagesAdapter;
-import net.hockeyapp.android.objects.ErrorObject;
 import net.hockeyapp.android.objects.FeedbackMessage;
 import net.hockeyapp.android.objects.FeedbackResponse;
 import net.hockeyapp.android.objects.FeedbackUserDataElement;
 import net.hockeyapp.android.tasks.ParseFeedbackTask;
 import net.hockeyapp.android.tasks.SendFeedbackTask;
 import net.hockeyapp.android.utils.AsyncTaskUtils;
+import net.hockeyapp.android.utils.HockeyLog;
 import net.hockeyapp.android.utils.PrefsUtil;
 import net.hockeyapp.android.utils.Util;
 import net.hockeyapp.android.views.AttachmentListView;
 import net.hockeyapp.android.views.AttachmentView;
-import net.hockeyapp.android.views.FeedbackView;
 
-public class FeedbackActivity extends Activity implements FeedbackActivityInterface, OnClickListener {
-    private static final int MAX_ATTACHMENTS_PER_MSG = 3;
-    private final int ATTACH_FILE = 2;
-    private final int ATTACH_PICTURE = 1;
-    private final int DIALOG_ERROR_ID = 0;
-    private final int PAINT_IMAGE = 3;
-    private Button addAttachmentButton;
-    private Button addResponseButton;
-    private Context context;
-    private EditText emailInput;
-    private ErrorObject error;
-    private Handler feedbackHandler;
-    private ArrayList<FeedbackMessage> feedbackMessages;
-    private ScrollView feedbackScrollView;
-    private boolean feedbackViewInitialized;
-    private boolean inSendFeedback;
-    private List<Uri> initialAttachments;
-    private TextView lastUpdatedTextView;
-    private MessagesAdapter messagesAdapter;
-    private ListView messagesListView;
-    private EditText nameInput;
-    private Handler parseFeedbackHandler;
-    private ParseFeedbackTask parseFeedbackTask;
-    private Button refreshButton;
-    private Button sendFeedbackButton;
-    private SendFeedbackTask sendFeedbackTask;
-    private EditText subjectInput;
-    private EditText textInput;
-    private String token;
-    private String url;
-    private LinearLayout wrapperLayoutFeedbackAndMessages;
+public class FeedbackActivity extends Activity implements OnClickListener, OnFocusChangeListener {
+    private AttachmentListView mAttachmentListView;
+    private Context mContext;
+    private EditText mEmailInput;
+    private Handler mFeedbackHandler;
+    private boolean mFeedbackViewInitialized;
+    private boolean mForceNewThread;
+    private boolean mInSendFeedback;
+    private List<Uri> mInitialAttachments = new ArrayList();
+    private String mInitialUserEmail;
+    private String mInitialUserName;
+    private String mInitialUserSubject;
+    private TextView mLastUpdatedTextView;
+    private MessagesAdapter mMessagesAdapter;
+    private ListView mMessagesListView;
+    private EditText mNameInput;
+    private Handler mParseFeedbackHandler;
+    private ParseFeedbackTask mParseFeedbackTask;
+    private Button mSendFeedbackButton;
+    private SendFeedbackTask mSendFeedbackTask;
+    private EditText mSubjectInput;
+    private EditText mTextInput;
+    private String mToken;
+    private String mUrl;
 
-    class C02551 implements DialogInterface.OnClickListener {
-        C02551() {
+    class C00431 extends AsyncTask<Void, Object, Object> {
+        C00431() {
         }
 
-        public void onClick(DialogInterface dialog, int id) {
-            FeedbackActivity.this.error = null;
-            dialog.cancel();
+        protected Object doInBackground(Void... voids) {
+            PrefsUtil.getInstance().saveFeedbackTokenToPrefs(FeedbackActivity.this, null);
+            FeedbackActivity.this.getSharedPreferences("net.hockeyapp.android.feedback", 0).edit().remove("idLastMessageSend").remove("idLastMessageProcessed").apply();
+            return null;
         }
     }
 
-    class C02572 extends Handler {
+    private static class FeedbackHandler extends Handler {
+        private final WeakReference<FeedbackActivity> mWeakFeedbackActivity;
 
-        class C02561 implements Runnable {
-            C02561() {
-            }
-
-            public void run() {
-                FeedbackActivity.this.enableDisableSendFeedbackButton(true);
-                FeedbackActivity.this.showDialog(0);
-            }
-        }
-
-        C02572() {
+        FeedbackHandler(FeedbackActivity feedbackActivity) {
+            this.mWeakFeedbackActivity = new WeakReference(feedbackActivity);
         }
 
         public void handleMessage(Message msg) {
             boolean success = false;
-            FeedbackActivity.this.error = new ErrorObject();
-            if (msg == null || msg.getData() == null) {
-                FeedbackActivity.this.error.setMessage(Strings.get(Strings.FEEDBACK_SEND_GENERIC_ERROR_ID));
-            } else {
-                Bundle bundle = msg.getData();
-                String responseString = bundle.getString("feedback_response");
-                String statusCode = bundle.getString("feedback_status");
-                String requestType = bundle.getString("request_type");
-                if (requestType.equals("send") && (responseString == null || Integer.parseInt(statusCode) != 201)) {
-                    FeedbackActivity.this.error.setMessage(Strings.get(Strings.FEEDBACK_SEND_GENERIC_ERROR_ID));
-                } else if (requestType.equals("fetch") && statusCode != null && (Integer.parseInt(statusCode) == 404 || Integer.parseInt(statusCode) == 422)) {
-                    FeedbackActivity.this.resetFeedbackView();
-                    success = true;
-                } else if (responseString != null) {
-                    FeedbackActivity.this.startParseFeedbackTask(responseString, requestType);
-                    success = true;
+            int errorMessage = 0;
+            FeedbackActivity feedbackActivity = (FeedbackActivity) this.mWeakFeedbackActivity.get();
+            if (feedbackActivity != null) {
+                if (msg == null || msg.getData() == null) {
+                    errorMessage = C0051R.string.hockeyapp_feedback_send_generic_error;
                 } else {
-                    FeedbackActivity.this.error.setMessage(Strings.get(Strings.FEEDBACK_SEND_NETWORK_ERROR_ID));
+                    Bundle bundle = msg.getData();
+                    String responseString = bundle.getString("feedback_response");
+                    String statusCode = bundle.getString("feedback_status");
+                    String requestType = bundle.getString("request_type");
+                    if ("send".equals(requestType) && (responseString == null || Integer.parseInt(statusCode) != 201)) {
+                        errorMessage = C0051R.string.hockeyapp_feedback_send_generic_error;
+                    } else if ("fetch".equals(requestType) && statusCode != null && (Integer.parseInt(statusCode) == 404 || Integer.parseInt(statusCode) == 422)) {
+                        feedbackActivity.resetFeedbackView();
+                        success = true;
+                    } else if (responseString != null) {
+                        feedbackActivity.startParseFeedbackTask(responseString, requestType);
+                        if ("send".equals(requestType)) {
+                            feedbackActivity.mInitialAttachments.removeAll(feedbackActivity.mAttachmentListView.getAttachments());
+                            Toast.makeText(feedbackActivity, C0051R.string.hockeyapp_feedback_sent_toast, 1).show();
+                        }
+                        success = true;
+                    } else {
+                        errorMessage = C0051R.string.hockeyapp_feedback_send_network_error;
+                    }
+                }
+                if (!success) {
+                    feedbackActivity.showError(errorMessage);
+                }
+                feedbackActivity.onSendFeedbackResult(success);
+            }
+        }
+    }
+
+    private static class ParseFeedbackHandler extends Handler {
+        private final WeakReference<FeedbackActivity> mWeakFeedbackActivity;
+
+        ParseFeedbackHandler(FeedbackActivity feedbackActivity) {
+            this.mWeakFeedbackActivity = new WeakReference(feedbackActivity);
+        }
+
+        @SuppressLint({"StaticFieldLeak"})
+        public void handleMessage(Message msg) {
+            boolean success = false;
+            final FeedbackActivity feedbackActivity = (FeedbackActivity) this.mWeakFeedbackActivity.get();
+            if (feedbackActivity != null) {
+                if (!(msg == null || msg.getData() == null)) {
+                    final FeedbackResponse feedbackResponse = (FeedbackResponse) msg.getData().getSerializable("parse_feedback_response");
+                    if (feedbackResponse != null) {
+                        if (feedbackResponse.getStatus().equalsIgnoreCase("success")) {
+                            success = true;
+                            if (feedbackResponse.getToken() != null) {
+                                feedbackActivity.mToken = feedbackResponse.getToken();
+                                AsyncTaskUtils.execute(new AsyncTask<Void, Object, Object>() {
+                                    protected Object doInBackground(Void... voids) {
+                                        PrefsUtil.getInstance().saveFeedbackTokenToPrefs(feedbackActivity, feedbackResponse.getToken());
+                                        return null;
+                                    }
+                                });
+                                feedbackActivity.loadFeedbackMessages(feedbackResponse);
+                                feedbackActivity.mInSendFeedback = false;
+                            }
+                        } else {
+                            success = false;
+                        }
+                    }
+                }
+                if (!success) {
+                    feedbackActivity.showError(C0051R.string.hockeyapp_dialog_error_message);
+                }
+                feedbackActivity.enableDisableSendFeedbackButton(true);
+            }
+        }
+    }
+
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(getLayoutView());
+        setTitle(C0051R.string.hockeyapp_feedback_title);
+        this.mContext = this;
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            this.mUrl = extras.getString(UpdateFragment.FRAGMENT_URL);
+            this.mToken = extras.getString("token");
+            this.mForceNewThread = extras.getBoolean("forceNewThread");
+            this.mInitialUserName = extras.getString("initialUserName");
+            this.mInitialUserEmail = extras.getString("initialUserEmail");
+            this.mInitialUserSubject = extras.getString("initialUserSubject");
+            Parcelable[] initialAttachmentsArray = extras.getParcelableArray("initialAttachments");
+            if (initialAttachmentsArray != null) {
+                this.mInitialAttachments.clear();
+                for (Parcelable parcelable : initialAttachmentsArray) {
+                    this.mInitialAttachments.add((Uri) parcelable);
                 }
             }
-            if (!success) {
-                FeedbackActivity.this.runOnUiThread(new C02561());
-            }
-            FeedbackActivity.this.onSendFeedbackResult(success);
+        }
+        if (savedInstanceState != null) {
+            this.mFeedbackViewInitialized = savedInstanceState.getBoolean("feedbackViewInitialized");
+            this.mInSendFeedback = savedInstanceState.getBoolean("inSendFeedback");
+            this.mToken = savedInstanceState.getString("token");
+        } else {
+            this.mInSendFeedback = false;
+            this.mFeedbackViewInitialized = false;
+        }
+        Util.cancelNotification(this, 2);
+        initFeedbackHandler();
+        initParseFeedbackHandler();
+        restoreSendFeedbackTask();
+        configureAppropriateView();
+    }
+
+    private void restoreSendFeedbackTask() {
+        Object object = getLastNonConfigurationInstance();
+        if (object != null && (object instanceof SendFeedbackTask)) {
+            this.mSendFeedbackTask = (SendFeedbackTask) object;
+            this.mSendFeedbackTask.setHandler(this.mFeedbackHandler);
         }
     }
 
-    class C02593 extends Handler {
-
-        class C02581 implements Runnable {
-            C02581() {
-            }
-
-            public void run() {
-                FeedbackActivity.this.showDialog(0);
-            }
-        }
-
-        C02593() {
-        }
-
-        public void handleMessage(Message msg) {
-            boolean success = false;
-            FeedbackActivity.this.error = new ErrorObject();
-            if (!(msg == null || msg.getData() == null)) {
-                FeedbackResponse feedbackResponse = (FeedbackResponse) msg.getData().getSerializable("parse_feedback_response");
-                if (feedbackResponse != null) {
-                    if (feedbackResponse.getStatus().equalsIgnoreCase("success")) {
-                        success = true;
-                        if (feedbackResponse.getToken() != null) {
-                            PrefsUtil.getInstance().saveFeedbackTokenToPrefs(FeedbackActivity.this.context, feedbackResponse.getToken());
-                            FeedbackActivity.this.loadFeedbackMessages(feedbackResponse);
-                            FeedbackActivity.this.inSendFeedback = false;
-                        }
-                    } else {
-                        success = false;
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            ArrayList<Uri> attachmentsUris = savedInstanceState.getParcelableArrayList("attachments");
+            if (attachmentsUris != null) {
+                Iterator it = attachmentsUris.iterator();
+                while (it.hasNext()) {
+                    Uri attachmentUri = (Uri) it.next();
+                    if (!this.mInitialAttachments.contains(attachmentUri)) {
+                        this.mAttachmentListView.addView(new AttachmentView((Context) this, this.mAttachmentListView, attachmentUri, true));
                     }
                 }
             }
-            if (!success) {
-                FeedbackActivity.this.runOnUiThread(new C02581());
-            }
-            FeedbackActivity.this.enableDisableSendFeedbackButton(true);
+            this.mFeedbackViewInitialized = savedInstanceState.getBoolean("feedbackViewInitialized");
+        }
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList("attachments", this.mAttachmentListView.getAttachments());
+        outState.putBoolean("feedbackViewInitialized", this.mFeedbackViewInitialized);
+        outState.putBoolean("inSendFeedback", this.mInSendFeedback);
+        outState.putString("token", this.mToken);
+        super.onSaveInstanceState(outState);
+    }
+
+    protected void onStart() {
+        super.onStart();
+        if (this.mSendFeedbackTask != null) {
+            this.mSendFeedbackTask.attach(this);
         }
     }
 
-    class C02615 implements Runnable {
-        C02615() {
-        }
-
-        public void run() {
-            PrefsUtil.getInstance().saveFeedbackTokenToPrefs(FeedbackActivity.this, null);
-            PrefsUtil.applyChanges(FeedbackActivity.this.getSharedPreferences(ParseFeedbackTask.PREFERENCES_NAME, 0).edit().remove(ParseFeedbackTask.ID_LAST_MESSAGE_SEND).remove(ParseFeedbackTask.ID_LAST_MESSAGE_PROCESSED));
-            FeedbackActivity.this.configureFeedbackView(false);
+    protected void onStop() {
+        super.onStop();
+        if (this.mSendFeedbackTask != null) {
+            this.mSendFeedbackTask.detach();
         }
     }
 
-    public void enableDisableSendFeedbackButton(boolean isEnable) {
-        if (this.sendFeedbackButton != null) {
-            this.sendFeedbackButton.setEnabled(isEnable);
+    public Object onRetainNonConfigurationInstance() {
+        if (this.mSendFeedbackTask != null) {
+            this.mSendFeedbackTask.detach();
         }
+        return this.mSendFeedbackTask;
     }
 
-    public ViewGroup getLayoutView() {
-        return new FeedbackView(this);
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode != 4) {
+            return super.onKeyDown(keyCode, event);
+        }
+        if (this.mInSendFeedback) {
+            this.mInSendFeedback = false;
+            configureAppropriateView();
+        } else {
+            finish();
+        }
+        return true;
     }
 
     public void onClick(View v) {
-        switch (v.getId()) {
-            case FeedbackView.SEND_FEEDBACK_BUTTON_ID /*8201*/:
-                sendFeedback();
+        int viewId = v.getId();
+        if (viewId == C0051R.id.button_send) {
+            sendFeedback();
+        } else if (viewId == C0051R.id.button_attachment) {
+            if (this.mAttachmentListView.getChildCount() >= 3) {
+                Toast.makeText(this, getString(C0051R.string.hockeyapp_feedback_max_attachments_allowed, new Object[]{Integer.valueOf(3)}), 0).show();
                 return;
-            case FeedbackView.ADD_ATTACHMENT_BUTTON_ID /*8208*/:
-                if (((ViewGroup) findViewById(FeedbackView.WRAPPER_LAYOUT_ATTACHMENTS)).getChildCount() >= 3) {
-                    Toast.makeText(this, String.format("", new Object[]{Integer.valueOf(3)}), LocationStatusCodes.GEOFENCE_NOT_AVAILABLE).show();
-                    return;
-                }
-                openContextMenu(v);
-                return;
-            case FeedbackView.ADD_RESPONSE_BUTTON_ID /*131088*/:
-                configureFeedbackView(false);
-                this.inSendFeedback = true;
-                return;
-            case FeedbackView.REFRESH_BUTTON_ID /*131089*/:
-                sendFetchFeedback(this.url, null, null, null, null, null, PrefsUtil.getInstance().getFeedbackTokenFromPrefs(this.context), this.feedbackHandler, true);
-                return;
-            default:
-                return;
+            }
+            openContextMenu(v);
+        } else if (viewId == C0051R.id.button_add_response) {
+            this.mInSendFeedback = true;
+            configureFeedbackView(false);
+        } else if (viewId == C0051R.id.button_refresh) {
+            sendFetchFeedback(this.mUrl, null, null, null, null, null, this.mToken, this.mFeedbackHandler, true);
         }
+    }
+
+    public void onFocusChange(View v, boolean hasFocus) {
+        if (!hasFocus) {
+            return;
+        }
+        if (v instanceof EditText) {
+            showKeyboard(v);
+        } else if ((v instanceof Button) || (v instanceof ImageButton)) {
+            hideKeyboard();
+        }
+    }
+
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        menu.add(0, 2, 0, getString(C0051R.string.hockeyapp_feedback_attach_file));
+        menu.add(0, 1, 0, getString(C0051R.string.hockeyapp_feedback_attach_picture));
     }
 
     public boolean onContextItemSelected(MenuItem item) {
@@ -234,142 +320,14 @@ public class FeedbackActivity extends Activity implements FeedbackActivityInterf
         }
     }
 
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(getLayoutView());
-        setTitle(Strings.get(Strings.FEEDBACK_TITLE_ID));
-        this.context = this;
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            this.url = extras.getString(PlusShare.KEY_CALL_TO_ACTION_URL);
-            Parcelable[] initialAttachmentsArray = extras.getParcelableArray("initialAttachments");
-            if (initialAttachmentsArray != null) {
-                this.initialAttachments = new ArrayList();
-                for (Parcelable parcelable : initialAttachmentsArray) {
-                    this.initialAttachments.add((Uri) parcelable);
-                }
-            }
-        }
-        if (savedInstanceState != null) {
-            this.feedbackViewInitialized = savedInstanceState.getBoolean("feedbackViewInitialized");
-            this.inSendFeedback = savedInstanceState.getBoolean("inSendFeedback");
-        } else {
-            this.inSendFeedback = false;
-            this.feedbackViewInitialized = false;
-        }
-        ((NotificationManager) getSystemService("notification")).cancel(2);
-        initFeedbackHandler();
-        initParseFeedbackHandler();
-        configureAppropriateView();
-    }
-
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        menu.add(0, 2, 0, Strings.get(Strings.FEEDBACK_ATTACH_FILE_ID));
-        menu.add(0, 1, 0, Strings.get(Strings.FEEDBACK_ATTACH_PICTURE_ID));
-    }
-
-    protected void onStop() {
-        super.onStop();
-        if (this.sendFeedbackTask != null) {
-            this.sendFeedbackTask.detach();
-        }
-    }
-
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode != 4) {
-            return super.onKeyDown(keyCode, event);
-        }
-        if (this.inSendFeedback) {
-            this.inSendFeedback = false;
-            configureAppropriateView();
-        } else {
-            finish();
-        }
-        return true;
-    }
-
-    public Object onRetainNonConfigurationInstance() {
-        if (this.sendFeedbackTask != null) {
-            this.sendFeedbackTask.detach();
-        }
-        return this.sendFeedbackTask;
-    }
-
-    protected void configureFeedbackView(boolean haveToken) {
-        this.feedbackScrollView = (ScrollView) findViewById(FeedbackView.FEEDBACK_SCROLLVIEW_ID);
-        this.wrapperLayoutFeedbackAndMessages = (LinearLayout) findViewById(FeedbackView.WRAPPER_LAYOUT_FEEDBACK_AND_MESSAGES_ID);
-        this.messagesListView = (ListView) findViewById(FeedbackView.MESSAGES_LISTVIEW_ID);
-        if (haveToken) {
-            this.wrapperLayoutFeedbackAndMessages.setVisibility(0);
-            this.feedbackScrollView.setVisibility(8);
-            this.lastUpdatedTextView = (TextView) findViewById(8192);
-            this.addResponseButton = (Button) findViewById(FeedbackView.ADD_RESPONSE_BUTTON_ID);
-            this.addResponseButton.setOnClickListener(this);
-            this.refreshButton = (Button) findViewById(FeedbackView.REFRESH_BUTTON_ID);
-            this.refreshButton.setOnClickListener(this);
-            return;
-        }
-        this.wrapperLayoutFeedbackAndMessages.setVisibility(8);
-        this.feedbackScrollView.setVisibility(0);
-        this.nameInput = (EditText) findViewById(8194);
-        this.emailInput = (EditText) findViewById(FeedbackView.EMAIL_EDIT_TEXT_ID);
-        this.subjectInput = (EditText) findViewById(FeedbackView.SUBJECT_EDIT_TEXT_ID);
-        this.textInput = (EditText) findViewById(FeedbackView.TEXT_EDIT_TEXT_ID);
-        if (!this.feedbackViewInitialized) {
-            String nameEmailSubject = PrefsUtil.getInstance().getNameEmailFromPrefs(this.context);
-            if (nameEmailSubject != null) {
-                String[] nameEmailSubjectArray = nameEmailSubject.split("\\|");
-                if (nameEmailSubjectArray != null && nameEmailSubjectArray.length >= 2) {
-                    this.nameInput.setText(nameEmailSubjectArray[0]);
-                    this.emailInput.setText(nameEmailSubjectArray[1]);
-                    if (nameEmailSubjectArray.length >= 3) {
-                        this.subjectInput.setText(nameEmailSubjectArray[2]);
-                        this.textInput.requestFocus();
-                    } else {
-                        this.subjectInput.requestFocus();
-                    }
-                }
-            } else {
-                this.nameInput.setText("");
-                this.emailInput.setText("");
-                this.subjectInput.setText("");
-                this.nameInput.requestFocus();
-            }
-            this.feedbackViewInitialized = true;
-        }
-        this.textInput.setText("");
-        if (PrefsUtil.getInstance().getFeedbackTokenFromPrefs(this.context) != null) {
-            this.subjectInput.setVisibility(8);
-        } else {
-            this.subjectInput.setVisibility(0);
-        }
-        ViewGroup attachmentListView = (ViewGroup) findViewById(FeedbackView.WRAPPER_LAYOUT_ATTACHMENTS);
-        attachmentListView.removeAllViews();
-        if (this.initialAttachments != null) {
-            for (Uri attachmentUri : this.initialAttachments) {
-                attachmentListView.addView(new AttachmentView((Context) this, attachmentListView, attachmentUri, true));
-            }
-        }
-        this.addAttachmentButton = (Button) findViewById(FeedbackView.ADD_ATTACHMENT_BUTTON_ID);
-        this.addAttachmentButton.setOnClickListener(this);
-        registerForContextMenu(this.addAttachmentButton);
-        this.sendFeedbackButton = (Button) findViewById(FeedbackView.SEND_FEEDBACK_BUTTON_ID);
-        this.sendFeedbackButton.setOnClickListener(this);
-    }
-
-    protected void onSendFeedbackResult(boolean success) {
-    }
-
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == -1) {
             Uri uri;
-            ViewGroup attachments;
             if (requestCode == 2) {
                 uri = data.getData();
                 if (uri != null) {
-                    attachments = (ViewGroup) findViewById(FeedbackView.WRAPPER_LAYOUT_ATTACHMENTS);
-                    attachments.addView(new AttachmentView((Context) this, attachments, uri, true));
+                    this.mAttachmentListView.addView(new AttachmentView((Context) this, this.mAttachmentListView, uri, true));
+                    Util.announceForAccessibility(this.mAttachmentListView, getString(C0051R.string.hockeyapp_feedback_attachment_added));
                 }
             } else if (requestCode == 1) {
                 uri = data.getData();
@@ -378,62 +336,110 @@ public class FeedbackActivity extends Activity implements FeedbackActivityInterf
                         Intent intent = new Intent(this, PaintActivity.class);
                         intent.putExtra("imageUri", uri);
                         startActivityForResult(intent, 3);
-                    } catch (ActivityNotFoundException e) {
-                        Log.e("HockeyApp", "Paint activity not declared!", e);
+                    } catch (Throwable e) {
+                        HockeyLog.error("Paint activity not declared!", e);
                     }
                 }
             } else if (requestCode == 3) {
                 uri = (Uri) data.getParcelableExtra("imageUri");
                 if (uri != null) {
-                    attachments = (ViewGroup) findViewById(FeedbackView.WRAPPER_LAYOUT_ATTACHMENTS);
-                    attachments.addView(new AttachmentView((Context) this, attachments, uri, true));
+                    this.mAttachmentListView.addView(new AttachmentView((Context) this, this.mAttachmentListView, uri, true));
+                    Util.announceForAccessibility(this.mAttachmentListView, getString(C0051R.string.hockeyapp_feedback_attachment_added));
                 }
             }
         }
     }
 
-    protected Dialog onCreateDialog(int id) {
-        switch (id) {
-            case 0:
-                return new Builder(this).setMessage(Strings.get(Strings.DIALOG_ERROR_MESSAGE_ID)).setCancelable(false).setTitle(Strings.get(Strings.DIALOG_ERROR_TITLE_ID)).setIcon(17301543).setPositiveButton(Strings.get(2048), new C02551()).create();
-            default:
-                return null;
+    @SuppressLint({"InflateParams"})
+    public View getLayoutView() {
+        return getLayoutInflater().inflate(C0051R.layout.hockeyapp_activity_feedback, null);
+    }
+
+    public void enableDisableSendFeedbackButton(boolean isEnable) {
+        if (this.mSendFeedbackButton != null) {
+            this.mSendFeedbackButton.setEnabled(isEnable);
         }
     }
 
-    protected void onPrepareDialog(int id, Dialog dialog) {
-        switch (id) {
-            case 0:
-                AlertDialog messageDialogError = (AlertDialog) dialog;
-                if (this.error != null) {
-                    messageDialogError.setMessage(this.error.getMessage());
-                    return;
-                } else {
-                    messageDialogError.setMessage(Strings.get(Strings.FEEDBACK_GENERIC_ERROR_ID));
-                    return;
-                }
-            default:
-                return;
+    protected void configureFeedbackView(boolean haveToken) {
+        ScrollView feedbackScrollView = (ScrollView) findViewById(C0051R.id.wrapper_feedback_scroll);
+        LinearLayout wrapperLayoutFeedbackAndMessages = (LinearLayout) findViewById(C0051R.id.wrapper_messages);
+        this.mMessagesListView = (ListView) findViewById(C0051R.id.list_feedback_messages);
+        this.mAttachmentListView = (AttachmentListView) findViewById(C0051R.id.wrapper_attachments);
+        if (haveToken) {
+            wrapperLayoutFeedbackAndMessages.setVisibility(0);
+            feedbackScrollView.setVisibility(8);
+            this.mLastUpdatedTextView = (TextView) findViewById(C0051R.id.label_last_updated);
+            this.mLastUpdatedTextView.setVisibility(4);
+            Button addResponseButton = (Button) findViewById(C0051R.id.button_add_response);
+            addResponseButton.setOnClickListener(this);
+            addResponseButton.setOnFocusChangeListener(this);
+            Button refreshButton = (Button) findViewById(C0051R.id.button_refresh);
+            refreshButton.setOnClickListener(this);
+            refreshButton.setOnFocusChangeListener(this);
+            return;
         }
-    }
-
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        if (savedInstanceState != null) {
-            ViewGroup attachmentList = (ViewGroup) findViewById(FeedbackView.WRAPPER_LAYOUT_ATTACHMENTS);
-            Iterator it = savedInstanceState.getParcelableArrayList("attachments").iterator();
-            while (it.hasNext()) {
-                attachmentList.addView(new AttachmentView((Context) this, attachmentList, (Uri) it.next(), true));
+        int i;
+        wrapperLayoutFeedbackAndMessages.setVisibility(8);
+        feedbackScrollView.setVisibility(0);
+        this.mNameInput = (EditText) findViewById(C0051R.id.input_name);
+        this.mNameInput.setOnFocusChangeListener(this);
+        this.mEmailInput = (EditText) findViewById(C0051R.id.input_email);
+        this.mEmailInput.setOnFocusChangeListener(this);
+        this.mSubjectInput = (EditText) findViewById(C0051R.id.input_subject);
+        this.mSubjectInput.setOnFocusChangeListener(this);
+        this.mTextInput = (EditText) findViewById(C0051R.id.input_message);
+        this.mTextInput.setOnFocusChangeListener(this);
+        configureHints();
+        if (!this.mFeedbackViewInitialized) {
+            this.mNameInput.setText(this.mInitialUserName);
+            this.mEmailInput.setText(this.mInitialUserEmail);
+            this.mSubjectInput.setText(this.mInitialUserSubject);
+            if (TextUtils.isEmpty(this.mInitialUserName)) {
+                this.mNameInput.requestFocus();
+            } else if (TextUtils.isEmpty(this.mInitialUserEmail)) {
+                this.mEmailInput.requestFocus();
+            } else if (TextUtils.isEmpty(this.mInitialUserSubject)) {
+                this.mSubjectInput.requestFocus();
+            } else {
+                this.mTextInput.requestFocus();
             }
-            this.feedbackViewInitialized = savedInstanceState.getBoolean("feedbackViewInitialized");
+            this.mFeedbackViewInitialized = true;
         }
-        super.onRestoreInstanceState(savedInstanceState);
+        EditText editText = this.mNameInput;
+        if (FeedbackManager.getRequireUserName() == FeedbackUserDataElement.DONT_SHOW) {
+            i = 8;
+        } else {
+            i = 0;
+        }
+        editText.setVisibility(i);
+        editText = this.mEmailInput;
+        if (FeedbackManager.getRequireUserEmail() == FeedbackUserDataElement.DONT_SHOW) {
+            i = 8;
+        } else {
+            i = 0;
+        }
+        editText.setVisibility(i);
+        this.mTextInput.setText(TtmlNode.ANONYMOUS_REGION_ID);
+        if ((!this.mForceNewThread || this.mInSendFeedback) && this.mToken != null) {
+            this.mSubjectInput.setVisibility(8);
+        } else {
+            this.mSubjectInput.setVisibility(0);
+        }
+        this.mAttachmentListView.removeAllViews();
+        for (Uri attachmentUri : this.mInitialAttachments) {
+            this.mAttachmentListView.addView(new AttachmentView((Context) this, this.mAttachmentListView, attachmentUri, true));
+        }
+        Button addAttachmentButton = (Button) findViewById(C0051R.id.button_attachment);
+        addAttachmentButton.setOnClickListener(this);
+        addAttachmentButton.setOnFocusChangeListener(this);
+        registerForContextMenu(addAttachmentButton);
+        this.mSendFeedbackButton = (Button) findViewById(C0051R.id.button_send);
+        this.mSendFeedbackButton.setOnClickListener(this);
+        addAttachmentButton.setOnFocusChangeListener(this);
     }
 
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putParcelableArrayList("attachments", ((AttachmentListView) findViewById(FeedbackView.WRAPPER_LAYOUT_ATTACHMENTS)).getAttachments());
-        outState.putBoolean("feedbackViewInitialized", this.feedbackViewInitialized);
-        outState.putBoolean("inSendFeedback", this.inSendFeedback);
-        super.onSaveInstanceState(outState);
+    protected void onSendFeedbackResult(boolean success) {
     }
 
     private boolean addAttachment(int request) {
@@ -442,7 +448,7 @@ public class FeedbackActivity extends Activity implements FeedbackActivityInterf
             intent = new Intent();
             intent.setType("*/*");
             intent.setAction("android.intent.action.GET_CONTENT");
-            startActivityForResult(Intent.createChooser(intent, Strings.get(Strings.FEEDBACK_SELECT_FILE_ID)), 2);
+            startActivityForResult(Intent.createChooser(intent, getString(C0051R.string.hockeyapp_feedback_select_file)), 2);
             return true;
         } else if (request != 1) {
             return false;
@@ -450,120 +456,152 @@ public class FeedbackActivity extends Activity implements FeedbackActivityInterf
             intent = new Intent();
             intent.setType("image/*");
             intent.setAction("android.intent.action.GET_CONTENT");
-            startActivityForResult(Intent.createChooser(intent, Strings.get(Strings.FEEDBACK_SELECT_PICTURE_ID)), 1);
+            startActivityForResult(Intent.createChooser(intent, getString(C0051R.string.hockeyapp_feedback_select_picture)), 1);
             return true;
         }
     }
 
+    private void configureHints() {
+        if (FeedbackManager.getRequireUserName() == FeedbackUserDataElement.REQUIRED) {
+            this.mNameInput.setHint(getString(C0051R.string.hockeyapp_feedback_name_hint_required));
+        }
+        if (FeedbackManager.getRequireUserEmail() == FeedbackUserDataElement.REQUIRED) {
+            this.mEmailInput.setHint(getString(C0051R.string.hockeyapp_feedback_email_hint_required));
+        }
+        this.mSubjectInput.setHint(getString(C0051R.string.hockeyapp_feedback_subject_hint_required));
+        this.mTextInput.setHint(getString(C0051R.string.hockeyapp_feedback_message_hint_required));
+    }
+
     private void configureAppropriateView() {
-        this.token = PrefsUtil.getInstance().getFeedbackTokenFromPrefs(this);
-        if (this.token == null || this.inSendFeedback) {
+        if (this.mToken == null || this.mInSendFeedback) {
             configureFeedbackView(false);
             return;
         }
         configureFeedbackView(true);
-        sendFetchFeedback(this.url, null, null, null, null, null, this.token, this.feedbackHandler, true);
+        sendFetchFeedback(this.mUrl, null, null, null, null, null, this.mToken, this.mFeedbackHandler, true);
     }
 
     private void createParseFeedbackTask(String feedbackResponseString, String requestType) {
-        this.parseFeedbackTask = new ParseFeedbackTask(this, feedbackResponseString, this.parseFeedbackHandler, requestType);
+        this.mParseFeedbackTask = new ParseFeedbackTask(this, feedbackResponseString, this.mParseFeedbackHandler, requestType);
+    }
+
+    private void showKeyboard(View view) {
+        ((InputMethodManager) getSystemService("input_method")).showSoftInput(view, 1);
     }
 
     private void hideKeyboard() {
-        if (this.textInput != null) {
-            ((InputMethodManager) getSystemService("input_method")).hideSoftInputFromWindow(this.textInput.getWindowToken(), 0);
+        if (this.mTextInput != null) {
+            ((InputMethodManager) getSystemService("input_method")).hideSoftInputFromWindow(this.mTextInput.getWindowToken(), 0);
         }
+    }
+
+    private void showError(int message) {
+        new Builder(this).setTitle(C0051R.string.hockeyapp_dialog_error_title).setMessage(message).setCancelable(false).setPositiveButton(C0051R.string.hockeyapp_dialog_positive_button, null).create().show();
     }
 
     private void initFeedbackHandler() {
-        this.feedbackHandler = new C02572();
+        this.mFeedbackHandler = new FeedbackHandler(this);
     }
 
     private void initParseFeedbackHandler() {
-        this.parseFeedbackHandler = new C02593();
+        this.mParseFeedbackHandler = new ParseFeedbackHandler(this);
     }
 
-    private void loadFeedbackMessages(final FeedbackResponse feedbackResponse) {
-        runOnUiThread(new Runnable() {
-            public void run() {
-                FeedbackActivity.this.configureFeedbackView(true);
-                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                SimpleDateFormat formatNew = new SimpleDateFormat("d MMM h:mm a");
-                if (feedbackResponse != null && feedbackResponse.getFeedback() != null && feedbackResponse.getFeedback().getMessages() != null && feedbackResponse.getFeedback().getMessages().size() > 0) {
-                    FeedbackActivity.this.feedbackMessages = feedbackResponse.getFeedback().getMessages();
-                    Collections.reverse(FeedbackActivity.this.feedbackMessages);
-                    try {
-                        Date date = format.parse(((FeedbackMessage) FeedbackActivity.this.feedbackMessages.get(0)).getCreatedAt());
-                        FeedbackActivity.this.lastUpdatedTextView.setText(String.format(Strings.get(Strings.FEEDBACK_LAST_UPDATED_TEXT_ID) + " %s", new Object[]{formatNew.format(date)}));
-                    } catch (ParseException e1) {
-                        e1.printStackTrace();
-                    }
-                    if (FeedbackActivity.this.messagesAdapter == null) {
-                        FeedbackActivity.this.messagesAdapter = new MessagesAdapter(FeedbackActivity.this.context, FeedbackActivity.this.feedbackMessages);
-                    } else {
-                        FeedbackActivity.this.messagesAdapter.clear();
-                        Iterator it = FeedbackActivity.this.feedbackMessages.iterator();
-                        while (it.hasNext()) {
-                            FeedbackActivity.this.messagesAdapter.add((FeedbackMessage) it.next());
-                        }
-                        FeedbackActivity.this.messagesAdapter.notifyDataSetChanged();
-                    }
-                    FeedbackActivity.this.messagesListView.setAdapter(FeedbackActivity.this.messagesAdapter);
-                }
+    @SuppressLint({"SimpleDateFormat"})
+    private void loadFeedbackMessages(FeedbackResponse feedbackResponse) {
+        configureFeedbackView(true);
+        if (feedbackResponse != null && feedbackResponse.getFeedback() != null && feedbackResponse.getFeedback().getMessages() != null && feedbackResponse.getFeedback().getMessages().size() > 0) {
+            ArrayList<FeedbackMessage> feedbackMessages = feedbackResponse.getFeedback().getMessages();
+            Collections.reverse(feedbackMessages);
+            try {
+                DateFormat dateFormatIn = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                dateFormatIn.setTimeZone(TimeZone.getTimeZone("UTC"));
+                DateFormat dateFormatOut = DateFormat.getDateTimeInstance(3, 3);
+                Date date = dateFormatIn.parse(((FeedbackMessage) feedbackMessages.get(0)).getCreatedAt());
+                this.mLastUpdatedTextView.setText(String.format(getString(C0051R.string.hockeyapp_feedback_last_updated_text), new Object[]{dateFormatOut.format(date)}));
+                this.mLastUpdatedTextView.setContentDescription(this.mLastUpdatedTextView.getText());
+                this.mLastUpdatedTextView.setVisibility(0);
+            } catch (Throwable e1) {
+                HockeyLog.error("Failed to parse feedback", e1);
             }
-        });
+            if (this.mMessagesAdapter == null) {
+                this.mMessagesAdapter = new MessagesAdapter(this.mContext, feedbackMessages);
+            } else {
+                this.mMessagesAdapter.clear();
+                Iterator it = feedbackMessages.iterator();
+                while (it.hasNext()) {
+                    this.mMessagesAdapter.add((FeedbackMessage) it.next());
+                }
+                this.mMessagesAdapter.notifyDataSetChanged();
+            }
+            this.mMessagesListView.setAdapter(this.mMessagesAdapter);
+        }
     }
 
+    @SuppressLint({"StaticFieldLeak"})
     private void resetFeedbackView() {
-        runOnUiThread(new C02615());
+        this.mToken = null;
+        AsyncTaskUtils.execute(new C00431());
+        configureFeedbackView(false);
     }
 
+    @SuppressLint({"StaticFieldLeak"})
     private void sendFeedback() {
         if (Util.isConnectedToNetwork(this)) {
             enableDisableSendFeedbackButton(false);
-            hideKeyboard();
-            String token = PrefsUtil.getInstance().getFeedbackTokenFromPrefs(this.context);
-            String name = this.nameInput.getText().toString().trim();
-            String email = this.emailInput.getText().toString().trim();
-            String subject = this.subjectInput.getText().toString().trim();
-            String text = this.textInput.getText().toString().trim();
+            String token = (!this.mForceNewThread || this.mInSendFeedback) ? this.mToken : null;
+            final String name = this.mNameInput.getText().toString().trim();
+            final String email = this.mEmailInput.getText().toString().trim();
+            final String subject = this.mSubjectInput.getText().toString().trim();
+            String text = this.mTextInput.getText().toString().trim();
             if (TextUtils.isEmpty(subject)) {
-                this.subjectInput.setVisibility(0);
-                setError(this.subjectInput, Strings.FEEDBACK_VALIDATE_SUBJECT_ERROR_ID);
+                this.mSubjectInput.setVisibility(0);
+                setError(this.mSubjectInput, C0051R.string.hockeyapp_feedback_validate_subject_error);
                 return;
             } else if (FeedbackManager.getRequireUserName() == FeedbackUserDataElement.REQUIRED && TextUtils.isEmpty(name)) {
-                setError(this.nameInput, Strings.FEEDBACK_VALIDATE_NAME_ERROR_ID);
+                setError(this.mNameInput, C0051R.string.hockeyapp_feedback_validate_name_error);
                 return;
             } else if (FeedbackManager.getRequireUserEmail() == FeedbackUserDataElement.REQUIRED && TextUtils.isEmpty(email)) {
-                setError(this.emailInput, Strings.FEEDBACK_VALIDATE_EMAIL_EMPTY_ID);
+                setError(this.mEmailInput, C0051R.string.hockeyapp_feedback_validate_email_empty);
                 return;
             } else if (TextUtils.isEmpty(text)) {
-                setError(this.textInput, Strings.FEEDBACK_VALIDATE_TEXT_ERROR_ID);
+                setError(this.mTextInput, C0051R.string.hockeyapp_feedback_validate_text_error);
                 return;
             } else if (FeedbackManager.getRequireUserEmail() != FeedbackUserDataElement.REQUIRED || Util.isValidEmail(email)) {
-                PrefsUtil.getInstance().saveNameEmailSubjectToPrefs(this.context, name, email, subject);
-                sendFetchFeedback(this.url, name, email, subject, text, ((AttachmentListView) findViewById(FeedbackView.WRAPPER_LAYOUT_ATTACHMENTS)).getAttachments(), token, this.feedbackHandler, false);
+                AsyncTaskUtils.execute(new AsyncTask<Void, Object, Object>() {
+                    protected Object doInBackground(Void... voids) {
+                        PrefsUtil.getInstance().saveNameEmailSubjectToPrefs(FeedbackActivity.this.mContext, name, email, subject);
+                        return null;
+                    }
+                });
+                sendFetchFeedback(this.mUrl, name, email, subject, text, this.mAttachmentListView.getAttachments(), token, this.mFeedbackHandler, false);
+                hideKeyboard();
                 return;
             } else {
-                setError(this.emailInput, Strings.FEEDBACK_VALIDATE_EMAIL_ERROR_ID);
+                setError(this.mEmailInput, C0051R.string.hockeyapp_feedback_validate_email_error);
                 return;
             }
         }
-        Toast.makeText(this, Strings.get(Strings.ERROR_NO_NETWORK_MESSAGE_ID), 1).show();
+        Toast.makeText(this, C0051R.string.hockeyapp_error_no_network_message, 1).show();
     }
 
-    private void setError(EditText inputField, int feedbackStringId) {
-        inputField.setError(Strings.get(feedbackStringId));
+    private void setError(final EditText inputField, int feedbackStringId) {
+        inputField.setError(getString(feedbackStringId));
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            public void run() {
+                inputField.requestFocus();
+            }
+        });
         enableDisableSendFeedbackButton(true);
     }
 
     private void sendFetchFeedback(String url, String name, String email, String subject, String text, List<Uri> attachmentUris, String token, Handler feedbackHandler, boolean isFetchMessages) {
-        this.sendFeedbackTask = new SendFeedbackTask(this.context, url, name, email, subject, text, attachmentUris, token, feedbackHandler, isFetchMessages);
-        AsyncTaskUtils.execute(this.sendFeedbackTask);
+        this.mSendFeedbackTask = new SendFeedbackTask(this.mContext, url, name, email, subject, text, attachmentUris, token, feedbackHandler, isFetchMessages);
+        AsyncTaskUtils.execute(this.mSendFeedbackTask);
     }
 
     private void startParseFeedbackTask(String feedbackResponseString, String requestType) {
         createParseFeedbackTask(feedbackResponseString, requestType);
-        AsyncTaskUtils.execute(this.parseFeedbackTask);
+        AsyncTaskUtils.execute(this.mParseFeedbackTask);
     }
 }

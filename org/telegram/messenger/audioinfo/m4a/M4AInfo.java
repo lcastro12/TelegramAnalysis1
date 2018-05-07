@@ -15,8 +15,6 @@ import com.coremedia.iso.boxes.RatingBox;
 import com.coremedia.iso.boxes.TrackBox;
 import com.coremedia.iso.boxes.UserDataBox;
 import com.coremedia.iso.boxes.apple.AppleItemListBox;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.googlecode.mp4parser.boxes.apple.AppleNameBox;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -24,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.telegram.messenger.audioinfo.AudioInfo;
 import org.telegram.messenger.audioinfo.mp3.ID3v1Genre;
+import org.telegram.messenger.exoplayer2.upstream.DataSchemeDataSource;
 
 public class M4AInfo extends AudioInfo {
     private static final String ASCII = "ISO8859_1";
@@ -191,7 +190,7 @@ public class M4AInfo extends AudioInfo {
                 LOGGER.log(this.debugLevel, child.toString());
             }
             if (child.getRemaining() != 0) {
-                data(child.nextChildUpTo("data"));
+                data(child.nextChildUpTo(DataSchemeDataSource.SCHEME_DATA));
             } else if (LOGGER.isLoggable(this.debugLevel)) {
                 LOGGER.log(this.debugLevel, child.getPath() + ": contains no value");
             }
@@ -316,7 +315,7 @@ public class M4AInfo extends AudioInfo {
                 }
                 break;
             case 5143505:
-                if (type.equals(AppleNameBox.TYPE)) {
+                if (type.equals("©nam")) {
                     obj = 16;
                     break;
                 }
@@ -363,7 +362,7 @@ public class M4AInfo extends AudioInfo {
                     opts.inJustDecodeBounds = false;
                     this.cover = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
                     if (this.cover != null) {
-                        float scale = ((float) Math.max(this.cover.getWidth(), this.cover.getHeight())) / BitmapDescriptorFactory.HUE_GREEN;
+                        float scale = ((float) Math.max(this.cover.getWidth(), this.cover.getHeight())) / 120.0f;
                         if (scale > 0.0f) {
                             this.smallCover = Bitmap.createScaledBitmap(this.cover, (int) (((float) this.cover.getWidth()) / scale), (int) (((float) this.cover.getHeight()) / scale), true);
                         } else {

@@ -8,22 +8,21 @@ import android.graphics.Paint.Style;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import java.io.File;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Bitmaps;
-import org.telegram.messenger.C0553R;
+import org.telegram.messenger.C0488R;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.ActionBar.ActionBarMenuOnItemClick;
 import org.telegram.ui.ActionBar.BaseFragment;
+import org.telegram.ui.ActionBar.Theme;
 
 public class PhotoCropActivity extends BaseFragment {
     private static final int done_button = 1;
@@ -34,6 +33,31 @@ public class PhotoCropActivity extends BaseFragment {
     private Bitmap imageToCrop;
     private boolean sameBitmap = false;
     private PhotoCropView view;
+
+    public interface PhotoEditActivityDelegate {
+        void didFinishEdit(Bitmap bitmap);
+    }
+
+    class C20741 extends ActionBarMenuOnItemClick {
+        C20741() {
+        }
+
+        public void onItemClick(int id) {
+            if (id == -1) {
+                PhotoCropActivity.this.finishFragment();
+            } else if (id == 1) {
+                if (!(PhotoCropActivity.this.delegate == null || PhotoCropActivity.this.doneButtonPressed)) {
+                    Bitmap bitmap = PhotoCropActivity.this.view.getBitmap();
+                    if (bitmap == PhotoCropActivity.this.imageToCrop) {
+                        PhotoCropActivity.this.sameBitmap = true;
+                    }
+                    PhotoCropActivity.this.delegate.didFinishEdit(bitmap);
+                    PhotoCropActivity.this.doneButtonPressed = true;
+                }
+                PhotoCropActivity.this.finishFragment();
+            }
+        }
+    }
 
     private class PhotoCropView extends FrameLayout {
         int bitmapHeight;
@@ -49,13 +73,13 @@ public class PhotoCropActivity extends BaseFragment {
         Paint rectPaint = null;
         float rectSizeX = 600.0f;
         float rectSizeY = 600.0f;
-        float rectX = GroundOverlayOptions.NO_DIMENSION;
-        float rectY = GroundOverlayOptions.NO_DIMENSION;
+        float rectX = -1.0f;
+        float rectY = -1.0f;
         int viewHeight;
         int viewWidth;
 
-        class C11361 implements OnTouchListener {
-            C11361() {
+        class C20751 implements OnTouchListener {
+            C20751() {
             }
 
             public boolean onTouch(View view, MotionEvent motionEvent) {
@@ -240,16 +264,6 @@ public class PhotoCropActivity extends BaseFragment {
             init();
         }
 
-        public PhotoCropView(Context context, AttributeSet attrs) {
-            super(context, attrs);
-            init();
-        }
-
-        public PhotoCropView(Context context, AttributeSet attrs, int defStyle) {
-            super(context, attrs, defStyle);
-            init();
-        }
-
         private void init() {
             this.rectPaint = new Paint();
             this.rectPaint.setColor(1073412858);
@@ -259,8 +273,8 @@ public class PhotoCropActivity extends BaseFragment {
             this.circlePaint.setColor(-1);
             this.halfPaint = new Paint();
             this.halfPaint.setColor(-939524096);
-            setBackgroundColor(-13421773);
-            setOnTouchListener(new C11361());
+            setBackgroundColor(Theme.ACTION_BAR_MEDIA_PICKER_COLOR);
+            setOnTouchListener(new C20751());
         }
 
         private void updateBitmapSize() {
@@ -282,7 +296,7 @@ public class PhotoCropActivity extends BaseFragment {
                 }
                 this.bitmapX = ((this.viewWidth - this.bitmapWidth) / 2) + AndroidUtilities.dp(14.0f);
                 this.bitmapY = ((this.viewHeight - this.bitmapHeight) / 2) + AndroidUtilities.dp(14.0f);
-                if (this.rectX != GroundOverlayOptions.NO_DIMENSION || this.rectY != GroundOverlayOptions.NO_DIMENSION) {
+                if (this.rectX != -1.0f || this.rectY != -1.0f) {
                     this.rectX = (((float) this.bitmapWidth) * percX) + ((float) this.bitmapX);
                     this.rectY = (((float) this.bitmapHeight) * percY) + ((float) this.bitmapY);
                     this.rectSizeX = ((float) this.bitmapWidth) * percSizeX;
@@ -334,7 +348,7 @@ public class PhotoCropActivity extends BaseFragment {
             try {
                 return Bitmaps.createBitmap(PhotoCropActivity.this.imageToCrop, x, y, sizeX, sizeY);
             } catch (Throwable e2) {
-                FileLog.m611e("tmessages", e2);
+                FileLog.m3e(e2);
                 return null;
             }
         }
@@ -345,7 +359,7 @@ public class PhotoCropActivity extends BaseFragment {
                     PhotoCropActivity.this.drawable.setBounds(this.bitmapX, this.bitmapY, this.bitmapX + this.bitmapWidth, this.bitmapY + this.bitmapHeight);
                     PhotoCropActivity.this.drawable.draw(canvas);
                 } catch (Throwable e) {
-                    FileLog.m611e("tmessages", e);
+                    FileLog.m3e(e);
                 }
             }
             canvas.drawRect((float) this.bitmapX, (float) this.bitmapY, (float) (this.bitmapX + this.bitmapWidth), this.rectY, this.halfPaint);
@@ -377,31 +391,6 @@ public class PhotoCropActivity extends BaseFragment {
                 canvas2.drawRect(((this.rectSizeX / 3.0f) * ((float) a)) + this.rectX, ((float) side) + this.rectY, ((this.rectSizeX / 3.0f) * ((float) a)) + (this.rectX + ((float) side)), (this.rectY + this.rectSizeY) - ((float) side), this.circlePaint);
                 canvas2 = canvas;
                 canvas2.drawRect(((float) side) + this.rectX, ((this.rectSizeY / 3.0f) * ((float) a)) + this.rectY, this.rectSizeX + (this.rectX - ((float) side)), ((float) side) + (this.rectY + ((this.rectSizeY / 3.0f) * ((float) a))), this.circlePaint);
-            }
-        }
-    }
-
-    public interface PhotoEditActivityDelegate {
-        void didFinishEdit(Bitmap bitmap);
-    }
-
-    class C16361 extends ActionBarMenuOnItemClick {
-        C16361() {
-        }
-
-        public void onItemClick(int id) {
-            if (id == -1) {
-                PhotoCropActivity.this.finishFragment();
-            } else if (id == 1) {
-                if (!(PhotoCropActivity.this.delegate == null || PhotoCropActivity.this.doneButtonPressed)) {
-                    Bitmap bitmap = PhotoCropActivity.this.view.getBitmap();
-                    if (bitmap == PhotoCropActivity.this.imageToCrop) {
-                        PhotoCropActivity.this.sameBitmap = true;
-                    }
-                    PhotoCropActivity.this.delegate.didFinishEdit(bitmap);
-                    PhotoCropActivity.this.doneButtonPressed = true;
-                }
-                PhotoCropActivity.this.finishFragment();
             }
         }
     }
@@ -450,13 +439,14 @@ public class PhotoCropActivity extends BaseFragment {
     }
 
     public View createView(Context context) {
-        this.actionBar.setBackgroundColor(-13421773);
-        this.actionBar.setItemsBackground(C0553R.drawable.bar_selector_picker);
-        this.actionBar.setBackButtonImage(C0553R.drawable.ic_ab_back);
+        this.actionBar.setBackgroundColor(Theme.ACTION_BAR_MEDIA_PICKER_COLOR);
+        this.actionBar.setItemsBackgroundColor(Theme.ACTION_BAR_PICKER_SELECTOR_COLOR, false);
+        this.actionBar.setTitleColor(-1);
+        this.actionBar.setBackButtonImage(C0488R.drawable.ic_ab_back);
         this.actionBar.setAllowOverlayTitle(true);
-        this.actionBar.setTitle(LocaleController.getString("CropImage", C0553R.string.CropImage));
-        this.actionBar.setActionBarMenuOnItemClick(new C16361());
-        this.actionBar.createMenu().addItemWithWidth(1, C0553R.drawable.ic_done, AndroidUtilities.dp(56.0f));
+        this.actionBar.setTitle(LocaleController.getString("CropImage", C0488R.string.CropImage));
+        this.actionBar.setActionBarMenuOnItemClick(new C20741());
+        this.actionBar.createMenu().addItemWithWidth(1, C0488R.drawable.ic_done, AndroidUtilities.dp(56.0f));
         View photoCropView = new PhotoCropView(context);
         this.view = photoCropView;
         this.fragmentView = photoCropView;

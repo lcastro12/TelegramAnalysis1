@@ -1,5 +1,6 @@
 package org.telegram.ui.ActionBar;
 
+import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -8,17 +9,18 @@ import android.content.DialogInterface.OnDismissListener;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
-import org.telegram.messenger.AnimationCompat.AnimatorSetProxy;
-import org.telegram.messenger.C0553R;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 
 public class BaseFragment {
     protected ActionBar actionBar;
     protected Bundle arguments;
     protected int classGuid;
+    protected int currentAccount;
     protected View fragmentView;
     protected boolean hasOwnBackground;
     private boolean isFinished;
@@ -26,33 +28,32 @@ public class BaseFragment {
     protected boolean swipeBackEnabled;
     protected Dialog visibleDialog;
 
-    class C07091 implements OnDismissListener {
-        C07091() {
-        }
-
-        public void onDismiss(DialogInterface dialog) {
-            BaseFragment.this.onDialogDismiss(BaseFragment.this.visibleDialog);
-            BaseFragment.this.visibleDialog = null;
-        }
-    }
-
     public BaseFragment() {
         this.isFinished = false;
         this.visibleDialog = null;
+        this.currentAccount = UserConfig.selectedAccount;
         this.classGuid = 0;
         this.swipeBackEnabled = true;
         this.hasOwnBackground = false;
-        this.classGuid = ConnectionsManager.getInstance().generateClassGuid();
+        this.classGuid = ConnectionsManager.generateClassGuid();
     }
 
     public BaseFragment(Bundle args) {
         this.isFinished = false;
         this.visibleDialog = null;
+        this.currentAccount = UserConfig.selectedAccount;
         this.classGuid = 0;
         this.swipeBackEnabled = true;
         this.hasOwnBackground = false;
         this.arguments = args;
-        this.classGuid = ConnectionsManager.getInstance().generateClassGuid();
+        this.classGuid = ConnectionsManager.generateClassGuid();
+    }
+
+    public void setCurrentAccount(int account) {
+        if (this.fragmentView != null) {
+            throw new IllegalStateException("trying to set current account when fragment UI already created");
+        }
+        this.currentAccount = account;
     }
 
     public ActionBar getActionBar() {
@@ -71,15 +72,20 @@ public class BaseFragment {
         return this.arguments;
     }
 
+    public int getCurrentAccount() {
+        return this.currentAccount;
+    }
+
     protected void clearViews() {
         ViewGroup parent;
         if (this.fragmentView != null) {
             parent = (ViewGroup) this.fragmentView.getParent();
             if (parent != null) {
                 try {
+                    onRemoveFromParent();
                     parent.removeView(this.fragmentView);
                 } catch (Throwable e) {
-                    FileLog.m611e("tmessages", e);
+                    FileLog.m3e(e);
                 }
             }
             this.fragmentView = null;
@@ -90,12 +96,15 @@ public class BaseFragment {
                 try {
                     parent.removeView(this.actionBar);
                 } catch (Throwable e2) {
-                    FileLog.m611e("tmessages", e2);
+                    FileLog.m3e(e2);
                 }
             }
             this.actionBar = null;
         }
         this.parentLayout = null;
+    }
+
+    protected void onRemoveFromParent() {
     }
 
     protected void setParentLayout(ActionBarLayout layout) {
@@ -106,9 +115,10 @@ public class BaseFragment {
                 parent = (ViewGroup) this.fragmentView.getParent();
                 if (parent != null) {
                     try {
+                        onRemoveFromParent();
                         parent.removeView(this.fragmentView);
                     } catch (Throwable e) {
-                        FileLog.m611e("tmessages", e);
+                        FileLog.m3e(e);
                     }
                 }
                 if (!(this.parentLayout == null || this.parentLayout.getContext() == this.fragmentView.getContext())) {
@@ -116,25 +126,36 @@ public class BaseFragment {
                 }
             }
             if (this.actionBar != null) {
-                parent = (ViewGroup) this.actionBar.getParent();
-                if (parent != null) {
-                    try {
-                        parent.removeView(this.actionBar);
-                    } catch (Throwable e2) {
-                        FileLog.m611e("tmessages", e2);
+                boolean differentParent = (this.parentLayout == null || this.parentLayout.getContext() == this.actionBar.getContext()) ? false : true;
+                if (this.actionBar.getAddToContainer() || differentParent) {
+                    parent = (ViewGroup) this.actionBar.getParent();
+                    if (parent != null) {
+                        try {
+                            parent.removeView(this.actionBar);
+                        } catch (Throwable e2) {
+                            FileLog.m3e(e2);
+                        }
                     }
                 }
-                if (!(this.parentLayout == null || this.parentLayout.getContext() == this.actionBar.getContext())) {
+                if (differentParent) {
                     this.actionBar = null;
                 }
             }
             if (this.parentLayout != null && this.actionBar == null) {
-                this.actionBar = new ActionBar(this.parentLayout.getContext());
+                this.actionBar = createActionBar(this.parentLayout.getContext());
                 this.actionBar.parentFragment = this;
-                this.actionBar.setBackgroundColor(-11242082);
-                this.actionBar.setItemsBackground(C0553R.drawable.bar_selector);
             }
         }
+    }
+
+    protected ActionBar createActionBar(Context context) {
+        ActionBar actionBar = new ActionBar(context);
+        actionBar.setBackgroundColor(Theme.getColor(Theme.key_actionBarDefault));
+        actionBar.setItemsBackgroundColor(Theme.getColor(Theme.key_actionBarDefaultSelector), false);
+        actionBar.setItemsBackgroundColor(Theme.getColor(Theme.key_actionBarActionModeDefaultSelector), true);
+        actionBar.setItemsColor(Theme.getColor(Theme.key_actionBarDefaultIcon), false);
+        actionBar.setItemsColor(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon), true);
+        return actionBar;
     }
 
     public void finishFragment() {
@@ -158,11 +179,15 @@ public class BaseFragment {
     }
 
     public void onFragmentDestroy() {
-        ConnectionsManager.getInstance().cancelRequestsForGuid(this.classGuid);
+        ConnectionsManager.getInstance(this.currentAccount).cancelRequestsForGuid(this.classGuid);
         this.isFinished = true;
         if (this.actionBar != null) {
             this.actionBar.setEnabled(false);
         }
+    }
+
+    public boolean needDelayOpenAnimation() {
+        return false;
     }
 
     public void onResume() {
@@ -178,8 +203,15 @@ public class BaseFragment {
                 this.visibleDialog = null;
             }
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
+    }
+
+    public BaseFragment getFragmentForAlert(int offset) {
+        if (this.parentLayout == null || this.parentLayout.fragmentsStack.size() <= offset + 1) {
+            return this;
+        }
+        return (BaseFragment) this.parentLayout.fragmentsStack.get((this.parentLayout.fragmentsStack.size() - 2) - offset);
     }
 
     public void onConfigurationChanged(Configuration newConfig) {
@@ -226,6 +258,17 @@ public class BaseFragment {
         }
     }
 
+    public void dismissCurrentDialig() {
+        if (this.visibleDialog != null) {
+            try {
+                this.visibleDialog.dismiss();
+                this.visibleDialog = null;
+            } catch (Throwable e) {
+                FileLog.m3e(e);
+            }
+        }
+    }
+
     public boolean dismissDialogOnPause(Dialog dialog) {
         return true;
     }
@@ -237,7 +280,7 @@ public class BaseFragment {
                 this.visibleDialog = null;
             }
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
         if (this.actionBar != null) {
             this.actionBar.onPause();
@@ -253,7 +296,7 @@ public class BaseFragment {
     protected void onBecomeFullyVisible() {
     }
 
-    protected AnimatorSetProxy onCustomTransitionAnimation(boolean isOpen, Runnable callback) {
+    protected AnimatorSet onCustomTransitionAnimation(boolean isOpen, Runnable callback) {
         return null;
     }
 
@@ -261,10 +304,14 @@ public class BaseFragment {
     }
 
     public Dialog showDialog(Dialog dialog) {
-        return showDialog(dialog, false);
+        return showDialog(dialog, false, null);
     }
 
-    public Dialog showDialog(Dialog dialog, boolean allowInTransition) {
+    public Dialog showDialog(Dialog dialog, OnDismissListener onDismissListener) {
+        return showDialog(dialog, false, onDismissListener);
+    }
+
+    public Dialog showDialog(Dialog dialog, boolean allowInTransition, final OnDismissListener onDismissListener) {
         Dialog dialog2 = null;
         if (!(dialog == null || this.parentLayout == null || this.parentLayout.animationInProgress || this.parentLayout.startedTracking || (!allowInTransition && this.parentLayout.checkTransitionAnimation()))) {
             try {
@@ -273,16 +320,24 @@ public class BaseFragment {
                     this.visibleDialog = null;
                 }
             } catch (Throwable e) {
-                FileLog.m611e("tmessages", e);
+                FileLog.m3e(e);
             }
             try {
                 this.visibleDialog = dialog;
                 this.visibleDialog.setCanceledOnTouchOutside(true);
-                this.visibleDialog.setOnDismissListener(new C07091());
+                this.visibleDialog.setOnDismissListener(new OnDismissListener() {
+                    public void onDismiss(DialogInterface dialog) {
+                        if (onDismissListener != null) {
+                            onDismissListener.onDismiss(dialog);
+                        }
+                        BaseFragment.this.onDialogDismiss(BaseFragment.this.visibleDialog);
+                        BaseFragment.this.visibleDialog = null;
+                    }
+                });
                 this.visibleDialog.show();
                 dialog2 = this.visibleDialog;
             } catch (Throwable e2) {
-                FileLog.m611e("tmessages", e2);
+                FileLog.m3e(e2);
             }
         }
         return dialog2;
@@ -297,5 +352,13 @@ public class BaseFragment {
 
     public void setVisibleDialog(Dialog dialog) {
         this.visibleDialog = dialog;
+    }
+
+    public boolean extendActionMode(Menu menu) {
+        return false;
+    }
+
+    public ThemeDescription[] getThemeDescriptions() {
+        return new ThemeDescription[0];
     }
 }

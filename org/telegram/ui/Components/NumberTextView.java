@@ -1,5 +1,8 @@
 package org.telegram.ui.Components;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Typeface;
@@ -7,26 +10,23 @@ import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.view.View;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import java.util.ArrayList;
 import java.util.Locale;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.AnimationCompat.AnimatorListenerAdapterProxy;
-import org.telegram.messenger.AnimationCompat.ObjectAnimatorProxy;
 
 public class NumberTextView extends View {
-    private ObjectAnimatorProxy animator;
+    private ObjectAnimator animator;
     private int currentNumber = 1;
     private ArrayList<StaticLayout> letters = new ArrayList();
     private ArrayList<StaticLayout> oldLetters = new ArrayList();
     private float progress = 0.0f;
     private TextPaint textPaint = new TextPaint(1);
 
-    class C15611 extends AnimatorListenerAdapterProxy {
-        C15611() {
+    class C15141 extends AnimatorListenerAdapter {
+        C15141() {
         }
 
-        public void onAnimationEnd(Object animation) {
+        public void onAnimationEnd(Animator animation) {
             NumberTextView.this.animator = null;
             NumberTextView.this.oldLetters.clear();
         }
@@ -76,11 +76,11 @@ public class NumberTextView extends View {
             if (animated && !this.oldLetters.isEmpty()) {
                 String str = "progress";
                 float[] fArr = new float[2];
-                fArr[0] = forwardAnimation ? GroundOverlayOptions.NO_DIMENSION : 1.0f;
+                fArr[0] = forwardAnimation ? -1.0f : 1.0f;
                 fArr[1] = 0.0f;
-                this.animator = ObjectAnimatorProxy.ofFloatProxy(this, str, fArr);
+                this.animator = ObjectAnimator.ofFloat(this, str, fArr);
                 this.animator.setDuration(150);
-                this.animator.addListener(new C15611());
+                this.animator.addListener(new C15141());
                 this.animator.start();
             }
             invalidate();

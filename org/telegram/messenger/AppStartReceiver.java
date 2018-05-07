@@ -6,8 +6,8 @@ import android.content.Intent;
 
 public class AppStartReceiver extends BroadcastReceiver {
 
-    class C03021 implements Runnable {
-        C03021() {
+    class C00801 implements Runnable {
+        C00801() {
         }
 
         public void run() {
@@ -16,6 +16,6 @@ public class AppStartReceiver extends BroadcastReceiver {
     }
 
     public void onReceive(Context context, Intent intent) {
-        AndroidUtilities.runOnUIThread(new C03021());
+        AndroidUtilities.runOnUIThread(new C00801());
     }
 }

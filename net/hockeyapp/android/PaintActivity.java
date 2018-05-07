@@ -1,5 +1,6 @@
 package net.hockeyapp.android;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog.Builder;
 import android.content.DialogInterface;
@@ -11,33 +12,52 @@ import android.graphics.Bitmap.CompressFormat;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.Toast;
-import com.google.android.gms.location.LocationStatusCodes;
 import java.io.File;
 import java.io.FileOutputStream;
+import net.hockeyapp.android.utils.AsyncTaskUtils;
+import net.hockeyapp.android.utils.HockeyLog;
+import net.hockeyapp.android.utils.ImageUtils;
 import net.hockeyapp.android.views.PaintView;
 
 public class PaintActivity extends Activity {
-    private static final int MENU_CLEAR_ID = 3;
-    private static final int MENU_SAVE_ID = 1;
-    private static final int MENU_UNDO_ID = 2;
-    private String imageName;
-    private PaintView paintView;
+    private Uri mImageUri;
+    private PaintView mPaintView;
 
-    class C02671 implements OnClickListener {
-        C02671() {
+    class C00481 extends AsyncTask<Void, Object, Integer> {
+        C00481() {
+        }
+
+        protected Integer doInBackground(Void... voids) {
+            return Integer.valueOf(ImageUtils.determineOrientation(PaintActivity.this, PaintActivity.this.mImageUri));
+        }
+
+        protected void onPostExecute(Integer desiredOrientation) {
+            PaintActivity.this.setRequestedOrientation(desiredOrientation.intValue());
+            if ((PaintActivity.this.getResources().getDisplayMetrics().widthPixels > PaintActivity.this.getResources().getDisplayMetrics().heightPixels ? 0 : 1) != desiredOrientation.intValue()) {
+                HockeyLog.debug("Image loading skipped because activity will be destroyed for orientation change.");
+            } else {
+                PaintActivity.this.showPaintView();
+            }
+        }
+    }
+
+    class C00492 implements OnClickListener {
+        C00492() {
         }
 
         public void onClick(DialogInterface dialog, int which) {
             switch (which) {
-                case -1:
+                case -2:
                     PaintActivity.this.finish();
+                    return;
+                case -1:
+                    PaintActivity.this.makeResult();
                     return;
                 default:
                     return;
@@ -45,39 +65,23 @@ public class PaintActivity extends Activity {
         }
     }
 
+    @SuppressLint({"StaticFieldLeak"})
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Uri imageUri = (Uri) getIntent().getExtras().getParcelable("imageUri");
-        this.imageName = determineFilename(imageUri, imageUri.getLastPathSegment());
-        int displayWidth = getResources().getDisplayMetrics().widthPixels;
-        int displayHeight = getResources().getDisplayMetrics().heightPixels;
-        int currentOrientation = displayWidth > displayHeight ? 0 : 1;
-        int desiredOrientation = PaintView.determineOrientation(getContentResolver(), imageUri);
-        setRequestedOrientation(desiredOrientation);
-        if (currentOrientation != desiredOrientation) {
-            Log.d("HockeyApp", "Image loading skipped because activity will be destroyed for orientation change.");
+        Bundle extras = getIntent().getExtras();
+        if (extras == null || extras.getParcelable("imageUri") == null) {
+            HockeyLog.error("Can't set up PaintActivity as image extra was not provided!");
             return;
         }
-        this.paintView = new PaintView(this, imageUri, displayWidth, displayHeight);
-        LinearLayout vLayout = new LinearLayout(this);
-        vLayout.setLayoutParams(new LayoutParams(-1, -1));
-        vLayout.setGravity(17);
-        vLayout.setOrientation(1);
-        LinearLayout hLayout = new LinearLayout(this);
-        hLayout.setLayoutParams(new LayoutParams(-1, -1));
-        hLayout.setGravity(17);
-        hLayout.setOrientation(0);
-        vLayout.addView(hLayout);
-        hLayout.addView(this.paintView);
-        setContentView(vLayout);
-        Toast.makeText(this, Strings.get(Strings.PAINT_INDICATOR_TOAST_ID), LocationStatusCodes.GEOFENCE_NOT_AVAILABLE).show();
+        this.mImageUri = (Uri) extras.getParcelable("imageUri");
+        AsyncTaskUtils.execute(new C00481());
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        menu.add(0, 1, 0, Strings.get(Strings.PAINT_MENU_SAVE_ID));
-        menu.add(0, 2, 0, Strings.get(Strings.PAINT_MENU_UNDO_ID));
-        menu.add(0, 3, 0, Strings.get(Strings.PAINT_MENU_CLEAR_ID));
+        menu.add(0, 1, 0, getString(C0051R.string.hockeyapp_paint_menu_save));
+        menu.add(0, 2, 0, getString(C0051R.string.hockeyapp_paint_menu_undo));
+        menu.add(0, 3, 0, getString(C0051R.string.hockeyapp_paint_menu_clear));
         return true;
     }
 
@@ -92,10 +96,10 @@ public class PaintActivity extends Activity {
                 makeResult();
                 return true;
             case 2:
-                this.paintView.undo();
+                this.mPaintView.undo();
                 return true;
             case 3:
-                this.paintView.clearImage();
+                this.mPaintView.clearImage();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -103,46 +107,77 @@ public class PaintActivity extends Activity {
     }
 
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode != 4 || this.paintView.isClear()) {
+        if (keyCode != 4 || this.mPaintView.isClear()) {
             return super.onKeyDown(keyCode, event);
         }
-        OnClickListener dialogClickListener = new C02671();
-        new Builder(this).setMessage(Strings.get(Strings.PAINT_DIALOG_MESSAGE_ID)).setPositiveButton(Strings.get(Strings.PAINT_DIALOG_POSITIVE_BUTTON_ID), dialogClickListener).setNegativeButton(Strings.get(Strings.PAINT_DIALOG_NEGATIVE_BUTTON_ID), dialogClickListener).show();
+        OnClickListener dialogClickListener = new C00492();
+        new Builder(this).setMessage(C0051R.string.hockeyapp_paint_dialog_message).setPositiveButton(C0051R.string.hockeyapp_paint_dialog_positive_button, dialogClickListener).setNegativeButton(C0051R.string.hockeyapp_paint_dialog_negative_button, dialogClickListener).setNeutralButton(C0051R.string.hockeyapp_paint_dialog_neutral_button, dialogClickListener).show();
         return true;
     }
 
+    private void showPaintView() {
+        this.mPaintView = new PaintView(this, this.mImageUri, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
+        LinearLayout vLayout = new LinearLayout(this);
+        vLayout.setLayoutParams(new LayoutParams(-1, -1));
+        vLayout.setGravity(17);
+        vLayout.setOrientation(1);
+        LinearLayout hLayout = new LinearLayout(this);
+        hLayout.setLayoutParams(new LayoutParams(-1, -1));
+        hLayout.setGravity(17);
+        hLayout.setOrientation(0);
+        vLayout.addView(hLayout);
+        hLayout.addView(this.mPaintView);
+        setContentView(vLayout);
+        Toast.makeText(this, C0051R.string.hockeyapp_paint_indicator_toast, 1).show();
+    }
+
+    @SuppressLint({"StaticFieldLeak"})
     private void makeResult() {
-        File hockeyAppCache = new File(getCacheDir(), "HockeyApp");
-        hockeyAppCache.mkdir();
-        File result = new File(hockeyAppCache, this.imageName + ".jpg");
-        int suffix = 1;
-        while (result.exists()) {
-            result = new File(hockeyAppCache, this.imageName + "_" + suffix + ".jpg");
-            suffix++;
-        }
-        this.paintView.setDrawingCacheEnabled(true);
-        final Bitmap bitmap = this.paintView.getDrawingCache();
-        new AsyncTask<File, Void, Void>() {
-            protected Void doInBackground(File... args) {
+        this.mPaintView.setDrawingCacheEnabled(true);
+        final Bitmap bitmap = this.mPaintView.getDrawingCache();
+        AsyncTaskUtils.execute(new AsyncTask<Void, Object, Boolean>() {
+            File result;
+
+            protected Boolean doInBackground(Void... args) {
+                File hockeyAppCache = new File(PaintActivity.this.getCacheDir(), "HockeyApp");
+                if (!hockeyAppCache.exists() && !hockeyAppCache.mkdir()) {
+                    return Boolean.valueOf(false);
+                }
+                String imageName = PaintActivity.this.determineFilename(PaintActivity.this.mImageUri, PaintActivity.this.mImageUri.getLastPathSegment());
+                this.result = new File(hockeyAppCache, imageName + ".jpg");
+                int suffix = 1;
+                while (this.result.exists()) {
+                    this.result = new File(hockeyAppCache, imageName + "_" + suffix + ".jpg");
+                    suffix++;
+                }
                 try {
-                    FileOutputStream out = new FileOutputStream(args[0]);
+                    FileOutputStream out = new FileOutputStream(this.result);
                     bitmap.compress(CompressFormat.JPEG, 100, out);
                     out.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Log.e("HockeyApp", "Could not save image.", e);
+                    return Boolean.valueOf(true);
+                } catch (Throwable e) {
+                    HockeyLog.error("Could not save image.", e);
+                    return Boolean.valueOf(false);
                 }
-                return null;
             }
-        }.execute(new File[]{result});
-        Intent intent = new Intent();
-        intent.putExtra("imageUri", Uri.fromFile(result));
-        if (getParent() == null) {
-            setResult(-1, intent);
-        } else {
-            getParent().setResult(-1, intent);
-        }
-        finish();
+
+            protected void onPostExecute(Boolean success) {
+                if (success.booleanValue()) {
+                    Intent intent = new Intent();
+                    intent.putExtra("imageUri", Uri.fromFile(this.result));
+                    if (PaintActivity.this.getParent() == null) {
+                        PaintActivity.this.setResult(-1, intent);
+                    } else {
+                        PaintActivity.this.getParent().setResult(-1, intent);
+                    }
+                } else if (PaintActivity.this.getParent() == null) {
+                    PaintActivity.this.setResult(0);
+                } else {
+                    PaintActivity.this.getParent().setResult(0);
+                }
+                PaintActivity.this.finish();
+            }
+        });
     }
 
     private String determineFilename(Uri uri, String fallback) {

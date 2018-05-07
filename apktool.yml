@@ -1,5 +1,5 @@
 !!brut.androlib.meta.MetaInfo
-apkFileName: telegram3-3-2.apk
+apkFileName: telegram-4-8-7.apk
 compressionType: false
 doNotCompress:
 - arsc
@@ -8,19 +8,40 @@ packageInfo:
   forcedPackageId: '127'
   renameManifestPackage: null
 sdkInfo:
-  minSdkVersion: '8'
-  targetSdkVersion: '23'
+  minSdkVersion: '16'
+  targetSdkVersion: '27'
 sharedLibrary: false
 unknownFiles:
-  version.txt: '8'
-  isoparser-default.properties: '8'
   builddef.lst: '8'
-  NOTICE.txt: '8'
+  firebase-abt.properties: '8'
+  firebase-analytics-impl.properties: '8'
+  firebase-common.properties: '8'
+  firebase-config.properties: '8'
+  firebase-iid.properties: '8'
+  firebase-messaging.properties: '8'
+  isoparser-default.properties: '8'
+  play-services-ads-identifier.properties: '8'
+  play-services-base.properties: '8'
+  play-services-basement.properties: '8'
+  play-services-clearcut.properties: '8'
+  play-services-flags.properties: '8'
+  play-services-identity.properties: '8'
+  play-services-maps.properties: '8'
+  play-services-measurement-base.properties: '8'
+  play-services-phenotype.properties: '8'
+  play-services-stats.properties: '8'
+  play-services-tasks.properties: '8'
+  play-services-vision-common.properties: '8'
+  play-services-vision.properties: '8'
+  play-services-wallet.properties: '8'
+  play-services-wearable.properties: '8'
+  version.txt: '8'
+  fabric/com.stripe.stripe-android.properties: '8'
 usesFramework:
   ids:
   - 1
   tag: null
 version: 2.3.0
 versionInfo:
-  versionCode: '695'
-  versionName: 3.3.2
+  versionCode: '12541'
+  versionName: 4.8.7

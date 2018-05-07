@@ -1,91 +1,87 @@
 package org.telegram.ui.Cells;
 
 import android.content.Context;
+import android.graphics.PorterDuff.Mode;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
-import android.text.TextUtils.TruncateAt;
-import android.view.View;
 import android.view.View.MeasureSpec;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
-import android.widget.TextView;
-import com.google.android.gms.maps.model.GroundOverlayOptions;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
-import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.ActionBar.SimpleTextView;
+import org.telegram.ui.ActionBar.Theme;
 
 public class TextCell extends FrameLayout {
     private ImageView imageView;
-    private TextView textView;
+    private SimpleTextView textView;
     private ImageView valueImageView;
-    private TextView valueTextView;
+    private SimpleTextView valueTextView;
 
     public TextCell(Context context) {
-        int i;
-        int i2;
-        int i3 = 3;
-        float f = 16.0f;
+        int i = 3;
         super(context);
-        this.textView = new TextView(context);
-        this.textView.setTextColor(-14606047);
-        this.textView.setTextSize(1, 16.0f);
-        this.textView.setLines(1);
-        this.textView.setMaxLines(1);
-        this.textView.setSingleLine(true);
-        this.textView.setEllipsize(TruncateAt.END);
-        this.textView.setGravity((LocaleController.isRTL ? 5 : 3) | 16);
-        View view = this.textView;
-        if (LocaleController.isRTL) {
-            i = 5;
-        } else {
-            i = 3;
-        }
-        addView(view, LayoutHelper.createFrame(-1, GroundOverlayOptions.NO_DIMENSION, i | 48, LocaleController.isRTL ? 16.0f : 71.0f, 0.0f, LocaleController.isRTL ? 71.0f : 16.0f, 0.0f));
-        this.valueTextView = new TextView(context);
-        this.valueTextView.setTextColor(-13660983);
-        this.valueTextView.setTextSize(1, 16.0f);
-        this.valueTextView.setLines(1);
-        this.valueTextView.setMaxLines(1);
-        this.valueTextView.setSingleLine(true);
-        TextView textView = this.valueTextView;
-        if (LocaleController.isRTL) {
-            i2 = 3;
-        } else {
-            i2 = 5;
-        }
-        textView.setGravity(i2 | 16);
-        view = this.valueTextView;
-        if (LocaleController.isRTL) {
-            i = 3;
-        } else {
+        this.textView = new SimpleTextView(context);
+        this.textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        this.textView.setTextSize(16);
+        this.textView.setGravity(LocaleController.isRTL ? 5 : 3);
+        addView(this.textView);
+        this.valueTextView = new SimpleTextView(context);
+        this.valueTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteValueText));
+        this.valueTextView.setTextSize(16);
+        SimpleTextView simpleTextView = this.valueTextView;
+        if (!LocaleController.isRTL) {
             i = 5;
         }
-        addView(view, LayoutHelper.createFrame(-2, GroundOverlayOptions.NO_DIMENSION, i | 48, LocaleController.isRTL ? 24.0f : 0.0f, 0.0f, LocaleController.isRTL ? 0.0f : 24.0f, 0.0f));
+        simpleTextView.setGravity(i);
+        addView(this.valueTextView);
         this.imageView = new ImageView(context);
         this.imageView.setScaleType(ScaleType.CENTER);
-        View view2 = this.imageView;
-        if (LocaleController.isRTL) {
-            i2 = 5;
-        } else {
-            i2 = 3;
-        }
-        int i4 = i2 | 48;
-        float f2 = LocaleController.isRTL ? 0.0f : 16.0f;
-        if (!LocaleController.isRTL) {
-            f = 0.0f;
-        }
-        addView(view2, LayoutHelper.createFrame(-2, -2.0f, i4, f2, 5.0f, f, 0.0f));
+        this.imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteGrayIcon), Mode.MULTIPLY));
+        addView(this.imageView);
         this.valueImageView = new ImageView(context);
         this.valueImageView.setScaleType(ScaleType.CENTER);
-        view = this.valueImageView;
-        if (!LocaleController.isRTL) {
-            i3 = 5;
-        }
-        addView(view, LayoutHelper.createFrame(-2, -2.0f, i3 | 16, LocaleController.isRTL ? 24.0f : 0.0f, 0.0f, LocaleController.isRTL ? 0.0f : 24.0f, 0.0f));
+        addView(this.valueImageView);
+    }
+
+    public SimpleTextView getTextView() {
+        return this.textView;
+    }
+
+    public SimpleTextView getValueTextView() {
+        return this.valueTextView;
+    }
+
+    public ImageView getValueImageView() {
+        return this.valueImageView;
     }
 
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), 1073741824), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(48.0f), 1073741824));
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int height = AndroidUtilities.dp(48.0f);
+        this.valueTextView.measure(MeasureSpec.makeMeasureSpec(width - AndroidUtilities.dp(24.0f), Integer.MIN_VALUE), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(20.0f), 1073741824));
+        this.textView.measure(MeasureSpec.makeMeasureSpec(width - AndroidUtilities.dp(95.0f), Integer.MIN_VALUE), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(20.0f), 1073741824));
+        this.imageView.measure(MeasureSpec.makeMeasureSpec(width, Integer.MIN_VALUE), MeasureSpec.makeMeasureSpec(height, Integer.MIN_VALUE));
+        this.valueImageView.measure(MeasureSpec.makeMeasureSpec(width, Integer.MIN_VALUE), MeasureSpec.makeMeasureSpec(height, Integer.MIN_VALUE));
+        setMeasuredDimension(width, AndroidUtilities.dp(48.0f));
+    }
+
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        int height = bottom - top;
+        int width = right - left;
+        int viewTop = (height - this.valueTextView.getTextHeight()) / 2;
+        int viewLeft = LocaleController.isRTL ? AndroidUtilities.dp(24.0f) : 0;
+        this.valueTextView.layout(viewLeft, viewTop, this.valueTextView.getMeasuredWidth() + viewLeft, this.valueTextView.getMeasuredHeight() + viewTop);
+        viewTop = (height - this.textView.getTextHeight()) / 2;
+        viewLeft = !LocaleController.isRTL ? AndroidUtilities.dp(71.0f) : AndroidUtilities.dp(24.0f);
+        this.textView.layout(viewLeft, viewTop, this.textView.getMeasuredWidth() + viewLeft, this.textView.getMeasuredHeight() + viewTop);
+        viewTop = AndroidUtilities.dp(5.0f);
+        viewLeft = !LocaleController.isRTL ? AndroidUtilities.dp(16.0f) : (width - this.imageView.getMeasuredWidth()) - AndroidUtilities.dp(16.0f);
+        this.imageView.layout(viewLeft, viewTop, this.imageView.getMeasuredWidth() + viewLeft, this.imageView.getMeasuredHeight() + viewTop);
+        viewTop = (height - this.valueImageView.getMeasuredHeight()) / 2;
+        viewLeft = LocaleController.isRTL ? AndroidUtilities.dp(24.0f) : (width - this.valueImageView.getMeasuredWidth()) - AndroidUtilities.dp(24.0f);
+        this.valueImageView.layout(viewLeft, viewTop, this.valueImageView.getMeasuredWidth() + viewLeft, this.valueImageView.getMeasuredHeight() + viewTop);
     }
 
     public void setTextColor(int color) {
@@ -94,6 +90,7 @@ public class TextCell extends FrameLayout {
 
     public void setText(String text) {
         this.textView.setText(text);
+        this.valueTextView.setText(null);
         this.imageView.setVisibility(4);
         this.valueTextView.setVisibility(4);
         this.valueImageView.setVisibility(4);
@@ -101,6 +98,7 @@ public class TextCell extends FrameLayout {
 
     public void setTextAndIcon(String text, int resId) {
         this.textView.setText(text);
+        this.valueTextView.setText(null);
         this.imageView.setImageResource(resId);
         this.imageView.setVisibility(0);
         this.valueTextView.setVisibility(4);
@@ -116,8 +114,19 @@ public class TextCell extends FrameLayout {
         this.valueImageView.setVisibility(4);
     }
 
+    public void setTextAndValueAndIcon(String text, String value, int resId) {
+        this.textView.setText(text);
+        this.valueTextView.setText(value);
+        this.valueTextView.setVisibility(0);
+        this.valueImageView.setVisibility(4);
+        this.imageView.setVisibility(0);
+        this.imageView.setPadding(0, AndroidUtilities.dp(7.0f), 0, 0);
+        this.imageView.setImageResource(resId);
+    }
+
     public void setTextAndValueDrawable(String text, Drawable drawable) {
         this.textView.setText(text);
+        this.valueTextView.setText(null);
         this.valueImageView.setVisibility(0);
         this.valueImageView.setImageDrawable(drawable);
         this.valueTextView.setVisibility(4);

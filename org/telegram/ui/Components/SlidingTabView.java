@@ -11,7 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.C0553R;
+import org.telegram.ui.ActionBar.Theme;
 
 public class SlidingTabView extends LinearLayout {
     private float animateTabXTo = 0.0f;
@@ -48,7 +48,7 @@ public class SlidingTabView extends LinearLayout {
         tab.setTextColor(-1);
         tab.setTextSize(1, 14.0f);
         tab.setTypeface(Typeface.DEFAULT_BOLD);
-        tab.setBackgroundResource(C0553R.drawable.bar_selector_picker);
+        tab.setBackgroundDrawable(Theme.createSelectorDrawable(Theme.ACTION_BAR_PICKER_SELECTOR_COLOR, 0));
         tab.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 SlidingTabView.this.didSelectTab(position);

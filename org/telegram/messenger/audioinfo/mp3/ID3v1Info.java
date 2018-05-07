@@ -1,6 +1,5 @@
 package org.telegram.messenger.audioinfo.mp3;
 
-import android.support.v4.media.TransportMediator;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,13 +31,13 @@ public class ID3v1Info extends AudioInfo {
                 this.year = (short) 0;
             }
             this.comment = extractString(bytes, 97, 30);
-            ID3v1Genre id3v1Genre = ID3v1Genre.getGenre(bytes[TransportMediator.KEYCODE_MEDIA_PAUSE]);
+            ID3v1Genre id3v1Genre = ID3v1Genre.getGenre(bytes[127]);
             if (id3v1Genre != null) {
                 this.genre = id3v1Genre.getDescription();
             }
-            if (bytes[125] == (byte) 0 && bytes[TransportMediator.KEYCODE_MEDIA_PLAY] != (byte) 0) {
+            if (bytes[125] == (byte) 0 && bytes[126] != (byte) 0) {
                 this.version = "1.1";
-                this.track = (short) (bytes[TransportMediator.KEYCODE_MEDIA_PLAY] & 255);
+                this.track = (short) (bytes[126] & 255);
             }
         }
     }
@@ -66,7 +65,7 @@ public class ID3v1Info extends AudioInfo {
             }
             return text.substring(0, zeroIndex);
         } catch (Exception e) {
-            return "";
+            return TtmlNode.ANONYMOUS_REGION_ID;
         }
     }
 }

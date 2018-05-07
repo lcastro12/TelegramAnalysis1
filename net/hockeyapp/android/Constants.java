@@ -1,60 +1,67 @@
 package net.hockeyapp.android;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.Settings.Secure;
-import android.util.Log;
 import java.io.File;
-import java.security.MessageDigest;
-import net.hockeyapp.android.utils.HttpURLConnectionBuilder;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import net.hockeyapp.android.utils.AsyncTaskUtils;
+import net.hockeyapp.android.utils.CompletedFuture;
+import net.hockeyapp.android.utils.HockeyLog;
 
 public class Constants {
+    public static String ANDROID_BUILD = null;
     public static String ANDROID_VERSION = null;
     public static String APP_PACKAGE = null;
     public static String APP_VERSION = null;
     public static String APP_VERSION_NAME = null;
-    public static final String BASE_URL = "https://sdk.hockeyapp.net/";
-    public static String CRASH_IDENTIFIER = null;
-    public static String FILES_PATH = null;
+    static String DEVICE_IDENTIFIER = null;
+    static CountDownLatch LOADING_LATCH = new CountDownLatch(1);
     public static String PHONE_MANUFACTURER = null;
     public static String PHONE_MODEL = null;
-    public static final String SDK_NAME = "HockeySDK";
-    public static final String SDK_VERSION = "3.6.0";
-    public static final String TAG = "HockeyApp";
-    public static final int UPDATE_PERMISSIONS_REQUEST = 1;
+
+    static class C00341 implements Callable<String> {
+        C00341() {
+        }
+
+        public String call() throws Exception {
+            Constants.LOADING_LATCH.await();
+            return Constants.DEVICE_IDENTIFIER;
+        }
+    }
+
+    public static Future<String> getDeviceIdentifier() {
+        if (LOADING_LATCH.getCount() == 0) {
+            return new CompletedFuture(DEVICE_IDENTIFIER);
+        }
+        return AsyncTaskUtils.execute(new C00341());
+    }
 
     public static void loadFromContext(Context context) {
         ANDROID_VERSION = VERSION.RELEASE;
+        ANDROID_BUILD = Build.DISPLAY;
         PHONE_MODEL = Build.MODEL;
         PHONE_MANUFACTURER = Build.MANUFACTURER;
-        loadFilesPath(context);
         loadPackageData(context);
-        loadCrashIdentifier(context);
+        loadIdentifiers(context);
     }
 
-    public static File getHockeyAppStorageDir() {
-        File dir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + "HockeyApp");
-        dir.mkdirs();
-        return dir;
-    }
-
-    private static void loadFilesPath(Context context) {
-        if (context != null) {
-            try {
-                File file = context.getFilesDir();
-                if (file != null) {
-                    FILES_PATH = file.getAbsolutePath();
-                }
-            } catch (Exception e) {
-                Log.e("HockeyApp", "Exception thrown when accessing the files dir:");
-                e.printStackTrace();
-            }
+    public static File getHockeyAppStorageDir(Context context) {
+        File dir = new File(context.getExternalFilesDir(null), "HockeyApp");
+        boolean success = dir.exists() || dir.mkdirs();
+        if (!success) {
+            HockeyLog.warn("Couldn't create HockeyApp Storage dir");
         }
+        return dir;
     }
 
     private static void loadPackageData(Context context) {
@@ -63,15 +70,14 @@ public class Constants {
                 PackageManager packageManager = context.getPackageManager();
                 PackageInfo packageInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
                 APP_PACKAGE = packageInfo.packageName;
-                APP_VERSION = "" + packageInfo.versionCode;
+                APP_VERSION = TtmlNode.ANONYMOUS_REGION_ID + packageInfo.versionCode;
                 APP_VERSION_NAME = packageInfo.versionName;
                 int buildNumber = loadBuildNumber(context, packageManager);
                 if (buildNumber != 0 && buildNumber > packageInfo.versionCode) {
-                    APP_VERSION = "" + buildNumber;
+                    APP_VERSION = TtmlNode.ANONYMOUS_REGION_ID + buildNumber;
                 }
-            } catch (Exception e) {
-                Log.e("HockeyApp", "Exception thrown when accessing the package info:");
-                e.printStackTrace();
+            } catch (Throwable e) {
+                HockeyLog.error("Exception thrown when accessing the package info", e);
             }
         }
     }
@@ -83,47 +89,32 @@ public class Constants {
             if (metaData != null) {
                 i = metaData.getInt("buildNumber", 0);
             }
-        } catch (Exception e) {
-            Log.e("HockeyApp", "Exception thrown when accessing the application info:");
-            e.printStackTrace();
+        } catch (Throwable e) {
+            HockeyLog.error("Exception thrown when accessing the application info", e);
         }
         return i;
     }
 
-    private static void loadCrashIdentifier(Context context) {
-        String deviceIdentifier = Secure.getString(context.getContentResolver(), "android_id");
-        if (APP_PACKAGE != null && deviceIdentifier != null) {
-            String combined = APP_PACKAGE + ":" + deviceIdentifier + ":" + createSalt(context);
-            try {
-                MessageDigest digest = MessageDigest.getInstance("SHA-1");
-                byte[] bytes = combined.getBytes(HttpURLConnectionBuilder.DEFAULT_CHARSET);
-                digest.update(bytes, 0, bytes.length);
-                CRASH_IDENTIFIER = bytesToHex(digest.digest());
-            } catch (Throwable th) {
-            }
-        }
-    }
+    @SuppressLint({"StaticFieldLeak"})
+    private static void loadIdentifiers(final Context context) {
+        if (DEVICE_IDENTIFIER == null) {
+            AsyncTaskUtils.execute(new AsyncTask<Void, Object, String>() {
+                protected String doInBackground(Void... voids) {
+                    SharedPreferences preferences = context.getSharedPreferences("HockeyApp", 0);
+                    String deviceIdentifier = preferences.getString("deviceIdentifier", null);
+                    if (deviceIdentifier != null) {
+                        return deviceIdentifier;
+                    }
+                    deviceIdentifier = UUID.randomUUID().toString();
+                    preferences.edit().putString("deviceIdentifier", deviceIdentifier).apply();
+                    return deviceIdentifier;
+                }
 
-    private static String createSalt(Context context) {
-        String fingerprint = "HA" + (Build.BOARD.length() % 10) + (Build.BRAND.length() % 10) + (Build.CPU_ABI.length() % 10) + (Build.PRODUCT.length() % 10);
-        String serial = "";
-        if (VERSION.SDK_INT >= 9) {
-            try {
-                serial = Build.class.getField("SERIAL").get(null).toString();
-            } catch (Throwable th) {
-            }
+                protected void onPostExecute(String deviceIdentifier) {
+                    Constants.DEVICE_IDENTIFIER = deviceIdentifier;
+                    Constants.LOADING_LATCH.countDown();
+                }
+            });
         }
-        return fingerprint + ":" + serial;
-    }
-
-    private static String bytesToHex(byte[] bytes) {
-        char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
-        char[] hex = new char[(bytes.length * 2)];
-        for (int index = 0; index < bytes.length; index++) {
-            int value = bytes[index] & 255;
-            hex[index * 2] = HEX_ARRAY[value >>> 4];
-            hex[(index * 2) + 1] = HEX_ARRAY[value & 15];
-        }
-        return new String(hex).replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
     }
 }

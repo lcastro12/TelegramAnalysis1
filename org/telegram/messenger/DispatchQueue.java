@@ -9,12 +9,21 @@ public class DispatchQueue extends Thread {
     private volatile Handler handler = null;
     private CountDownLatch syncLatch = new CountDownLatch(1);
 
+    class C01691 extends Handler {
+        C01691() {
+        }
+
+        public void handleMessage(Message msg) {
+            DispatchQueue.this.handleMessage(msg);
+        }
+    }
+
     public DispatchQueue(String threadName) {
         setName(threadName);
         start();
     }
 
-    private void sendMessage(Message msg, int delay) {
+    public void sendMessage(Message msg, int delay) {
         try {
             this.syncLatch.await();
             if (delay <= 0) {
@@ -23,7 +32,7 @@ public class DispatchQueue extends Thread {
                 this.handler.sendMessageDelayed(msg, (long) delay);
             }
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
     }
 
@@ -32,7 +41,7 @@ public class DispatchQueue extends Thread {
             this.syncLatch.await();
             this.handler.removeCallbacks(runnable);
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
     }
 
@@ -49,7 +58,7 @@ public class DispatchQueue extends Thread {
                 this.handler.postDelayed(runnable, delay);
             }
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
     }
 
@@ -58,13 +67,16 @@ public class DispatchQueue extends Thread {
             this.syncLatch.await();
             this.handler.removeCallbacksAndMessages(null);
         } catch (Throwable e) {
-            FileLog.m611e("tmessages", e);
+            FileLog.m3e(e);
         }
+    }
+
+    public void handleMessage(Message inputMessage) {
     }
 
     public void run() {
         Looper.prepare();
-        this.handler = new Handler();
+        this.handler = new C01691();
         this.syncLatch.countDown();
         Looper.loop();
     }

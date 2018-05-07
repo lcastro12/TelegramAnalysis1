@@ -1,17 +1,18 @@
 package android.support.v4.os;
 
 import android.os.Build.VERSION;
+import android.os.Trace;
 
-public class TraceCompat {
+public final class TraceCompat {
     public static void beginSection(String sectionName) {
         if (VERSION.SDK_INT >= 18) {
-            TraceJellybeanMR2.beginSection(sectionName);
+            Trace.beginSection(sectionName);
         }
     }
 
     public static void endSection() {
         if (VERSION.SDK_INT >= 18) {
-            TraceJellybeanMR2.endSection();
+            Trace.endSection();
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.googlecode.mp4parser.boxes.mp4.objectdescriptors;
 
-import android.support.v4.media.TransportMediator;
 import com.coremedia.iso.IsoTypeReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,10 +12,6 @@ public abstract class BaseDescriptor {
     int tag;
 
     public abstract void parseDetail(ByteBuffer byteBuffer) throws IOException;
-
-    public int getTag() {
-        return this.tag;
-    }
 
     public int getSize() {
         return (this.sizeOfInstance + 1) + this.sizeBytes;
@@ -34,11 +29,11 @@ public abstract class BaseDescriptor {
         this.tag = tag;
         int tmp = IsoTypeReader.readUInt8(bb);
         int i = 0 + 1;
-        this.sizeOfInstance = tmp & TransportMediator.KEYCODE_MEDIA_PAUSE;
+        this.sizeOfInstance = tmp & 127;
         while ((tmp >>> 7) == 1) {
             tmp = IsoTypeReader.readUInt8(bb);
             i++;
-            this.sizeOfInstance = (this.sizeOfInstance << 7) | (tmp & TransportMediator.KEYCODE_MEDIA_PAUSE);
+            this.sizeOfInstance = (this.sizeOfInstance << 7) | (tmp & 127);
         }
         this.sizeBytes = i;
         ByteBuffer detailSource = bb.slice();
